@@ -179,10 +179,16 @@ function App() {
     <ToastProvider>
     <AuthProvider>
       <LeaveQuotaProvider>
-      <CompanyProvider>
-        <NotificationProvider>
-          <OfflineProvider>
-          <Router>
+        <CompanyProvider>
+          <NotificationProvider>
+            <OfflineProvider>
+              <TimeAttendanceProvider>
+                <BenefitsProvider>
+                  <EngagementProvider>
+                    <ComplianceProvider>
+                      <AnalyticsProvider>
+                        <IntegrationsProvider>
+                          <Router>
             <Routes>
               {/* Public Routes */}
               <Route path="/login" element={<Login />} />
@@ -709,18 +715,18 @@ function App() {
                 </PrivateRoute>
               } />
               </Routes>
-              </Router>
-            </IntegrationsProvider>
-            </AnalyticsProvider>
-            </ComplianceProvider>
-            </EngagementProvider>
-            </BenefitsProvider>
-            </TimeAttendanceProvider>
+            </Router>
+          </IntegrationsProvider>
+        </AnalyticsProvider>
+      </ComplianceProvider>
+    </EngagementProvider>
+  </BenefitsProvider>
+</TimeAttendanceProvider>
           </OfflineProvider>
         </NotificationProvider>
       </CompanyProvider>
-      </LeaveQuotaProvider>
-    </AuthProvider>
+    </LeaveQuotaProvider>
+  </AuthProvider>
     </ToastProvider>
     </ThemeProvider>
   );
