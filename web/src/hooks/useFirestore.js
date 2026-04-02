@@ -65,7 +65,13 @@ export function useFirestore(collectionName, customConstraints = []) {
       }
       setLoading(false);
     }).catch((err) => {
-      setError(err.message);
+      console.error(`Firestore error in ${collectionName}:`, err);
+      // Check for quota exceeded error
+      if (err.message?.includes('quota') || err.code === 'resource-exhausted') {
+        setError('Firebase quota exceeded. Please try again later or upgrade your plan.');
+      } else {
+        setError(err.message);
+      }
       setLoading(false);
     });
   }, [collectionName, companyId, JSON.stringify(customConstraints)]);
