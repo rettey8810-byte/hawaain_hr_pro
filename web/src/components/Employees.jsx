@@ -15,7 +15,8 @@ export default function Employees() {
   const canEditEmployee = hasAccess('employees', 'edit');
   const canDeleteEmployee = hasAccess('employees', 'delete');
   
-  const { employees, loading } = useFilteredEmployees();
+  const [employees, setEmployees] = useState([]); // Local state for paginated employees
+  const [loading, setLoading] = useState(false);
   const [allEmployees, setAllEmployees] = useState([]); // For stats
   const [passports, setPassports] = useState([]);
   const [workPermits, setWorkPermits] = useState([]);
