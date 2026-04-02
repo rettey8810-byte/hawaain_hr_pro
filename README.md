@@ -1,0 +1,555 @@
+# Hawaain HR Pro
+
+## Full-Stack HR & Expatriate Management System
+
+A comprehensive HR management system with expatriate compliance tracking, document management, **leave planner with transportation booking**, renewal workflows, and real-time alerts.
+
+---
+
+## 🚀 Features
+
+### Core HR Management
+- **Employee Management**: Add, edit, view employee profiles with modern colorful UI
+- **Role-based Access**: Superadmin/Admin/HR/GM/Staff with granular permissions
+  - **HR & GM**: Access to salary sections, payroll, and sensitive employee data
+  - **Staff**: Limited access to own profile and documents only
+- **Document Storage**: Firebase Storage integration
+- **Modern UI/UX**: Gradient headers, colorful cards, glass-morphism effects
+
+### 🌴 Leave Planner (Comprehensive)
+- **Leave Applications**: 10+ leave types including Annual, Sick, Emergency, Half-Day, Hourly, Compensatory, Study, Maternity, Paternity, Unpaid
+- **Leave Quota Management**: Track balances per employee per year with auto-calculation
+- **Smart Employee Search**: Type-to-search dropdown for selecting employees
+- **Transportation Booking**: Air, Sea, Land transport options
+- **4-Level Approval Workflow**: Supervisor → Dept Head → HR → GM approval chain
+- **Status Tracking**: 
+  - 📋 Quotation Received
+  - 🎫 Tickets Purchased
+  - ✈️ Departed
+  - 📍 Arrived
+- **Emergency Contacts**: Track emergency contact information
+- **Calendar View**: Visual monthly calendar showing all leaves
+- **Team Calendar**: Department-filtered calendar with overlap warnings
+- **Export to CSV/Excel**: Export leave data for reporting
+- **Print View**: Professional printable leave application form
+- **Offline Mode**: Auto-save drafts to localStorage when Firebase quota exceeded
+- **Document Upload**: Medical certificates, tickets with HR verification
+- **Email Notifications**: Automatic emails for approvals, rejections, reminders
+- **Leave Balance Dashboard**: Real-time view of remaining days by type
+
+### 📋 Recruitment & ATS (Enhanced v1.4)
+- **Job Postings Management**: Create, publish, and close job openings with salary ranges
+- **Applicant Tracking System (ATS)**: Full pipeline from Application to Hired
+- **Candidate Pipeline Stages**: Applied → Screening → Interview → Assessment → Offer → Hired/Rejected
+- **Source Tracking**: Track candidate sources (Direct, Referral, LinkedIn, Indeed, Job Board, Agency)
+- **Candidate Rating**: 5-star rating system for evaluations
+- **Resume Database**: Store candidate information and contact details
+- **Real-time Pipeline**: Visual pipeline with candidate counts per stage
+- **Job Management**: Close job postings when positions filled
+
+### 🎯 Performance Management
+- **Performance Reviews**: Annual, quarterly, and probation reviews
+- **KPI/Goal Setting**: Set and track employee objectives (SMART, OKRs)
+- **360-Degree Feedback**: Peer, manager, self, and direct report feedback
+- **Competency Framework**: Technical, behavioral, and business competencies
+- **Performance Improvement Plans (PIP)**: Track underperformance cases
+- **Rating Scale**: 5-point scale with detailed descriptions
+- **One-on-One Meeting Notes**: Record manager-employee discussions
+
+### 🎓 Training & Development
+- **Training Calendar**: Schedule and manage training sessions
+- **Certification Tracking**: Monitor employee certifications and expiry
+- **Skills Matrix**: Department skill gap analysis
+- **Learning Management**: Course enrollment and progress tracking
+- **Training Cost Calculator**: Calculate per-participant costs
+- **Certification Expiry Alerts**: Warn before certifications expire
+
+### 💰 Payroll Management (Enhanced v1.4) - HR/GM Only
+- **Monthly Payroll Run**: Process payroll for all active employees
+- **Salary Components**: Basic, Housing Allowance, Transport Allowance, Other Allowances
+- **Deductions**: Tax, Pension, Loan Repayment, Other Deductions
+- **Payslip Generation**: Professional payslip with earnings & deductions breakdown
+- **Payslip Viewer**: Detailed view with download capability
+- **Bank Information**: Track employee bank details (Bank Name, Account, IBAN)
+- **Payroll Summary**: Total Gross, Deductions, Net Pay calculations
+- **Employee Salary Profiles**: Store salary data in employee records (HR/GM access only)
+
+### ⏰ Attendance & Time Tracking
+- **Biometric Integration Ready**: Connect with fingerprint/RFID systems
+- **Timesheet Management**: Daily time entry and approval
+- **Shift Scheduling**: Create and manage work shifts
+- **Work Pattern Management**: 5-day, 6-day, rotating shifts
+- **Late/Absence Tracking**: Monitor punctuality
+- **Work From Home Tracking**: Remote work logging
+- **Overtime Calculation**: Automatic OT calculations
+
+### 💝 Employee Engagement (Enhanced v2.0)
+- **Pulse Surveys** - Quick engagement questionnaires with analytics
+- **eNPS Scoring** - Employee Net Promoter Score calculation
+- **Kudos & Recognition** - Peer-to-peer recognition with points system
+- **Recognition Categories** - Teamwork, Innovation, Excellence, Leadership, Customer Focus
+- **Points System** - Gamified recognition with redeemable points
+- **Suggestion Box** - Anonymous feedback with voting system
+- **Survey Analytics** - Response tracking and reporting dashboard
+- **Event Management** - Company events and team building
+- **Anniversary Alerts** - Work anniversary notifications
+- **Birthday Alerts** - Birthday notifications
+
+### ⏰ Time & Attendance (Advanced v2.0)
+- **GPS-based Clock-in/out** - Location tracking with address recording
+- **Biometric Integration Ready** - Support for fingerprint/face recognition
+- **Shift Management** - Morning, Day, Evening, Night, Rotating shifts
+- **Shift Swapping** - Employee-to-employee exchange with manager approval
+- **Overtime Management** - Automatic calculation with 1.5x, 2x rates
+- **Working Hours Calculation** - Automatic daily totals
+- **Attendance History** - 30-day rolling view with status tracking
+- **Late/Absence Tracking** - Monitor punctuality
+- **Work From Home Tracking** - Remote work logging
+- **Timesheet Approval** - Manager approval workflow
+
+### 💰 Benefits & Payroll Management (v2.0)
+- **Benefit Programs** - Health, Dental, Vision, Life, Retirement plans
+- **Employee Enrollment** - Self-service benefit selection
+- **Contribution Tracking** - Employer vs Employee split tracking
+- **Salary Advances** - Request and approval workflow with repayment tracking
+- **Benefit Cost Analytics** - Total cost breakdown by program
+- **Provider Management** - Insurance and benefit providers
+- **Eligibility Rules** - Service period and employee type requirements
+
+### 🔐 Compliance & Legal (v2.0)
+- **Audit Trail** - Complete action history with 30-day retention
+- **GDPR Compliance** - Data subject request management (Access, Rectification, Erasure, Portability, Restriction)
+- **30-Day Deadline Tracking** - Automatic GDPR request deadline monitoring
+- **Document Templates** - Contract, Offer Letter, Warning Letter generators
+- **Template Placeholders** - Dynamic field replacement
+- **Document Generation** - HTML/PDF output with company letterhead
+- **Compliance Score** - Overall compliance health metric
+- **Labor Law Compliance** - 8 key compliance areas tracking
+
+### 📊 HR Analytics Dashboard (Advanced v2.0)
+- **Retention Risk Analysis** - AI-powered turnover prediction
+- **Risk Scoring** - 0-100 risk score per employee
+- **Risk Factors** - Absence rate, Recognition gap, Tenure, Salary stagnation
+- **Risk Levels** - Critical, High, Medium, Low categorization
+- **Recommended Actions** - AI-suggested retention strategies
+- **Diversity Metrics** - Gender, Age, Ethnicity, Disability tracking
+- **Demographics Dashboard** - Visual breakdowns with charts
+- **Custom Reports** - User-defined analytics reports
+- **Report Scheduling** - Automated report generation
+- **Export Capability** - CSV, Excel, PDF exports
+
+### 🔌 Integrations Hub (v2.0)
+- **Calendar Sync** - Google Calendar & Microsoft Outlook integration
+- **Two-way Sync** - Events sync in both directions
+- **Slack Notifications** - Real-time HR event notifications
+- **Notification Events** - Leave requests, Expense claims, New hires, Birthdays
+- **Job Board Posting** - LinkedIn, Indeed, Glassdoor integration
+- **Accounting Integration** - QuickBooks & Xero sync
+- **Webhook Support** - Custom integration endpoints
+- **Sync Status Dashboard** - Health monitoring for all integrations
+
+### 🏢 HR Operations
+- **Disciplinary Actions** - Warning letters, incident tracking
+- **Grievance Management** - Employee complaint handling
+- **Exit Management** - Resignation workflow, clearance forms
+- **Exit Checklist** - HR, IT, Finance, Admin, Manager tasks
+- **No Objection Certificate (NOC)** - Track and issue NOCs
+- **Reference Letter Generator** - Auto-generate employment certificates
+
+### 👤 Employee Self-Service
+- **Profile Self-Update**: Employees update their own info
+- **Payslip Download**: Access and download payslips (view-only for employees)
+- **Leave Balance View**: Check leave quotas
+- **Document Upload**: Upload personal documents
+- **Request Forms**: Certificate requests, address changes
+- **Request Tracking**: Track pending requests
+
+**Note**: Salary information is only visible to HR and GM roles. Employees can view their own payslips but not salary breakdowns of others.
+
+### Expatriate Compliance System
+- **Passport Tracking**: Issue/expiry dates, country, number
+- **Visa Tracking**: Type, number, entry type, status
+- **Work Permit Tracking**: Employer, position, permit number
+- **Medical Records**: Test dates, results, expiry tracking
+
+### Alert System
+- **Expiry Alerts**: 90, 60, 30 days warnings
+- **Expired Documents**: Real-time expired status
+- **Dashboard Widgets**: Visual expiry counters with gradient cards
+- **Color Coding**: Green (Valid), Yellow (Warning), Red (Expired)
+
+### Renewal Workflow
+- **5-Step Process**: Alert → HR Notify → Start Renewal → Upload → Update
+- **Status Tracking**: Pending, In Progress, Completed
+- **Progress Visualization**: Step-by-step tracking
+
+### Mobile App
+- **React Native + Expo**: Cross-platform mobile access
+- **Document Viewing**: View employee documents
+- **Push Notifications**: Alert updates
+- **Camera Upload**: Direct document capture
+
+---
+
+## 📁 Project Structure
+
+```
+Hawaain_HR_Pro/
+├── web/                    # React Web Application
+│   ├── src/
+│   │   ├── components/    # React components
+│   │   ├── contexts/      # Auth & Notification contexts
+│   │   ├── hooks/         # Custom React hooks
+│   │   ├── utils/         # Helper functions
+│   │   ├── firebase/      # Firebase config
+│   │   ├── App.jsx        # Main application
+│   │   └── index.css      # Tailwind styles
+│   ├── package.json
+│   └── vite.config.js
+│
+├── mobile/                # React Native Mobile App
+│   ├── src/
+│   │   ├── screens/       # Mobile screens
+│   │   ├── contexts/      # Auth context
+│   │   └── utils/         # Helper functions
+│   ├── App.js             # Mobile app entry
+│   └── firebase.js        # Firebase config
+│
+└── README.md
+```
+
+---
+
+## 🛠️ Tech Stack
+
+### Web
+- **React 18** (Vite)
+- **Tailwind CSS**
+- **React Router DOM**
+- **Lucide React** (Icons)
+- **date-fns** (Date handling)
+- **Recharts** (Charts and graphs)
+- **React Context** (State management)
+- **localStorage** (Offline data persistence)
+
+### Mobile
+- **React Native**
+- **Expo**
+- **React Navigation**
+- **Expo Image Picker**
+
+### Backend
+- **Firebase Authentication**
+- **Cloud Firestore**
+- **Firebase Storage**
+
+---
+
+## 🚀 Local Setup
+
+### Prerequisites
+- Node.js 18+
+- npm or yarn
+- Firebase account (free tier)
+
+### Web Application
+
+```bash
+# Navigate to web directory
+cd web
+
+# Install dependencies
+npm install
+
+# Configure Firebase
+# Edit src/firebase/config.js with your Firebase credentials
+
+# Start development server
+npm run dev
+```
+
+### Mobile Application
+
+```bash
+# Navigate to mobile directory
+cd mobile
+
+# Install dependencies
+npm install
+
+# Configure Firebase
+# Edit firebase.js with your Firebase credentials
+
+# Start Expo
+npx expo start
+
+# Scan QR code with Expo Go app on your phone
+# Or press 'a' for Android emulator
+# Or press 'i' for iOS simulator (Mac only)
+```
+
+---
+
+## 🔥 Firebase Setup
+
+1. **Create Firebase Project**
+   - Go to [Firebase Console](https://console.firebase.google.com)
+   - Create new project
+   - Enable Authentication, Firestore, and Storage
+
+2. **Authentication**
+   - Enable Email/Password sign-in method
+
+3. **Firestore Database**
+   - Create database in test mode
+   - Collections will be auto-created
+
+4. **Storage**
+   - Enable Firebase Storage
+   - Set rules for authenticated access
+
+5. **Get Config**
+   - Project Settings → General → Your apps
+   - Copy Firebase config object
+   - Paste in `web/src/firebase/config.js` and `mobile/firebase.js`
+
+---
+
+## 📊 Database Collections
+
+### employees
+- name, email, phone, employeeId
+- department, position, location
+- joinDate, status, nationality
+- passportNumber, dateOfBirth
+- emergencyContact
+- **salary** (HR/GM only):
+  - basic, housingAllowance, transportAllowance, otherAllowances
+  - bankName, bankAccount, iban
+
+### jobPostings
+- title, department, location, type (full-time/part-time/contract)
+- description, requirements
+- salaryMin, salaryMax
+- status (open/closed)
+- postedAt, companyId
+
+### candidates
+- name, email, phone, resume
+- jobId, source (direct/referral/linkedin/etc.)
+- stage (applied/screening/interview/assessment/offer/hired/rejected)
+- rating (1-5), notes
+- appliedAt, hiredAt, companyId
+
+### payrolls
+- employeeId, employeeName, month
+- basicSalary, housingAllowance, transportAllowance, otherAllowances
+- taxDeduction, pensionDeduction, loanDeduction, otherDeductions
+- grossSalary, totalDeductions, netSalary
+- processedAt, status, companyId
+
+### passports
+- employeeId, passportNumber, country
+- issueDate, expiryDate, placeOfIssue
+- documentUrl, notes
+
+### visas
+- employeeId, visaNumber, visaType
+- entryType, issueDate, expiryDate
+- documentUrl, notes
+
+### workPermits
+- employeeId, permitNumber, jobPosition
+- employer, issueDate, expiryDate
+- documentUrl, notes
+
+### medicals
+- employeeId, testDate, expiryDate
+- result, testCenter, documentUrl
+
+### leaves
+- employeeId, leaveType, startDate, endDate
+- days, destination, reason
+- contactNumber, contactEmail
+- transportation (mode, from, to, status)
+- emergencyContact (name, relationship, phone)
+- status (pending, approved, rejected, cancelled)
+- approverId, approverName, approvalComments
+- appliedBy, appliedAt, updatedAt
+
+### leaveBalances
+- employeeId, year
+- quotas (annual, sick, emergency, halfDay, hourly, etc.)
+- used, remaining, accrued
+- updatedAt
+
+### leavePolicies
+- companyId
+- quota settings per leave type
+- approval workflow configuration
+- restrictions and rules
+- updatedAt
+
+### notifications
+- type, message, userId
+- documentType, read, createdAt
+
+### users
+- name, email, role
+- createdAt, updatedAt
+
+---
+
+## 🔐 Security Rules
+
+### Firestore Rules
+```javascript
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /users/{userId} {
+      allow read, write: if request.auth != null;
+    }
+    match /employees/{employeeId} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null && 
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['hr', 'admin'];
+    }
+    match /{document=**} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null && 
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['hr', 'admin'];
+    }
+  }
+}
+```
+
+### Storage Rules
+```javascript
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    match /{allPaths=**} {
+      allow read, write: if request.auth != null;
+    }
+  }
+}
+```
+
+---
+
+## 🌐 Deployment
+
+### Web (Vercel)
+
+```bash
+# Install Vercel CLI
+npm i -g vercel
+
+# Deploy
+cd web
+vercel
+
+# Follow prompts to link project
+```
+
+### Mobile (Expo)
+
+```bash
+cd mobile
+
+# Build for stores
+expo build:android
+expo build:ios
+
+# Or use EAS Build
+expo eas build
+```
+
+---
+
+## 📱 Using the Mobile App
+
+1. Install **Expo Go** from App Store/Google Play
+2. Run `npx expo start` in mobile directory
+3. Scan QR code with Expo Go
+4. Login with credentials
+5. Access employee data and documents
+
+---
+
+## 🎯 Key Features Summary
+
+✅ **Time & Attendance (v2.0)** - GPS clock-in, shift management, overtime tracking, shift swapping  
+✅ **Benefits Management (v2.0)** - Health, dental, vision benefits with enrollment tracking  
+✅ **Salary Advances (v2.0)** - Advance requests with approval and repayment tracking  
+✅ **Employee Engagement (v2.0)** - Pulse surveys, Kudos recognition, suggestion box with voting  
+✅ **Compliance Center (v2.0)** - Audit trail, GDPR requests, document templates  
+✅ **HR Analytics (v2.0)** - Retention risk AI, diversity metrics, custom reports  
+✅ **Integrations Hub (v2.0)** - Calendar, Slack, job boards, accounting sync  
+✅ **Recruitment & ATS** - Job postings and candidate pipeline  
+✅ **Payroll Management** - Monthly payroll runs with payslip generation  
+✅ **Payroll Approval Workflow** - HRM → GM approval process  
+✅ **Salary Management** - Employee salary profiles (HR/GM only)  
+✅ **Payslip Viewer** - Detailed earnings and deductions breakdown  
+✅ **Role-based Access** - 6-level hierarchy (Superadmin > GM > HRM > Dept Head > Supervisor > Staff)  
+✅ **Feature Permissions** - Granular feature-level access control (view/create/edit/delete)  
+✅ **Data Visibility** - Role-based data filtering by company and department  
+✅ **Companies Management** - Multi-company support with letterhead  
+✅ **Position Quotas** - Track filled vs available positions by department  
+✅ **Job Descriptions** - Auto-generate JDs with company letterhead  
+✅ **Offer Letters & Contracts** - Generate employment documents  
+✅ **Form Templates Hub** - Centralized form management (GM/HRM)  
+✅ **Promotion Management** - HOD → HRM → GM approval workflow  
+✅ **Disciplinary Actions** - Warnings and disciplinary letters with workflow  
+✅ **Performance Reviews** - 360-degree feedback and goal tracking  
+✅ **Expense Claims** - Multi-level approval with receipt uploads  
+✅ **Employee Self-Service** - Payslips, leaves, documents portal  
+✅ **Employee Directory** - Org chart with contact info  
+✅ **Company Announcements** - Policy repository with read receipts  
+✅ **Shift Management** - Shift patterns, swaps, coverage alerts  
+✅ **Leave Planner** - Full leave management with transportation  
+✅ **Leave Quota System** - Balance tracking and accruals  
+✅ **Multi-Level Approval** - Manager → HR → Director workflow  
+✅ **Advanced Leave Types** - Half-day, hourly, compensatory  
+✅ **Team Calendar** - Department view with overlap warnings  
+✅ **Email Notifications** - Auto-emails for all events  
+✅ **Document Upload** - Medical certs, tickets with verification  
+✅ **Reports & Analytics** - Charts, trends, exports  
+✅ **Leave Policy Settings** - Configure quotas and rules  
+✅ **Calendar View** - Visual leave scheduling  
+✅ **Export CSV** - Data export functionality  
+✅ **Print Forms** - Professional document printing  
+✅ **Offline Mode** - Auto-save drafts to localStorage  
+✅ **Dark Mode** - Toggle between light/dark themes  
+✅ **Toast Notifications** - User-friendly alerts  
+✅ **Smart Search** - Type-to-search employee dropdown  
+✅ **Employee Management** - Full CRUD operations  
+✅ **Document Tracking** - Passport, Visa, Work Permit, Medical  
+✅ **Expiry Alerts** - 90/60/30 day warnings + expired  
+✅ **Renewal Workflow** - 5-step process tracking  
+✅ **Real-time Updates** - Firestore live sync  
+✅ **File Uploads** - Document storage  
+✅ **Mobile App** - iOS & Android support  
+✅ **Search & Filter** - Employee/document search  
+✅ **Dashboard** - Visual statistics  
+
+---
+
+## 📝 License
+
+MIT License - Free for personal and commercial use
+
+---
+
+## 🤝 Support
+
+For issues or questions, please check:
+1. Firebase Console for service status
+2. Browser console for web errors
+3. Metro bundler for mobile errors
+4. Firestore rules for permission issues
+
+---
+
+**Built with ❤️ for HR Professionals managing expatriate workforces**

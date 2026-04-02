@@ -1,0 +1,2 @@
+export { default } from './firebase/config';
+export { auth, db, storage } from './firebase/config';

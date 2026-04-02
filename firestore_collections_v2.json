@@ -1,0 +1,443 @@
+{
+  "timeAttendance": {
+    "collection": "timeAttendance",
+    "fields": {
+      "employeeId": "string (ref to employees)",
+      "companyId": "string",
+      "date": "timestamp",
+      "clockIn": "timestamp",
+      "clockOut": "timestamp",
+      "clockInLocation": {
+        "latitude": "number",
+        "longitude": "number",
+        "address": "string"
+      },
+      "clockOutLocation": {
+        "latitude": "number",
+        "longitude": "number",
+        "address": "string"
+      },
+      "clockInMethod": "string (gps, biometric, manual)",
+      "clockOutMethod": "string (gps, biometric, manual)",
+      "status": "string (present, absent, late, early_departure, on_leave)",
+      "shiftId": "string (ref to shifts)",
+      "overtimeHours": "number",
+      "breakHours": "number",
+      "totalWorkingHours": "number",
+      "notes": "string",
+      "verifiedBy": "string (ref to employees)",
+      "createdAt": "timestamp",
+      "updatedAt": "timestamp"
+    }
+  },
+  "shifts": {
+    "collection": "shifts",
+    "fields": {
+      "companyId": "string",
+      "name": "string",
+      "code": "string",
+      "startTime": "string (HH:mm)",
+      "endTime": "string (HH:mm)",
+      "breakDuration": "number (minutes)",
+      "gracePeriod": "number (minutes)",
+      "workingDays": "array [0-6]",
+      "color": "string",
+      "isActive": "boolean",
+      "createdAt": "timestamp",
+      "updatedAt": "timestamp"
+    }
+  },
+  "shiftAssignments": {
+    "collection": "shiftAssignments",
+    "fields": {
+      "employeeId": "string (ref to employees)",
+      "companyId": "string",
+      "shiftId": "string (ref to shifts)",
+      "effectiveFrom": "timestamp",
+      "effectiveTo": "timestamp",
+      "rotationType": "string (fixed, rotating)",
+      "createdAt": "timestamp",
+      "updatedAt": "timestamp"
+    }
+  },
+  "shiftSwaps": {
+    "collection": "shiftSwaps",
+    "fields": {
+      "requesterId": "string (ref to employees)",
+      "recipientId": "string (ref to employees)",
+      "companyId": "string",
+      "requestedShiftId": "string",
+      "offeredShiftId": "string",
+      "swapDate": "timestamp",
+      "reason": "string",
+      "status": "string (pending, approved, rejected)",
+      "requestedAt": "timestamp",
+      "respondedAt": "timestamp",
+      "managerApproval": {
+        "approved": "boolean",
+        "approvedBy": "string",
+        "approvedAt": "timestamp",
+        "comments": "string"
+      },
+      "createdAt": "timestamp",
+      "updatedAt": "timestamp"
+    }
+  },
+  "overtimeRequests": {
+    "collection": "overtimeRequests",
+    "fields": {
+      "employeeId": "string (ref to employees)",
+      "companyId": "string",
+      "date": "timestamp",
+      "startTime": "timestamp",
+      "endTime": "timestamp",
+      "hours": "number",
+      "reason": "string",
+      "type": "string (regular, holiday, weekend)",
+      "rate": "number (1.5, 2.0, etc)",
+      "status": "string (pending, approved, rejected, processed)",
+      "requestedAt": "timestamp",
+      "approvedBy": "string (ref to employees)",
+      "approvedAt": "timestamp",
+      "payrollPeriodId": "string",
+      "createdAt": "timestamp",
+      "updatedAt": "timestamp"
+    }
+  },
+  "payrollCountries": {
+    "collection": "payrollCountries",
+    "fields": {
+      "companyId": "string",
+      "countryCode": "string (ISO 3166-1 alpha-2)",
+      "countryName": "string",
+      "currency": "string",
+      "taxRules": {
+        "incomeTaxBrackets": "array of objects",
+        "socialSecurityRate": "number",
+        "employerContributionRate": "number",
+        "employeeContributionRate": "number"
+      },
+      "payrollFrequency": "string (monthly, biweekly, weekly)",
+      "workingDaysPerMonth": "number",
+      "workingHoursPerDay": "number",
+      "overtimeRules": {
+        "regularRate": "number",
+        "weekendRate": "number",
+        "holidayRate": "number",
+        "maxMonthlyHours": "number"
+      },
+      "isActive": "boolean",
+      "createdAt": "timestamp",
+      "updatedAt": "timestamp"
+    }
+  },
+  "benefits": {
+    "collection": "benefits",
+    "fields": {
+      "companyId": "string",
+      "name": "string",
+      "type": "string (health, dental, vision, life, retirement, other)",
+      "provider": "string",
+      "description": "string",
+      "coverageAmount": "number",
+      "employerContribution": "number (percentage or fixed)",
+      "employeeContribution": "number (percentage or fixed)",
+      "eligibleEmployeeTypes": "array",
+      "eligibleDepartments": "array",
+      "minimumServiceMonths": "number",
+      "enrollmentPeriod": {
+        "startMonth": "number",
+        "endMonth": "number"
+      },
+      "isActive": "boolean",
+      "createdAt": "timestamp",
+      "updatedAt": "timestamp"
+    }
+  },
+  "benefitEnrollments": {
+    "collection": "benefitEnrollments",
+    "fields": {
+      "employeeId": "string (ref to employees)",
+      "companyId": "string",
+      "benefitId": "string (ref to benefits)",
+      "enrolledAt": "timestamp",
+      "effectiveFrom": "timestamp",
+      "effectiveTo": "timestamp",
+      "dependents": "array of objects",
+      "monthlyContribution": "number",
+      "employerContribution": "number",
+      "status": "string (active, suspended, terminated)",
+      "createdAt": "timestamp",
+      "updatedAt": "timestamp"
+    }
+  },
+  "salaryAdvances": {
+    "collection": "salaryAdvances",
+    "fields": {
+      "employeeId": "string (ref to employees)",
+      "companyId": "string",
+      "amount": "number",
+      "reason": "string",
+      "requestedAt": "timestamp",
+      "requestedForPayrollPeriod": "string",
+      "repaymentSchedule": "array of objects",
+      "status": "string (pending, approved, rejected, repaid)",
+      "approvedBy": "string (ref to employees)",
+      "approvedAt": "timestamp",
+      "totalRepaid": "number",
+      "remainingBalance": "number",
+      "createdAt": "timestamp",
+      "updatedAt": "timestamp"
+    }
+  },
+  "surveys": {
+    "collection": "surveys",
+    "fields": {
+      "companyId": "string",
+      "title": "string",
+      "description": "string",
+      "type": "string (pulse, engagement, exit, custom)",
+      "questions": "array of objects",
+      "isAnonymous": "boolean",
+      "targetDepartments": "array",
+      "targetEmployeeTypes": "array",
+      "startsAt": "timestamp",
+      "endsAt": "timestamp",
+      "status": "string (draft, active, closed, archived)",
+      "createdBy": "string (ref to employees)",
+      "createdAt": "timestamp",
+      "updatedAt": "timestamp"
+    }
+  },
+  "surveyResponses": {
+    "collection": "surveyResponses",
+    "fields": {
+      "surveyId": "string (ref to surveys)",
+      "employeeId": "string (ref to employees)",
+      "companyId": "string",
+      "responses": "array of objects",
+      "submittedAt": "timestamp",
+      "isAnonymous": "boolean",
+      "createdAt": "timestamp"
+    }
+  },
+  "recognitions": {
+    "collection": "recognitions",
+    "fields": {
+      "companyId": "string",
+      "recipientId": "string (ref to employees)",
+      "senderId": "string (ref to employees)",
+      "category": "string (teamwork, innovation, excellence, leadership, customer_focus)",
+      "message": "string",
+      "points": "number",
+      "isPublic": "boolean",
+      "createdAt": "timestamp",
+      "updatedAt": "timestamp"
+    }
+  },
+  "suggestions": {
+    "collection": "suggestions",
+    "fields": {
+      "companyId": "string",
+      "employeeId": "string (ref to employees, optional for anonymous)",
+      "title": "string",
+      "description": "string",
+      "category": "string (process, culture, facility, other)",
+      "isAnonymous": "boolean",
+      "status": "string (submitted, under_review, implemented, rejected)",
+      "votes": "number",
+      "votedBy": "array of employeeIds",
+      "department": "string",
+      "assignedTo": "string (ref to employees)",
+      "response": "string",
+      "respondedAt": "timestamp",
+      "createdAt": "timestamp",
+      "updatedAt": "timestamp"
+    }
+  },
+  "auditLogs": {
+    "collection": "auditLogs",
+    "fields": {
+      "companyId": "string",
+      "userId": "string (ref to users)",
+      "userEmail": "string",
+      "userRole": "string",
+      "action": "string (create, update, delete, view, export, login, logout)",
+      "resourceType": "string (employee, payroll, document, etc)",
+      "resourceId": "string",
+      "details": "object (before/after values)",
+      "ipAddress": "string",
+      "userAgent": "string",
+      "timestamp": "timestamp"
+    }
+  },
+  "gdprRequests": {
+    "collection": "gdprRequests",
+    "fields": {
+      "employeeId": "string (ref to employees)",
+      "companyId": "string",
+      "type": "string (access, rectification, erasure, portability, restriction)",
+      "description": "string",
+      "status": "string (pending, in_progress, completed, rejected)",
+      "requestedAt": "timestamp",
+      "deadline": "timestamp",
+      "completedAt": "timestamp",
+      "handledBy": "string (ref to employees)",
+      "response": "string",
+      "createdAt": "timestamp",
+      "updatedAt": "timestamp"
+    }
+  },
+  "documentTemplates": {
+    "collection": "documentTemplates",
+    "fields": {
+      "companyId": "string",
+      "name": "string",
+      "type": "string (contract, offer_letter, termination_letter, warning_letter, certificate, custom)",
+      "category": "string",
+      "content": "string (HTML/template with placeholders)",
+      "placeholders": "array of strings",
+      "isDefault": "boolean",
+      "isActive": "boolean",
+      "createdBy": "string (ref to employees)",
+      "createdAt": "timestamp",
+      "updatedAt": "timestamp"
+    }
+  },
+  "analyticsReports": {
+    "collection": "analyticsReports",
+    "fields": {
+      "companyId": "string",
+      "name": "string",
+      "description": "string",
+      "type": "string (retention, diversity, cost, turnover, custom)",
+      "filters": "object",
+      "dateRange": {
+        "start": "timestamp",
+        "end": "timestamp"
+      },
+      "data": "object (cached report data)",
+      "createdBy": "string (ref to employees)",
+      "schedule": {
+        "frequency": "string (daily, weekly, monthly)",
+        "lastRun": "timestamp",
+        "nextRun": "timestamp",
+        "recipients": "array of emails"
+      },
+      "createdAt": "timestamp",
+      "updatedAt": "timestamp"
+    }
+  },
+  "retentionRiskScores": {
+    "collection": "retentionRiskScores",
+    "fields": {
+      "employeeId": "string (ref to employees)",
+      "companyId": "string",
+      "score": "number (0-100)",
+      "riskLevel": "string (low, medium, high, critical)",
+      "factors": "array of objects",
+      "predictedDepartureDate": "timestamp (optional)",
+      "recommendedActions": "array of strings",
+      "calculatedAt": "timestamp",
+      "modelVersion": "string",
+      "createdAt": "timestamp",
+      "updatedAt": "timestamp"
+    }
+  },
+  "diversityMetrics": {
+    "collection": "diversityMetrics",
+    "fields": {
+      "companyId": "string",
+      "date": "timestamp",
+      "department": "string",
+      "metrics": {
+        "gender": {
+          "male": "number",
+          "female": "number",
+          "nonBinary": "number",
+          "preferNotToSay": "number"
+        },
+        "ageGroups": {
+          "under25": "number",
+          "25to34": "number",
+          "35to44": "number",
+          "45to54": "number",
+          "55plus": "number"
+        },
+        "ethnicity": "object",
+        "disability": {
+          "yes": "number",
+          "no": "number"
+        }
+      },
+      "goals": "object",
+      "createdAt": "timestamp",
+      "updatedAt": "timestamp"
+    }
+  },
+  "integrationConfigs": {
+    "collection": "integrationConfigs",
+    "fields": {
+      "companyId": "string",
+      "type": "string (calendar, slack, teams, quickbooks, xero, job_board)",
+      "provider": "string (google, microsoft, slack, quickbooks, etc)",
+      "isEnabled": "boolean",
+      "credentials": {
+        "encrypted": "boolean",
+        "accessToken": "string (encrypted)",
+        "refreshToken": "string (encrypted)",
+        "expiresAt": "timestamp"
+      },
+      "settings": "object (provider-specific settings)",
+      "webhookUrl": "string",
+      "lastSyncAt": "timestamp",
+      "syncStatus": "string (active, error, pending)",
+      "createdAt": "timestamp",
+      "updatedAt": "timestamp"
+    }
+  },
+  "calendarSyncs": {
+    "collection": "calendarSyncs",
+    "fields": {
+      "employeeId": "string (ref to employees)",
+      "companyId": "string",
+      "provider": "string (google, microsoft)",
+      "externalCalendarId": "string",
+      "syncDirection": "string (one_way, two_way)",
+      "syncEvents": "array [leave, meetings, shifts]",
+      "lastSyncAt": "timestamp",
+      "status": "string (active, error, paused)",
+      "createdAt": "timestamp",
+      "updatedAt": "timestamp"
+    }
+  },
+  "slackNotifications": {
+    "collection": "slackNotifications",
+    "fields": {
+      "companyId": "string",
+      "channel": "string",
+      "eventType": "string (leave_request, expense_claim, new_hire, birthday, etc)",
+      "messageTemplate": "string",
+      "isEnabled": "boolean",
+      "createdAt": "timestamp",
+      "updatedAt": "timestamp"
+    }
+  },
+  "jobBoardPostings": {
+    "collection": "jobBoardPostings",
+    "fields": {
+      "companyId": "string",
+      "requisitionId": "string (ref to recruitmentRequisitions)",
+      "jobBoard": "string (linkedin, indeed, glassdoor, monster)",
+      "externalJobId": "string",
+      "postingUrl": "string",
+      "status": "string (draft, posted, expired, closed)",
+      "postedAt": "timestamp",
+      "expiresAt": "timestamp",
+      "applicantsCount": "number",
+      "cost": "number",
+      "createdAt": "timestamp",
+      "updatedAt": "timestamp"
+    }
+  }
+}

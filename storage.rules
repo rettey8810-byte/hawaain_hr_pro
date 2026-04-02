@@ -1,0 +1,21 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    // Allow authenticated users to read/write their own files
+    match /{userId}/{allPaths=**} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+    
+    // HR and Admin can access all document folders
+    match /{documentType}/{allPaths=**} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null && 
+        firestore.get(/databases/(default)/documents/users/$(request.auth.uid)).data.role in ['hr', 'admin'];
+    }
+    
+    // Default: authenticated users can read/write
+    match /{allPaths=**} {
+      allow read, write: if request.auth != null;
+    }
+  }
+}
