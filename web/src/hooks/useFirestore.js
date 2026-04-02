@@ -40,11 +40,29 @@ export function useFirestore(collectionName, customConstraints = []) {
 
     // Use one-time getDocs for faster initial load
     getDocs(q).then((snapshot) => {
-      const docs = snapshot.docs.map(doc => ({
+      let docs = snapshot.docs.map(doc => ({
         id: doc.id,
         ...doc.data()
       }));
-      setDocuments(docs);
+      
+      // Fallback: if no documents with companyId, fetch all documents
+      if (docs.length === 0) {
+        console.log(`No documents with companyId ${companyId} in ${collectionName}, fetching all...`);
+        return getDocs(query(collection(db, collectionName)));
+      }
+      
+      return { docs };
+    }).then((result) => {
+      // Handle the fallback case
+      if (result && result.docs) {
+        const docs = result.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        }));
+        setDocuments(docs);
+      } else {
+        setDocuments(result); // Original docs
+      }
       setLoading(false);
     }).catch((err) => {
       setError(err.message);
