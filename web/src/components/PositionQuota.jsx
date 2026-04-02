@@ -25,7 +25,7 @@ const DEPARTMENTS = [
 ];
 
 export default function PositionQuota() {
-  const { userData, hasAccess } = useAuth();
+  const { user, userData, hasAccess } = useAuth();
   const { companyId } = useCompany();
   
   const [quotas, setQuotas] = useState([]);
@@ -121,7 +121,7 @@ export default function PositionQuota() {
         maxSalary: parseFloat(formData.maxSalary) || 0,
         companyId,
         createdAt: serverTimestamp(),
-        createdBy: userData?.uid,
+        createdBy: user?.uid,
         updatedAt: serverTimestamp()
       };
 
