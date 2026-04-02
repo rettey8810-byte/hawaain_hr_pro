@@ -48,21 +48,18 @@ export function useFirestore(collectionName, customConstraints = []) {
       // Fallback: if no documents with companyId, fetch all documents
       if (docs.length === 0) {
         console.log(`No documents with companyId ${companyId} in ${collectionName}, fetching all...`);
-        return getDocs(query(collection(db, collectionName)));
+        return getDocs(query(collection(db, collectionName))).then(fallbackSnapshot => {
+          // Process fallback snapshot and return as docs array
+          return fallbackSnapshot.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data()
+          }));
+        });
       }
       
-      return { docs };
-    }).then((result) => {
-      // Handle the fallback case
-      if (result && result.docs) {
-        const docs = result.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data()
-        }));
-        setDocuments(docs);
-      } else {
-        setDocuments(result); // Original docs
-      }
+      return docs;
+    }).then((docs) => {
+      setDocuments(docs);
       setLoading(false);
     }).catch((err) => {
       console.error(`Firestore error in ${collectionName}:`, err);
