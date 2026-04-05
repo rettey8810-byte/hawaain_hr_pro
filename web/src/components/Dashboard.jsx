@@ -98,7 +98,12 @@ function AlertItem({ title, count, type, icon: Icon, href }) {
 
 export default function Dashboard() {
   const { companyId, currentCompany, getCompanyDisplayName, isConstructionCompany, isExternalCompany } = useCompany();
+  
+  // Fetch different data based on company type
   const { documents: employees } = useFirestore('employees');
+  const { documents: constructionWorkers } = useFirestore('constructionWorkers');
+  const { documents: externalStaff } = useFirestore('externalStaff');
+  
   const { documents: passports } = useFirestore('passports');
   const { documents: visas } = useFirestore('visas');
   const { documents: workPermits } = useFirestore('workPermits');
@@ -110,8 +115,18 @@ export default function Dashboard() {
     setMounted(true);
   }, []);
 
-  // Filter by company
-  const companyEmployees = employees.filter(e => e.companyId === companyId);
+  // Get the correct workforce data based on company type
+  const getWorkforceData = () => {
+    if (isConstructionCompany()) {
+      return constructionWorkers.filter(w => w.companyId === companyId);
+    } else if (isExternalCompany()) {
+      return externalStaff.filter(s => s.companyId === companyId);
+    } else {
+      return employees.filter(e => e.companyId === companyId || !e.companyId); // Fallback for old data
+    }
+  };
+
+  const companyEmployees = getWorkforceData();
   const companyLeaves = leaves.filter(l => l.companyId === companyId);
 
   // Calculate department distribution
@@ -229,7 +244,7 @@ export default function Dashboard() {
           <>
             <StatCard
               title="Construction Workers"
-              value="View All"
+              value={companyEmployees.length}
               icon={HardHat}
               gradient="orange"
               subtitle="Villa Construction Workforce"
@@ -237,26 +252,26 @@ export default function Dashboard() {
             />
             <StatCard
               title="Work Permits"
-              value="Manage"
+              value={companyEmployees.filter(w => w.wpDays > 0).length}
               icon={Briefcase}
               gradient="cyan"
-              subtitle="Construction WP Tracking"
+              subtitle="Active Work Permits"
               href="/construction-workforce"
             />
             <StatCard
               title="Expiring Soon"
-              value="Check"
+              value={companyEmployees.filter(w => w.status === 'expiring30').length}
               icon={AlertTriangle}
               gradient="yellow"
-              subtitle="Document Expiry Alerts"
+              subtitle="Within 30 days"
               href="/construction-workforce"
             />
             <StatCard
-              title="Export Data"
-              value="CSV"
-              icon={FileText}
-              gradient="green"
-              subtitle="Download Workforce Data"
+              title="Expired"
+              value={companyEmployees.filter(w => w.status === 'expired').length}
+              icon={Clock}
+              gradient="red"
+              subtitle="Requires immediate action"
               href="/construction-workforce"
             />
           </>
@@ -264,15 +279,15 @@ export default function Dashboard() {
           <>
             <StatCard
               title="External Staff"
-              value="Manage"
+              value={companyEmployees.length}
               icon={Users}
               gradient="blue"
-              subtitle="Villa Park & 3rd Party"
+              subtitle="Total Staff & Visitors"
               href="/external-staff"
             />
             <StatCard
               title="Checked In"
-              value="View"
+              value={companyEmployees.filter(s => s.status === 'checked-in').length}
               icon={Building2}
               gradient="green"
               subtitle="Currently on Property"
@@ -280,18 +295,18 @@ export default function Dashboard() {
             />
             <StatCard
               title="Visitors"
-              value="Manage"
+              value={companyEmployees.filter(s => s.type === 'visitor').length}
               icon={Users}
               gradient="purple"
-              subtitle="Visitor Management"
+              subtitle="Visitor Count"
               href="/external-staff"
             />
             <StatCard
-              title="Add Entry"
-              value="+ New"
-              icon={CheckCircle}
+              title="3rd Party"
+              value={companyEmployees.filter(s => s.type === '3rd-party').length}
+              icon={Briefcase}
               gradient="cyan"
-              subtitle="Register New Staff/Visitor"
+              subtitle="Contractor Staff"
               href="/external-staff"
             />
           </>
@@ -299,7 +314,7 @@ export default function Dashboard() {
           <>
             <StatCard
               title="Total Employees"
-              value={employees.length}
+              value={companyEmployees.length}
               icon={Users}
               gradient="blue"
               subtitle="Active workforce"
