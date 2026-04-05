@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { 
   LayoutDashboard, 
@@ -43,15 +43,13 @@ import {
   Megaphone,
   Award,
   Receipt,
-  CalendarDays,
-  HardHat
+  CalendarDays
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useNotifications } from '../contexts/NotificationContext';
 import { useCompany } from '../contexts/CompanyContext';
 import { useTheme } from '../contexts/ThemeContext';
 import ToastContainer from './ToastContainer';
-import CompanySwitcher from './CompanySwitcher';
 
 export default function Layout({ children }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -59,7 +57,7 @@ export default function Layout({ children }) {
   const [expandedCategories, setExpandedCategories] = useState(['Dashboard']);
   const { user, userData, logout, isHR, isHRorGM, hasAccess } = useAuth();
   const { unreadCount } = useNotifications();
-  const { currentCompany, isSuperAdmin, companyId, isConstructionCompany, isExternalCompany } = useCompany();
+  const { currentCompany, isSuperAdmin } = useCompany();
   const { darkMode, toggleDarkMode } = useTheme();
   const navigate = useNavigate();
   const location = useLocation();
@@ -70,148 +68,112 @@ export default function Layout({ children }) {
   };
 
   // Navigation categories with sub-items and permissions
-  const navigationCategories = useMemo(() => {
-    const isConstruction = isConstructionCompany && isConstructionCompany();
-    const isExternal = isExternalCompany && isExternalCompany();
-    
-    // Base categories that all companies see
-    const baseCategories = [
-      {
-        name: 'Dashboard',
-        icon: LayoutDashboard,
-        items: [
-          { name: 'Overview', href: '/', icon: LayoutDashboard, feature: 'employees', action: 'view' },
-        ]
-      }
-    ];
-
-    // Add Construction Workforce menu item for construction company
-    const constructionMenu = isConstruction ? [
-      {
-        name: 'Workforce',
-        icon: HardHat,
-        items: [
-          { name: 'Construction Workforce', href: '/construction-workforce', icon: HardHat, feature: 'employees', action: 'view' },
-          { name: 'Export Data', href: '/construction-workforce', icon: FileSpreadsheet, feature: 'employees', action: 'view' },
-        ]
-      }
-    ] : [];
-
-    // Add External Staff menu for external companies
-    const externalMenu = isExternal ? [
-      {
-        name: 'External Staff',
-        icon: Users,
-        items: [
-          { name: 'Manage Staff', href: '/external-staff', icon: Users, feature: 'employees', action: 'view' },
-          { name: 'Add New Entry', href: '/external-staff', icon: UserPlus, feature: 'employees', action: 'create' },
-        ]
-      }
-    ] : [];
-
-    // Full navigation for all companies
-    return [
-      ...baseCategories,
-      ...constructionMenu,
-      ...externalMenu,
-      {
-        name: 'People',
-        icon: Users,
-        items: [
-          { name: 'Employees', href: '/employees', icon: Users, feature: 'employees', action: 'view' },
-          { name: 'Employee Directory', href: '/employee-directory', icon: Network, feature: 'employees', action: 'view' },
-          { name: 'Org Structure', href: '/org-structure', icon: Network, feature: 'employees', action: 'view' },
-          { name: 'Recruitment', href: '/recruitment', icon: Briefcase, feature: 'recruitment', action: 'view' },
-          { name: 'Bulk Import/Export', href: '/bulk-import-export', icon: FileSpreadsheet, feature: 'employees', action: 'create' },
-        ]
-      },
-      {
-        name: 'Leave & Time',
-        icon: Palmtree,
-        items: [
-          { name: 'Leave Planner', href: '/leave-planner', icon: Palmtree, feature: 'leave', action: 'view' },
-          { name: 'Apply for Leave', href: '/leave-planner/apply', icon: FileText, feature: 'leave', action: 'apply' },
-          { name: 'My Leaves', href: '/leave-planner/my-leaves', icon: ClipboardList, feature: 'leave', action: 'view' },
-          { name: 'Attendance', href: '/attendance-tracking', icon: Clock, feature: 'leave', action: 'view' },
-          { name: 'Shift Management', href: '/shift-management', icon: CalendarDays, feature: 'leave', action: 'view' },
-        ]
-      },
-      {
-        name: 'Documents',
-        icon: FolderOpen,
-        items: [
-          { name: 'Passports', href: '/passports', icon: FileText, feature: 'documents', action: 'view' },
-          { name: 'Work Permits', href: '/work-permits', icon: Briefcase, feature: 'documents', action: 'view' },
-          { name: 'Visas', href: '/visas', icon: Plane, feature: 'documents', action: 'view' },
-          { name: 'Medical', href: '/medical', icon: HeartPulse, feature: 'documents', action: 'view' },
-          { name: 'Renewals', href: '/renewals', icon: RefreshCw, feature: 'documents', action: 'view' },
-        ]
-      },
-      {
-        name: 'HR Management',
-        icon: Briefcase,
-        items: [
-          { name: 'Performance Reviews', href: '/performance-reviews', icon: Award, feature: 'employees', action: 'view' },
-          { name: 'Training', href: '/training', icon: GraduationCap, feature: 'employees', action: 'view' },
-          { name: 'Payroll', href: '/payroll', icon: CreditCard, feature: 'payroll', action: 'view' },
-          { name: 'Payroll Approval', href: '/payroll/approval', icon: FileText, feature: 'payroll', action: 'view' },
-          { name: 'Expense Claims', href: '/expense-claims', icon: Receipt, feature: 'employees', action: 'view' },
-          { name: 'Promotions', href: '/promotions', icon: TrendingUp, feature: 'employees', action: 'view' },
-          { name: 'Disciplinary', href: '/disciplinary', icon: AlertTriangle, feature: 'employees', action: 'view' },
-          { name: 'Recruitment Approval', href: '/recruitment/approval', icon: UserPlus, feature: 'recruitment', action: 'view' },
-          { name: 'Form Templates', href: '/form-templates', icon: FileSpreadsheet, feature: 'settings', action: 'view' },
-          { name: 'Position Quotas', href: '/position-quotas', icon: Users, feature: 'employees', action: 'view' },
-          { name: 'Engagement', href: '/engagement', icon: Heart, feature: 'employees', action: 'view' },
-          { name: 'Operations', href: '/operations', icon: AlertCircle, feature: 'employees', action: 'view' },
-        ]
-      },
-      {
-        name: 'Budget',
-        icon: DollarSign,
-        items: [
-          { name: 'Manpower Budget', href: '/manpower-budget', icon: FileSpreadsheet, feature: 'payroll', action: 'view' },
-        ]
-      },
-      {
-        name: 'Compliance & Reports',
-        icon: Shield,
-        items: [
-          { name: 'Compliance', href: '/compliance', icon: Shield, feature: 'documents', action: 'view' },
-          { name: 'HR Analytics', href: '/hr-analytics', icon: BarChart3, feature: 'reports', action: 'view' },
-          { name: 'Reports', href: '/reports', icon: BarChart3, feature: 'reports', action: 'view' },
-          { name: 'Leave Reports', href: '/leave-reports', icon: BarChart3, feature: 'reports', action: 'view' },
-          { name: 'Leave Policy', href: '/leave-policy', icon: Settings, feature: 'settings', action: 'view' },
-        ]
-      },
-      {
-        name: 'Self Service',
-        icon: UserCircle,
-        items: [
-          { name: 'My Self Service', href: '/self-service', icon: UserCircle, feature: 'leave', action: 'apply' },
-          { name: 'Announcements', href: '/announcements', icon: Megaphone, feature: 'settings', action: 'view' },
-        ]
-      },
-      {
-        name: 'Administration',
-        icon: Building2,
-        items: [
-          { name: 'Companies', href: '/companies', icon: Building2, feature: 'companies', action: 'view' },
-          { name: 'User Management', href: '/users', icon: UserCog, feature: 'users', action: 'view' },
-          { name: 'Audit Log', href: '/audit-log', icon: ClipboardList, feature: 'reports', action: 'view' },
-        ]
-      },
-      {
-        name: 'Utilities',
-        icon: Settings,
-        items: [
-          { name: 'Notifications', href: '/notifications', icon: Bell, badge: unreadCount, feature: 'settings', action: 'view' },
-          { name: 'Global Search', href: '/search', icon: Search, feature: 'employees', action: 'view' },
-          { name: 'Settings', href: '/settings', icon: Settings, feature: 'settings', action: 'view' },
-          { name: 'Help', href: '/help', icon: HelpCircle },
-        ]
-      },
-    ];
-  }, [unreadCount, isConstructionCompany, isExternalCompany]);
+  const navigationCategories = [
+    {
+      name: 'Dashboard',
+      icon: LayoutDashboard,
+      items: [
+        { name: 'Overview', href: '/', icon: LayoutDashboard, feature: 'employees', action: 'view' },
+      ]
+    },
+    {
+      name: 'People',
+      icon: Users,
+      items: [
+        { name: 'Employees', href: '/employees', icon: Users, feature: 'employees', action: 'view' },
+        { name: 'Employee Directory', href: '/employee-directory', icon: Network, feature: 'employees', action: 'view' },
+        { name: 'Org Structure', href: '/org-structure', icon: Network, feature: 'employees', action: 'view' },
+        { name: 'Visitors & Staff', href: '/visitors-and-staff', icon: UserPlus, feature: 'employees', action: 'view' },
+        { name: 'Recruitment', href: '/recruitment', icon: Briefcase, feature: 'recruitment', action: 'view' },
+        { name: 'Bulk Import/Export', href: '/bulk-import-export', icon: FileSpreadsheet, feature: 'employees', action: 'create' },
+      ]
+    },
+    {
+      name: 'Leave & Time',
+      icon: Palmtree,
+      items: [
+        { name: 'Leave Planner', href: '/leave-planner', icon: Palmtree, feature: 'leave', action: 'view' },
+        { name: 'Apply for Leave', href: '/leave-planner/apply', icon: FileText, feature: 'leave', action: 'apply' },
+        { name: 'My Leaves', href: '/leave-planner/my-leaves', icon: ClipboardList, feature: 'leave', action: 'view' },
+        { name: 'Attendance', href: '/attendance-tracking', icon: Clock, feature: 'leave', action: 'view' },
+        { name: 'Shift Management', href: '/shift-management', icon: CalendarDays, feature: 'leave', action: 'view' },
+      ]
+    },
+    {
+      name: 'Documents',
+      icon: FolderOpen,
+      items: [
+        { name: 'Passports', href: '/passports', icon: FileText, feature: 'documents', action: 'view' },
+        { name: 'Work Permits', href: '/work-permits', icon: Briefcase, feature: 'documents', action: 'view' },
+        { name: 'Visas', href: '/visas', icon: Plane, feature: 'documents', action: 'view' },
+        { name: 'Medical', href: '/medical', icon: HeartPulse, feature: 'documents', action: 'view' },
+        { name: 'Renewals', href: '/renewals', icon: RefreshCw, feature: 'documents', action: 'view' },
+      ]
+    },
+    {
+      name: 'HR Management',
+      icon: Briefcase,
+      items: [
+        { name: 'Performance Reviews', href: '/performance-reviews', icon: Award, feature: 'employees', action: 'view' },
+        { name: 'Training', href: '/training', icon: GraduationCap, feature: 'employees', action: 'view' },
+        { name: 'Payroll', href: '/payroll', icon: CreditCard, feature: 'payroll', action: 'view' },
+        { name: 'Payroll Approval', href: '/payroll/approval', icon: FileText, feature: 'payroll', action: 'view' },
+        { name: 'Expense Claims', href: '/expense-claims', icon: Receipt, feature: 'employees', action: 'view' },
+        { name: 'Promotions', href: '/promotions', icon: TrendingUp, feature: 'employees', action: 'view' },
+        { name: 'Disciplinary', href: '/disciplinary', icon: AlertTriangle, feature: 'employees', action: 'view' },
+        { name: 'Recruitment Approval', href: '/recruitment/approval', icon: UserPlus, feature: 'recruitment', action: 'view' },
+        { name: 'Form Templates', href: '/form-templates', icon: FileSpreadsheet, feature: 'settings', action: 'view' },
+        { name: 'Position Quotas', href: '/position-quotas', icon: Users, feature: 'employees', action: 'view' },
+        { name: 'Engagement', href: '/engagement', icon: Heart, feature: 'employees', action: 'view' },
+        { name: 'Operations', href: '/operations', icon: AlertCircle, feature: 'employees', action: 'view' },
+      ]
+    },
+    {
+      name: 'Budget',
+      icon: DollarSign,
+      items: [
+        { name: 'Manpower Budget', href: '/manpower-budget', icon: FileSpreadsheet, feature: 'payroll', action: 'view' },
+      ]
+    },
+    {
+      name: 'Compliance & Reports',
+      icon: Shield,
+      items: [
+        { name: 'Compliance', href: '/compliance', icon: Shield, feature: 'documents', action: 'view' },
+        { name: 'HR Analytics', href: '/hr-analytics', icon: BarChart3, feature: 'reports', action: 'view' },
+        { name: 'Reports', href: '/reports', icon: BarChart3, feature: 'reports', action: 'view' },
+        { name: 'Leave Reports', href: '/leave-reports', icon: BarChart3, feature: 'reports', action: 'view' },
+        { name: 'Leave Policy', href: '/leave-policy', icon: Settings, feature: 'settings', action: 'view' },
+      ]
+    },
+    {
+      name: 'Self Service',
+      icon: UserCircle,
+      items: [
+        { name: 'My Self Service', href: '/self-service', icon: UserCircle, feature: 'leave', action: 'apply' },
+        { name: 'Announcements', href: '/announcements', icon: Megaphone, feature: 'settings', action: 'view' },
+      ]
+    },
+    {
+      name: 'Administration',
+      icon: Building2,
+      items: [
+        { name: 'Companies', href: '/companies', icon: Building2, feature: 'companies', action: 'view' },
+        { name: 'User Management', href: '/users', icon: UserCog, feature: 'users', action: 'view' },
+        { name: 'Audit Log', href: '/audit-log', icon: ClipboardList, feature: 'reports', action: 'view' },
+      ]
+    },
+    {
+      name: 'Utilities',
+      icon: Settings,
+      items: [
+        { name: 'Notifications', href: '/notifications', icon: Bell, badge: unreadCount, feature: 'settings', action: 'view' },
+        { name: 'Global Search', href: '/search', icon: Search, feature: 'employees', action: 'view' },
+        { name: 'Settings', href: '/settings', icon: Settings, feature: 'settings', action: 'view' },
+        { name: 'Help', href: '/help', icon: HelpCircle },
+      ]
+    },
+  ];
 
   const toggleCategory = (categoryName) => {
     setExpandedCategories(prev => 
@@ -345,9 +307,6 @@ export default function Layout({ children }) {
           <div className="flex flex-1 justify-between px-4">
             <div className="flex flex-1" />
             <div className="ml-4 flex items-center gap-3">
-              {/* Company Switcher */}
-              <CompanySwitcher />
-              
               {/* Dark Mode Toggle */}
               <button
                 onClick={toggleDarkMode}
