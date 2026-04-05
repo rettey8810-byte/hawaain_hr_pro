@@ -230,6 +230,7 @@ export default function UserManagement() {
                       <tr>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">User</th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Company</th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
                         <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                       </tr>
@@ -249,6 +250,9 @@ export default function UserManagement() {
                             </div>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{user.email}</td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            {companies.find(c => c.id === user.companyId)?.name || user.companyId || 'N/A'}
+                          </td>
                           <td className="px-6 py-4 whitespace-nowrap">
                             <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
                               user.status === 'active' ? 'bg-green-100 text-green-800' : 
@@ -269,6 +273,7 @@ export default function UserManagement() {
                                       email: user.email,
                                       role: user.role,
                                       status: user.status || 'active',
+                                      companyId: user.companyId || '',
                                       password: '',
                                       confirmPassword: ''
                                     });
@@ -524,6 +529,24 @@ export default function UserManagement() {
                   <option value="active">Active</option>
                   <option value="inactive">Inactive</option>
                   <option value="suspended">Suspended</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700">
+                  <Building2 className="h-4 w-4 inline mr-1" />
+                  Company
+                </label>
+                <select
+                  value={formData.companyId}
+                  onChange={(e) => setFormData({...formData, companyId: e.target.value})}
+                  className="mt-1 block w-full rounded-md border-gray-300 border px-3 py-2"
+                >
+                  <option value="">Select a company...</option>
+                  {companies.map(company => (
+                    <option key={company.id} value={company.id}>
+                      {company.name}
+                    </option>
+                  ))}
                 </select>
               </div>
               <div className="flex justify-end space-x-3 pt-4">
