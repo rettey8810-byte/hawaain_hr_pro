@@ -88,9 +88,9 @@ export default function PromotionManagement() {
   const filteredPromotions = promotions.filter(promo => {
     // Search filter
     const matchesSearch = 
-      promo.employeeName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      promo.proposedPosition?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      promo.currentDepartment?.toLowerCase().includes(searchTerm.toLowerCase());
+      (promo.employeeName || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (promo.proposedPosition || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (promo.currentDepartment || '').toLowerCase().includes(searchTerm.toLowerCase());
     
     // Status filter
     const matchesStatus = filterStatus === 'all' || promo.status === filterStatus;
@@ -388,8 +388,8 @@ export default function PromotionManagement() {
               filteredPromotions.map((promo) => (
                 <tr key={promo.id} className="hover:bg-gray-50">
                   <td className="px-6 py-4">
-                    <div className="font-medium text-gray-900">{promo.employeeName}</div>
-                    <div className="text-sm text-gray-500">{promo.employeeCode}</div>
+                    <div className="font-medium text-gray-900">{promo.employeeName || 'N/A'}</div>
+                    <div className="text-sm text-gray-500">{promo.employeeCode || promo.employeeId || 'N/A'}</div>
                   </td>
                   <td className="px-6 py-4">
                     <span className="capitalize">{promo.type?.replace('_', ' ')}</span>
@@ -463,15 +463,15 @@ export default function PromotionManagement() {
                     setFormData({
                       ...formData,
                       employeeId: e.target.value,
-                      proposedDepartment: emp?.department || '',
-                      proposedPosition: emp?.position || ''
+                      proposedDepartment: emp?.['Department '] || emp?.Department || emp?.department || '',
+                      proposedPosition: emp?.Designation || emp?.position || ''
                     });
                   }}
                   className="w-full px-3 py-2 border rounded-lg"
                 >
                   <option value="">Select Employee...</option>
                   {employees.map(emp => (
-                    <option key={emp.id} value={emp.id}>{emp.name} - {emp.position}</option>
+                    <option key={emp.id} value={emp.id}>{emp.FullName || emp.name || 'N/A'} - {emp.Designation || emp.position || 'N/A'}</option>
                   ))}
                 </select>
               </div>

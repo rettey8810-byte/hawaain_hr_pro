@@ -19,11 +19,6 @@ import {
  * - Department-wise and position-wise quota management
  */
 
-const DEPARTMENTS = [
-  'Engineering', 'HR', 'Finance', 'Marketing', 
-  'Operations', 'Sales', 'IT', 'Admin', 'Customer Service'
-];
-
 export default function PositionQuota() {
   const { user, userData, hasAccess } = useAuth();
   const { companyId } = useCompany();
@@ -93,8 +88,8 @@ export default function PositionQuota() {
   // Calculate quota usage
   const getQuotaUsage = (quota) => {
     const filled = employees.filter(emp => 
-      emp.department === quota.department && 
-      emp.position === quota.position &&
+      (emp['Department '] || emp.Department || emp.department) === quota.department && 
+      (emp.Designation || emp.position) === quota.position &&
       emp.status === 'active'
     ).length;
     
@@ -217,6 +212,9 @@ export default function PositionQuota() {
     return matchesSearch && matchesDept;
   });
 
+  // Get unique departments from employee data
+  const departments = [...new Set(employees.map(e => e['Department '] || e.Department || e.department).filter(Boolean))];
+
   // Summary statistics
   const getSummaryStats = () => {
     let totalPositions = 0;
@@ -328,7 +326,7 @@ export default function PositionQuota() {
           className="px-4 py-2 border rounded-lg"
         >
           <option value="all">All Departments</option>
-          {DEPARTMENTS.map(dept => (
+          {departments.map(dept => (
             <option key={dept} value={dept}>{dept}</option>
           ))}
         </select>
@@ -458,7 +456,7 @@ export default function PositionQuota() {
                   className="w-full px-3 py-2 border rounded-lg"
                 >
                   <option value="">Select Department...</option>
-                  {DEPARTMENTS.map(dept => (
+                  {departments.map(dept => (
                     <option key={dept} value={dept}>{dept}</option>
                   ))}
                 </select>
@@ -582,7 +580,7 @@ export default function PositionQuota() {
                   onChange={handleInputChange}
                   className="w-full px-3 py-2 border rounded-lg"
                 >
-                  {DEPARTMENTS.map(dept => (
+                  {departments.map(dept => (
                     <option key={dept} value={dept}>{dept}</option>
                   ))}
                 </select>

@@ -160,10 +160,10 @@ export default function DisciplinaryManagement() {
 
     const newAction = {
       employeeId: formData.employeeId,
-      employeeName: employee.name,
-      employeeCode: employee.employeeCode || 'N/A',
-      department: employee.department,
-      position: employee.position,
+      employeeName: employee.FullName || employee.name || 'N/A',
+      employeeCode: employee.EmpID || employee.employeeCode || 'N/A',
+      department: employee['Department '] || employee.Department || employee.department || 'N/A',
+      position: employee.Designation || employee.position || 'N/A',
       
       incidentDate: formData.incidentDate,
       reportedDate: new Date().toISOString(),
@@ -478,7 +478,7 @@ export default function DisciplinaryManagement() {
                 >
                   <option value="">Select Employee...</option>
                   {employees.map(emp => (
-                    <option key={emp.id} value={emp.id}>{emp.name} - {emp.position}</option>
+                    <option key={emp.id} value={emp.id}>{emp.FullName || emp.name || 'N/A'} - {emp.Designation || emp.position || 'N/A'}</option>
                   ))}
                 </select>
               </div>
@@ -677,13 +677,13 @@ export default function DisciplinaryManagement() {
               <div className="grid grid-cols-2 gap-4 bg-gray-50 p-4 rounded-lg">
                 <div>
                   <div className="text-sm text-gray-500">Employee</div>
-                  <div className="font-medium">{selectedAction.employeeName}</div>
-                  <div className="text-sm text-gray-500">{selectedAction.employeeCode}</div>
+                  <div className="font-medium">{selectedAction.employeeName || 'N/A'}</div>
+                  <div className="text-sm text-gray-500">{selectedAction.employeeCode || selectedAction.employeeId || 'N/A'}</div>
                 </div>
                 <div>
                   <div className="text-sm text-gray-500">Department/Position</div>
-                  <div className="font-medium">{selectedAction.department}</div>
-                  <div className="text-sm text-gray-500">{selectedAction.position}</div>
+                  <div className="font-medium">{selectedAction.department || 'N/A'}</div>
+                  <div className="text-sm text-gray-500">{selectedAction.position || 'N/A'}</div>
                 </div>
               </div>
 

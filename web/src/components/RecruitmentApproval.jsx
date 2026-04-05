@@ -57,16 +57,12 @@ const URGENCY_LEVELS = [
   { value: 'planned', label: 'Planned (1-3 months)' }
 ];
 
-const DEPARTMENTS = [
-  'Engineering', 'HR', 'Finance', 'Marketing', 
-  'Operations', 'Sales', 'IT', 'Admin', 'Customer Service'
-];
-
 export default function RecruitmentApproval() {
   const { userData, hasAccess } = useAuth();
   const { companyId } = useCompany();
   
   const [requisitions, setRequisitions] = useState([]);
+  const [employees, setEmployees] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showDetailModal, setShowDetailModal] = useState(false);
@@ -96,10 +92,11 @@ export default function RecruitmentApproval() {
     justification: ''
   });
 
-  // Fetch requisitions
+  // Fetch requisitions and employees
   useEffect(() => {
     if (!companyId) return;
     
+    // Fetch requisitions
     const q = query(
       collection(db, 'recruitmentApprovals'),
       where('companyId', '==', companyId),
@@ -111,9 +108,26 @@ export default function RecruitmentApproval() {
       setRequisitions(data);
       setLoading(false);
     });
+
+    // Fetch employees for department dropdown
+    const employeesQuery = query(
+      collection(db, 'employees'),
+      where('companyId', '==', companyId)
+    );
     
-    return () => unsubscribe();
+    const unsubscribeEmployees = onSnapshot(employeesQuery, (snapshot) => {
+      const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      setEmployees(data);
+    });
+    
+    return () => {
+      unsubscribe();
+      unsubscribeEmployees();
+    };
   }, [companyId]);
+
+  // Get unique departments from employee data
+  const departments = [...new Set(employees.map(e => e['Department '] || e.Department || e.department).filter(Boolean))];
 
   // Filter requisitions
   const filteredRequisitions = requisitions.filter(req => {
@@ -478,7 +492,7 @@ export default function RecruitmentApproval() {
                     className="w-full px-3 py-2 border rounded-lg"
                   >
                     <option value="">Select Department...</option>
-                    {DEPARTMENTS.map(dept => (
+                    {departments.map(dept => (
                       <option key={dept} value={dept}>{dept}</option>
                     ))}
                   </select>
