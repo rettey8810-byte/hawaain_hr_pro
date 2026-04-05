@@ -15,7 +15,9 @@ import {
   Minus,
   BarChart3,
   PieChart,
-  Activity
+  Activity,
+  HardHat,
+  Building2
 } from 'lucide-react';
 import { 
   BarChart, 
@@ -36,7 +38,6 @@ import {
 import { useFirestore } from '../hooks/useFirestore';
 import { useExpiryAlerts } from '../hooks/useExpiryAlerts';
 import { useCompany } from '../contexts/CompanyContext';
-import { HardHat, Users, Building2, Briefcase } from 'lucide-react';
 
 function StatCard({ title, value, icon: Icon, gradient, subtitle, href }) {
   const gradientClasses = {
