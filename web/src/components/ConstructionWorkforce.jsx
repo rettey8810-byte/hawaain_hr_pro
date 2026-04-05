@@ -10,7 +10,7 @@ import {
   ChevronDown,
   ChevronUp,
   Briefcase,
-  Passport,
+  Contact,
   CreditCard,
   HeartPulse,
   Shield,
@@ -406,7 +406,7 @@ export default function ConstructionWorkforce() {
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                           <div className="space-y-3">
                             <h4 className="font-medium text-gray-900 flex items-center gap-2">
-                              <Passport className="h-4 w-4" />
+                              <Contact className="h-4 w-4" />
                               Documents
                             </h4>
                             <div className="space-y-2 text-sm">
