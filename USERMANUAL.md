@@ -4,22 +4,23 @@
 1. [Introduction](#introduction)
 2. [Getting Started](#getting-started)
 3. [User Roles & Permissions](#user-roles--permissions)
-4. [Dashboard](#dashboard)
-5. [Employee Management](#employee-management)
-6. [Recruitment & ATS](#recruitment--ats)
-7. [Payroll & Payslips](#payroll--payslips)
-8. [Manpower Budget](#manpower-budget)
-9. [Leave Planner](#leave-planner)
-10. [Leave Reports & Analytics](#leave-reports--analytics)
-11. [Leave Policy Settings](#leave-policy-settings)
-12. [Document Management](#document-management)
-13. [Notifications & Alerts](#notifications--alerts)
-14. [Settings](#settings)
-15. [Troubleshooting](#troubleshooting)
-16. [Tips & Best Practices](#tips--best-practices)
-17. [Keyboard Shortcuts](#keyboard-shortcuts)
-18. [Contact & Support](#contact--support)
-19. [FAQ](#faq)
+4. [Company Management](#company-management)
+5. [Dashboard](#dashboard)
+6. [Employee Management](#employee-management)
+7. [Recruitment & ATS](#recruitment--ats)
+8. [Payroll & Payslips](#payroll--payslips)
+9. [Manpower Budget](#manpower-budget)
+10. [Leave Planner](#leave-planner)
+11. [Leave Reports & Analytics](#leave-reports--analytics)
+12. [Leave Policy Settings](#leave-policy-settings)
+13. [Document Management](#document-management)
+14. [Notifications & Alerts](#notifications--alerts)
+15. [Settings](#settings)
+16. [Troubleshooting](#troubleshooting)
+17. [Tips & Best Practices](#tips--best-practices)
+18. [Keyboard Shortcuts](#keyboard-shortcuts)
+19. [Contact & Support](#contact--support)
+20. [FAQ](#faq)
 
 ---
 
@@ -114,6 +115,83 @@ The system uses a hierarchical role structure where higher roles can create and 
 2. Superadmin has exclusive rights to create companies
 3. Only Superadmin can assign the Superadmin role
 4. Users cannot modify or delete users at the same or higher level
+
+---
+
+## Company Management
+
+### Overview (Superadmin Only)
+
+The Company Management module allows superadmins to create and manage multiple companies in the system. Each company has complete data isolation.
+
+### Data Isolation Structure
+
+**Multi-Tenant Architecture:**
+- Each company has a unique slug ID (e.g., "sunisland-resort-and-spa")
+- All employee data is linked to a company via `companyId` field
+- Users can only access data from their assigned company
+- Superadmins can switch between all companies
+
+### Creating a New Company
+
+1. Go to "Administration" → "Companies"
+2. Click "Add Company"
+3. Enter company details:
+   - **Company Name**: Full legal name (e.g., "Sunisland Resort and Spa")
+   - **Company Code**: Unique identifier (e.g., "SUNISLAND")
+   - **Address**: Full company address
+   - **Contact Info**: Phone, email
+   - **Industry**: Business sector
+4. Click "Create Company"
+5. System automatically creates company document with slug ID
+
+### Managing Companies
+
+**Viewing Companies:**
+- See all companies in the Companies list
+- View employee count per company
+- Check company status (active/inactive)
+
+**Editing Companies:**
+1. Select company from list
+2. Click "Edit"
+3. Update company information
+4. Save changes
+
+**Company Switching (Superadmin):**
+- Use company selector in top navigation
+- Switch between companies instantly
+- All data updates to show selected company's information
+
+### Assigning Users to Companies
+
+**Creating Company Admin:**
+1. Go to "Administration" → "User Management"
+2. Click "Add User"
+3. Enter user details:
+   - **Role**: Select "company_admin" or appropriate role
+   - **Company**: Select the company from dropdown
+4. System automatically sets `companyId` and `companyIds[]`
+
+**User Company Access:**
+- Regular users see only their assigned company's data
+- Company admins can manage all data within their company
+- Superadmins see all companies and can switch between them
+
+### Bulk Data Import
+
+**Importing Employees:**
+1. Prepare Excel file with employee data
+2. Use `upload_to_firestore.py` script
+3. Script automatically:
+   - Creates company document if not exists
+   - Imports all employees with `companyId` linkage
+   - Generates document IDs: `{companySlug}_{empId}`
+
+**Example Import:**
+- 887 employees imported for "Sunisland Resort and Spa"
+- Document ID format: `sunisland-resort-and-spa_571`
+- All employees linked to company ID: `sunisland-resort-and-spa`
 
 ---
 
