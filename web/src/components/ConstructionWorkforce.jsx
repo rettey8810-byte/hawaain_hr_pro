@@ -2,7 +2,6 @@ import { useState, useEffect, useMemo } from 'react';
 import { 
   HardHat, 
   Search, 
-  Filter, 
   Download, 
   AlertTriangle, 
   Calendar,
@@ -10,18 +9,16 @@ import {
   FileText,
   ChevronDown,
   ChevronUp,
-  Building2,
-  MapPin,
   Briefcase,
   Passport,
   CreditCard,
   HeartPulse,
-  Shield
+  Shield,
+  Building2
 } from 'lucide-react';
 import { useCompany } from '../contexts/CompanyContext';
-
-// Import construction workforce data
-import constructionData from '../../../Construction_Work_Force.json';
+import { collection, query, where, onSnapshot } from 'firebase/firestore';
+import { db } from '../firebase/config';
 
 const STATUS_COLORS = {
   active: 'bg-green-100 text-green-800',
@@ -32,62 +29,81 @@ const STATUS_COLORS = {
 };
 
 export default function ConstructionWorkforce() {
-  const { currentCompany, getCompanyDisplayName } = useCompany();
+  const { currentCompany, getCompanyDisplayName, companyId } = useCompany();
+  const [workers, setWorkers] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterDept, setFilterDept] = useState('all');
   const [filterNationality, setFilterNationality] = useState('all');
   const [sortField, setSortField] = useState('Name');
   const [sortDirection, setSortDirection] = useState('asc');
   const [expandedRow, setExpandedRow] = useState(null);
-  const [selectedWorkers, setSelectedWorkers] = useState([]);
 
-  // Parse dates and calculate status
-  const workers = useMemo(() => {
-    return constructionData.map(worker => {
-      const today = new Date();
-      const wpExpiry = new Date(worker.WPExpiry);
-      const visaExpiry = new Date(worker.VIsaExpiry);
-      const medicalExpiry = new Date(worker.MedicalExpiry);
-      const insuranceExpiry = new Date(worker.InsuranceExpiry);
+  // Fetch construction workers from Firestore
+  useEffect(() => {
+    if (!companyId) {
+      setLoading(false);
+      return;
+    }
+
+    const q = query(
+      collection(db, 'constructionWorkers'),
+      where('companyId', '==', companyId)
+    );
+
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const data = snapshot.docs.map(doc => {
+        const worker = { id: doc.id, ...doc.data() };
+        
+        const today = new Date();
+        const wpExpiry = new Date(worker.WPExpiry);
+        const visaExpiry = new Date(worker.VIsaExpiry);
+        const medicalExpiry = new Date(worker.MedicalExpiry);
+        const insuranceExpiry = new Date(worker.InsuranceExpiry);
+        
+        const daysUntil = (date) => Math.ceil((date - today) / (1000 * 60 * 60 * 24));
+        
+        const wpDays = daysUntil(wpExpiry);
+        const visaDays = daysUntil(visaExpiry);
+        const medicalDays = daysUntil(medicalExpiry);
+        const insuranceDays = daysUntil(insuranceExpiry);
+        
+        let status = 'active';
+        let statusReason = '';
+        
+        const minDays = Math.min(wpDays, visaDays, medicalDays, insuranceDays);
+        
+        if (minDays < 0) {
+          status = 'expired';
+          statusReason = 'Documents Expired';
+        } else if (minDays <= 30) {
+          status = 'expiring30';
+          statusReason = `${minDays} days remaining`;
+        } else if (minDays <= 60) {
+          status = 'expiring60';
+          statusReason = `${minDays} days remaining`;
+        } else if (minDays <= 90) {
+          status = 'expiring90';
+          statusReason = `${minDays} days remaining`;
+        }
+        
+        return {
+          ...worker,
+          wpDays,
+          visaDays,
+          medicalDays,
+          insuranceDays,
+          status,
+          statusReason
+        };
+      });
       
-      const daysUntil = (date) => Math.ceil((date - today) / (1000 * 60 * 60 * 24));
-      
-      const wpDays = daysUntil(wpExpiry);
-      const visaDays = daysUntil(visaExpiry);
-      const medicalDays = daysUntil(medicalExpiry);
-      const insuranceDays = daysUntil(insuranceExpiry);
-      
-      // Determine overall status
-      let status = 'active';
-      let statusReason = '';
-      
-      const minDays = Math.min(wpDays, visaDays, medicalDays, insuranceDays);
-      
-      if (minDays < 0) {
-        status = 'expired';
-        statusReason = 'Documents Expired';
-      } else if (minDays <= 30) {
-        status = 'expiring30';
-        statusReason = `${minDays} days remaining`;
-      } else if (minDays <= 60) {
-        status = 'expiring60';
-        statusReason = `${minDays} days remaining`;
-      } else if (minDays <= 90) {
-        status = 'expiring90';
-        statusReason = `${minDays} days remaining`;
-      }
-      
-      return {
-        ...worker,
-        wpDays,
-        visaDays,
-        medicalDays,
-        insuranceDays,
-        status,
-        statusReason
-      };
+      setWorkers(data);
+      setLoading(false);
     });
-  }, []);
+
+    return () => unsubscribe();
+  }, [companyId]);
 
   // Get unique departments and nationalities for filters
   const departments = useMemo(() => [...new Set(workers.map(w => w.Department))], [workers]);
@@ -178,6 +194,17 @@ export default function ConstructionWorkforce() {
   const toggleRowExpansion = (id) => {
     setExpandedRow(expandedRow === id ? null : id);
   };
+
+  // Only allow access to Villa Construction company
+  if (currentCompany?.id !== 'villa-construction') {
+    return (
+      <div className="flex flex-col items-center justify-center py-20">
+        <Building2 className="h-16 w-16 text-gray-300 mb-4" />
+        <h2 className="text-xl font-bold text-gray-700">Access Denied</h2>
+        <p className="text-gray-500 mt-2">Please switch to Villa Construction company to view this data.</p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -302,7 +329,13 @@ export default function ConstructionWorkforce() {
 
       {/* Workers Table */}
       <div className="bg-white rounded-xl shadow-sm border overflow-hidden">
-        <div className="overflow-x-auto">
+        {loading ? (
+          <div className="text-center py-12">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-600 mx-auto"></div>
+            <p className="text-gray-500 mt-4">Loading workforce data...</p>
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
           <table className="w-full">
             <thead className="bg-gray-50">
               <tr>
@@ -324,7 +357,7 @@ export default function ConstructionWorkforce() {
             <tbody className="divide-y divide-gray-200">
               {filteredWorkers.map((worker) => (
                 <>
-                  <tr key={worker.ID} className="hover:bg-gray-50">
+                  <tr key={worker.id} className="hover:bg-gray-50">
                     <td className="px-4 py-3">
                       <div className="font-medium text-gray-900">{worker.Name}</div>
                       <div className="text-xs text-gray-500">ID: {worker.ID}</div>
@@ -360,14 +393,14 @@ export default function ConstructionWorkforce() {
                     </td>
                     <td className="px-4 py-3">
                       <button
-                        onClick={() => toggleRowExpansion(worker.ID)}
+                        onClick={() => toggleRowExpansion(worker.id)}
                         className="text-blue-600 hover:text-blue-800 text-sm font-medium"
                       >
-                        {expandedRow === worker.ID ? 'Hide Details' : 'View Details'}
+                        {expandedRow === worker.id ? 'Hide Details' : 'View Details'}
                       </button>
                     </td>
                   </tr>
-                  {expandedRow === worker.ID && (
+                  {expandedRow === worker.id && (
                     <tr className="bg-gray-50">
                       <td colSpan={8} className="px-4 py-4">
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -434,10 +467,12 @@ export default function ConstructionWorkforce() {
             </tbody>
           </table>
         </div>
-        {filteredWorkers.length === 0 && (
+        )}
+        {filteredWorkers.length === 0 && !loading && (
           <div className="text-center py-12">
             <Users className="h-12 w-12 text-gray-300 mx-auto mb-4" />
-            <p className="text-gray-500">No workers found matching your filters</p>
+            <p className="text-gray-500">No workers found. Data needs to be imported to Firestore.</p>
+            <p className="text-sm text-gray-400 mt-2">Contact admin to upload Construction_Work_Force.json data.</p>
           </div>
         )}
       </div>
