@@ -50,6 +50,7 @@ import { useNotifications } from '../contexts/NotificationContext';
 import { useCompany } from '../contexts/CompanyContext';
 import { useTheme } from '../contexts/ThemeContext';
 import ToastContainer from './ToastContainer';
+import CompanySwitcher from './CompanySwitcher';
 
 export default function Layout({ children }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -84,6 +85,7 @@ export default function Layout({ children }) {
         { name: 'Employee Directory', href: '/employee-directory', icon: Network, feature: 'employees', action: 'view' },
         { name: 'Org Structure', href: '/org-structure', icon: Network, feature: 'employees', action: 'view' },
         { name: 'Recruitment', href: '/recruitment', icon: Briefcase, feature: 'recruitment', action: 'view' },
+        { name: 'External Staff', href: '/external-staff', icon: UserCircle, feature: 'employees', action: 'view' },
         { name: 'Bulk Import/Export', href: '/bulk-import-export', icon: FileSpreadsheet, feature: 'employees', action: 'create' },
       ]
     },
@@ -306,6 +308,9 @@ export default function Layout({ children }) {
           <div className="flex flex-1 justify-between px-4">
             <div className="flex flex-1" />
             <div className="ml-4 flex items-center gap-3">
+              {/* Company Switcher */}
+              <CompanySwitcher />
+              
               {/* Dark Mode Toggle */}
               <button
                 onClick={toggleDarkMode}

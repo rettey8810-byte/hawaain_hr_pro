@@ -5,6 +5,16 @@ import { useAuth } from './AuthContext';
 
 const CompanyContext = createContext();
 
+// Virtual companies for external staff management
+const VIRTUAL_COMPANIES = [
+  { id: 'sun_island', name: 'Sun Island', type: 'main', isVirtual: false },
+  { id: 'construction', name: 'Construction Workforce', type: 'external', isVirtual: true },
+  { id: 'villa_park', name: 'Villa Park Staff', type: 'external', isVirtual: true },
+  { id: 'third_party', name: '3rd Party Staff', type: 'external', isVirtual: true },
+  { id: 'sister_property', name: 'Sister Property Staff', type: 'external', isVirtual: true },
+  { id: 'visitors', name: 'Visitors', type: 'external', isVirtual: true }
+];
+
 export function useCompany() {
   return useContext(CompanyContext);
 }
@@ -28,31 +38,58 @@ export function CompanyProvider({ children }) {
   const loadCompanies = async () => {
     setLoading(true);
     try {
-      // If super admin, load all companies
+      let allCompanies = [...VIRTUAL_COMPANIES];
+      
+      // If super admin, load all real companies from database
       if (userData.role === 'superadmin') {
         const companiesSnap = await getDocs(collection(db, 'companies'));
-        const companiesList = companiesSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-        setCompanies(companiesList);
-        
-        // Set first company as default or from localStorage
-        const savedCompanyId = localStorage.getItem('selectedCompanyId');
-        if (savedCompanyId) {
-          const found = companiesList.find(c => c.id === savedCompanyId);
-          if (found) setCurrentCompany(found);
-          else if (companiesList.length > 0) setCurrentCompany(companiesList[0]);
-        } else if (companiesList.length > 0) {
-          setCurrentCompany(companiesList[0]);
-        }
+        const realCompanies = companiesSnap.docs.map(doc => ({ 
+          id: doc.id, 
+          ...doc.data(),
+          isVirtual: false 
+        }));
+        // Merge real companies with virtual ones (avoid duplicates)
+        const realCompanyIds = realCompanies.map(c => c.id);
+        allCompanies = [
+          ...realCompanies,
+          ...VIRTUAL_COMPANIES.filter(vc => !realCompanyIds.includes(vc.id))
+        ];
       } else {
         // Regular user - load their assigned company
         if (userData.companyId) {
           const companyDoc = await getDoc(doc(db, 'companies', userData.companyId));
           if (companyDoc.exists()) {
-            const companyData = { id: companyDoc.id, ...companyDoc.data() };
-            setCompanies([companyData]);
-            setCurrentCompany(companyData);
+            const companyData = { 
+              id: companyDoc.id, 
+              ...companyDoc.data(),
+              isVirtual: false 
+            };
+            // Replace sun_island virtual company with real one if exists
+            allCompanies = [
+              companyData,
+              ...VIRTUAL_COMPANIES.filter(vc => vc.id !== 'sun_island')
+            ];
           }
         }
+      }
+      
+      setCompanies(allCompanies);
+      
+      // Set default company from localStorage or first available
+      const savedCompanyId = localStorage.getItem('selectedCompanyId');
+      if (savedCompanyId) {
+        const found = allCompanies.find(c => c.id === savedCompanyId);
+        if (found) {
+          setCurrentCompany(found);
+        } else if (allCompanies.length > 0) {
+          // Default to Sun Island or first company
+          const sunIsland = allCompanies.find(c => c.id === 'sun_island') || allCompanies[0];
+          setCurrentCompany(sunIsland);
+        }
+      } else {
+        // Default to Sun Island or first company
+        const sunIsland = allCompanies.find(c => c.id === 'sun_island') || allCompanies[0];
+        setCurrentCompany(sunIsland);
       }
     } catch (error) {
       console.error('Error loading companies:', error);
@@ -75,7 +112,8 @@ export function CompanyProvider({ children }) {
     loading,
     switchCompany,
     isSuperAdmin: () => userData?.role === 'superadmin',
-    companyId: currentCompany?.id
+    companyId: currentCompany?.id,
+    isExternalCompany: currentCompany?.type === 'external'
   };
 
   return (

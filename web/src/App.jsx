@@ -83,6 +83,7 @@ import HRAnalytics from './components/HRAnalytics';
 import EmployeeDirectory from './components/EmployeeDirectory';
 import CompanyAnnouncements from './components/CompanyAnnouncements';
 import ShiftManagement from './components/ShiftManagement';
+import ExternalStaff from './components/ExternalStaff';
 
 // Advanced HR Feature Modules (v2.0.0)
 import TimeAttendance from './components/TimeAttendance';
@@ -719,6 +720,13 @@ function App() {
                 <PrivateRoute>
                   <PermissionRoute feature="employees" action="create">
                     <Layout><BulkImportExport /></Layout>
+                  </PermissionRoute>
+                </PrivateRoute>
+              } />
+              <Route path="/external-staff" element={
+                <PrivateRoute>
+                  <PermissionRoute feature="employees" action="view">
+                    <Layout><ExternalStaff /></Layout>
                   </PermissionRoute>
                 </PrivateRoute>
               } />
