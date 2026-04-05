@@ -294,26 +294,26 @@ export default function JobDescriptionGenerator() {
               <div className="absolute z-50 w-full mt-1 bg-white border rounded-lg shadow-lg max-h-60 overflow-auto">
                 {employees
                   .filter(emp => 
-                    emp.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                    emp.position?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                    emp.department?.toLowerCase().includes(searchTerm.toLowerCase())
+                    (emp.FullName || emp.name || '')?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                    (emp.Designation || emp.position || '')?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                    (emp['Department '] || emp.Department || emp.department || '')?.toLowerCase().includes(searchTerm.toLowerCase())
                   )
                   .map(emp => (
                     <button
                       key={emp.id}
                       onClick={() => {
                         handleEmployeeSelect(emp.id);
-                        setSearchTerm(`${emp.name} - ${emp.position}`);
+                        setSearchTerm(`${emp.FullName || emp.name || 'N/A'} - ${emp.Designation || emp.position || 'N/A'}`);
                         setDropdownOpen(false);
                       }}
                       className="w-full px-4 py-2 text-left hover:bg-blue-50 focus:bg-blue-50 focus:outline-none border-b last:border-b-0"
                     >
-                      <div className="font-medium text-gray-900">{emp.name}</div>
-                      <div className="text-sm text-gray-500">{emp.position} • {emp.department}</div>
+                      <div className="font-medium text-gray-900">{emp.FullName || emp.name || 'N/A'}</div>
+                      <div className="text-sm text-gray-500">{emp.Designation || emp.position || 'N/A'} • {emp['Department '] || emp.Department || emp.department || 'N/A'}</div>
                     </button>
                   ))}
                 {employees.filter(emp => 
-                  emp.name?.toLowerCase().includes(searchTerm.toLowerCase())
+                  (emp.FullName || emp.name || '')?.toLowerCase().includes(searchTerm.toLowerCase())
                 ).length === 0 && (
                   <div className="px-4 py-3 text-gray-500 text-center">
                     No employees found
