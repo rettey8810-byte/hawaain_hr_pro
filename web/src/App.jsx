@@ -58,7 +58,7 @@ import Compliance from './components/Compliance';
 import OrgStructure from './components/OrgStructure';
 import SelfService from './components/SelfService';
 import ApprovalWorkflowSettings from './components/ApprovalWorkflowSettings';
-import BulkImportExport from './components/BulkImportExport';
+import DataFixUtility from './components/DataFixUtility';
 
 // Approval Workflow Modules
 import PayrollApproval from './components/PayrollApproval';
@@ -194,6 +194,7 @@ function App() {
               {/* Public Routes */}
               <Route path="/login" element={<Login />} />
               <Route path="/signup" element={<Signup />} />
+              <Route path="/data-fix" element={<DataFixUtility />} />
               
               {/* Protected Routes */}
               <Route path="/" element={
