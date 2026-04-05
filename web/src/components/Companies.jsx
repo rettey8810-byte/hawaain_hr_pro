@@ -68,7 +68,11 @@ export default function Companies() {
     return () => unsubscribe();
   }, []);
 
-  const canManageCompanies = () => isSuperAdmin();
+  const canManageCompanies = () => {
+    const isSuper = isSuperAdmin();
+    console.log('canManageCompanies called, isSuperAdmin:', isSuper, 'userData:', userData);
+    return isSuper;
+  };
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -236,8 +240,11 @@ export default function Companies() {
         {canManageCompanies() && (
           <button
             type="button"
-            onClick={() => setShowCreateModal(true)}
-            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors cursor-pointer"
+            onClick={() => {
+              console.log('Add Company button clicked');
+              setShowCreateModal(true);
+            }}
+            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors cursor-pointer relative z-10"
           >
             <Plus className="h-5 w-5 pointer-events-none" />
             Add Company
@@ -360,7 +367,16 @@ export default function Companies() {
 
       {/* Create Modal */}
       {showCreateModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div 
+          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              console.log('Modal backdrop clicked, closing modal');
+              setShowCreateModal(false);
+            }
+          }}
+        >
+          {console.log('Create Modal is rendering')}
           <div className="bg-white rounded-xl max-w-4xl w-full max-h-[90vh] overflow-auto">
             <div className="p-6 border-b flex justify-between items-center">
               <h3 className="text-xl font-semibold">Create New Company</h3>
