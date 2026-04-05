@@ -2,7 +2,9 @@ import { useState, useEffect } from 'react';
 import { useCompany } from '../contexts/CompanyContext';
 import { useFirestoreAdmin } from '../hooks/useFirestore';
 import { useAuth } from '../contexts/AuthContext';
-import { Plus, Building2, Users, Edit2, Trash2, CheckCircle } from 'lucide-react';
+import { Plus, Building2, Users, Edit2, X } from 'lucide-react';
+import { collection, addDoc, updateDoc, doc, serverTimestamp } from 'firebase/firestore';
+import { db } from '../firebase';
 
 export default function CompanyAdmin() {
   const { companies, loading, switchCompany, currentCompany } = useCompany();
@@ -28,14 +30,31 @@ export default function CompanyAdmin() {
   }, []);
 
   const handleCreate = async () => {
-    // Implementation for creating company
-    setShowNewModal(false);
-    setFormData({ name: '', code: '', address: '', phone: '', email: '', maxUsers: 10, status: 'active' });
+    try {
+      await addDoc(collection(db, 'companies'), {
+        ...formData,
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp()
+      });
+      setShowNewModal(false);
+      setFormData({ name: '', code: '', address: '', phone: '', email: '', maxUsers: 10, status: 'active' });
+    } catch (error) {
+      console.error('Error creating company:', error);
+    }
   };
 
   const handleEdit = async () => {
-    // Implementation for editing company
-    setShowEditModal(false);
+    try {
+      if (selectedCompany?.id) {
+        await updateDoc(doc(db, 'companies', selectedCompany.id), {
+          ...formData,
+          updatedAt: serverTimestamp()
+        });
+      }
+      setShowEditModal(false);
+    } catch (error) {
+      console.error('Error updating company:', error);
+    }
   };
 
   const getCompanyUsers = (companyId) => {
@@ -169,6 +188,149 @@ export default function CompanyAdmin() {
             <span className="text-sm text-blue-900">
               Currently viewing: <strong>{currentCompany.name}</strong>
             </span>
+          </div>
+        </div>
+      )}
+      {/* Create Modal */}
+      {showNewModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl max-w-lg w-full p-6">
+            <h3 className="text-xl font-semibold mb-4">Create New Company</h3>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium mb-1">Company Name *</label>
+                <input
+                  type="text"
+                  value={formData.name}
+                  onChange={(e) => setFormData({...formData, name: e.target.value})}
+                  className="w-full px-3 py-2 border rounded-lg"
+                  placeholder="Enter company name"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">Company Code *</label>
+                <input
+                  type="text"
+                  value={formData.code}
+                  onChange={(e) => setFormData({...formData, code: e.target.value})}
+                  className="w-full px-3 py-2 border rounded-lg"
+                  placeholder="e.g., ABC001"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">Email</label>
+                <input
+                  type="email"
+                  value={formData.email}
+                  onChange={(e) => setFormData({...formData, email: e.target.value})}
+                  className="w-full px-3 py-2 border rounded-lg"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">Phone</label>
+                <input
+                  type="tel"
+                  value={formData.phone}
+                  onChange={(e) => setFormData({...formData, phone: e.target.value})}
+                  className="w-full px-3 py-2 border rounded-lg"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">Max Users</label>
+                <input
+                  type="number"
+                  value={formData.maxUsers}
+                  onChange={(e) => setFormData({...formData, maxUsers: parseInt(e.target.value) || 10})}
+                  className="w-full px-3 py-2 border rounded-lg"
+                />
+              </div>
+            </div>
+            <div className="flex gap-3 mt-6">
+              <button
+                onClick={handleCreate}
+                className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+              >
+                Create
+              </button>
+              <button
+                onClick={() => setShowNewModal(false)}
+                className="flex-1 px-4 py-2 border rounded-lg hover:bg-gray-50"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Modal */}
+      {showEditModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl max-w-lg w-full p-6">
+            <h3 className="text-xl font-semibold mb-4">Edit Company</h3>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium mb-1">Company Name *</label>
+                <input
+                  type="text"
+                  value={formData.name}
+                  onChange={(e) => setFormData({...formData, name: e.target.value})}
+                  className="w-full px-3 py-2 border rounded-lg"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">Company Code *</label>
+                <input
+                  type="text"
+                  value={formData.code}
+                  onChange={(e) => setFormData({...formData, code: e.target.value})}
+                  className="w-full px-3 py-2 border rounded-lg"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">Email</label>
+                <input
+                  type="email"
+                  value={formData.email}
+                  onChange={(e) => setFormData({...formData, email: e.target.value})}
+                  className="w-full px-3 py-2 border rounded-lg"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">Phone</label>
+                <input
+                  type="tel"
+                  value={formData.phone}
+                  onChange={(e) => setFormData({...formData, phone: e.target.value})}
+                  className="w-full px-3 py-2 border rounded-lg"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">Status</label>
+                <select
+                  value={formData.status}
+                  onChange={(e) => setFormData({...formData, status: e.target.value})}
+                  className="w-full px-3 py-2 border rounded-lg"
+                >
+                  <option value="active">Active</option>
+                  <option value="inactive">Inactive</option>
+                </select>
+              </div>
+            </div>
+            <div className="flex gap-3 mt-6">
+              <button
+                onClick={handleEdit}
+                className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+              >
+                Save Changes
+              </button>
+              <button
+                onClick={() => setShowEditModal(false)}
+                className="flex-1 px-4 py-2 border rounded-lg hover:bg-gray-50"
+              >
+                Cancel
+              </button>
+            </div>
           </div>
         </div>
       )}
