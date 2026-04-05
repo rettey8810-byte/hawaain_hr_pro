@@ -5,16 +5,17 @@ import { useAuth } from '../contexts/AuthContext';
 import { 
   DollarSign, 
   Users, 
-  TrendingUp, 
   Plus, 
   Trash2, 
-  AlertCircle,
-  CheckCircle,
   FileSpreadsheet,
   Search,
   Download,
-  Eye,
-  X
+  Building2,
+  ChevronDown,
+  ChevronRight,
+  X,
+  Save,
+  ArrowRight
 } from 'lucide-react';
 import { collection, addDoc, deleteDoc, doc } from 'firebase/firestore';
 import { db } from '../firebase/config';
@@ -26,531 +27,424 @@ export default function ManpowerBudget() {
   const { documents: budgets, loading } = useFirestore('manpowerBudgets');
   
   const [showAddModal, setShowAddModal] = useState(false);
-  const [showDetailModal, setShowDetailModal] = useState(false);
-  const [selectedBudget, setSelectedBudget] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
-  const [filterCompany, setFilterCompany] = useState('all');
+  const [expandedDepts, setExpandedDepts] = useState({});
   
-  // Form state
+  // Form state - department based structure
   const [formData, setFormData] = useState({
-    name: '',
+    department: '',
+    section: '',
     designation: '',
-    basicSalary: 0,
-    foodAllowance: 0,
-    transportAllowance: 0,
-    phoneAllowance: 0,
-    otherAllowance: 0,
-    companyId: companyId || ''
+    actual2026: '',
+    required100_80: '',
+    required80_65: '',
+    required65_50: '',
+    requiredBelow50: ''
   });
 
-  // Smart checks
-  const [smartChecks, setSmartChecks] = useState({
-    totalBudget: 0,
-    employeeCount: 0,
-    avgSalary: 0,
-    alerts: []
-  });
+  // Group budgets by department
+  const groupedByDepartment = budgets?.reduce((acc, budget) => {
+    const dept = budget.department || 'Unassigned';
+    if (!acc[dept]) acc[dept] = [];
+    acc[dept].push(budget);
+    return acc;
+  }, {}) || {};
 
-  useEffect(() => {
-    if (budgets && budgets.length > 0) {
-      calculateSmartChecks();
-    }
-  }, [budgets]);
-
-  const calculateSmartChecks = () => {
-    const totalBudget = budgets.reduce((sum, b) => sum + (b.monthlySalary || 0), 0);
-    const employeeCount = budgets.length;
-    const avgSalary = employeeCount > 0 ? totalBudget / employeeCount : 0;
-    
-    const alerts = [];
-    
-    // Check for duplicates
-    const names = budgets.map(b => b.name?.toLowerCase());
-    const duplicates = names.filter((item, index) => names.indexOf(item) !== index);
-    if (duplicates.length > 0) {
-      alerts.push({ type: 'warning', message: `Duplicate employees found: ${[...new Set(duplicates)].join(', ')}` });
-    }
-    
-    // Check for high salaries
-    const highEarners = budgets.filter(b => (b.monthlySalary || 0) > 50000);
-    if (highEarners.length > 0) {
-      alerts.push({ type: 'info', message: `${highEarners.length} employees have monthly salary > 50,000 MVR` });
-    }
-    
-    // Check for zero salaries
-    const zeroSalary = budgets.filter(b => !(b.monthlySalary || 0));
-    if (zeroSalary.length > 0) {
-      alerts.push({ type: 'error', message: `${zeroSalary.length} employees have no salary data` });
-    }
-
-    setSmartChecks({
-      totalBudget,
-      employeeCount,
-      avgSalary,
-      alerts
-    });
+  const handleInputChange = (field, value) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
   };
 
-  const handleAddEmployee = async (e) => {
-    e.preventDefault();
-    try {
-      const totalAllowances = 
-        parseFloat(formData.foodAllowance) + 
-        parseFloat(formData.transportAllowance) + 
-        parseFloat(formData.phoneAllowance) + 
-        parseFloat(formData.otherAllowance);
-      
-      const monthlySalary = parseFloat(formData.basicSalary) + totalAllowances;
-      
-      await addDoc(collection(db, 'manpowerBudgets'), {
-        ...formData,
-        totalAllowances,
-        monthlySalary,
-        projectedBudget: monthlySalary * 12,
-        actualBudget: monthlySalary * 12,
-        createdAt: new Date().toISOString(),
-        createdBy: userData?.uid,
-        status: 'active'
-      });
-      
-      toast.success('Employee added to budget');
-      setShowAddModal(false);
-      setFormData({
-        name: '',
-        designation: '',
-        basicSalary: 0,
-        foodAllowance: 0,
-        transportAllowance: 0,
-        phoneAllowance: 0,
-        otherAllowance: 0,
-        companyId: companyId || ''
-      });
-    } catch (error) {
-      toast.error('Error adding employee: ' + error.message);
+  const handleSave = async () => {
+    if (!formData.department || !formData.section || !formData.designation) {
+      toast.error('Please fill Department, Section, and Designation');
+      return;
     }
+
+    try {
+      await addDoc(collection(db, 'manpowerBudgets'), {
+        department: formData.department,
+        section: formData.section,
+        designation: formData.designation,
+        actual2026: formData.actual2026,
+        requiredManpower: {
+          '100_80': formData.required100_80,
+          '80_65': formData.required80_65,
+          '65_50': formData.required65_50,
+          'below50': formData.requiredBelow50
+        },
+        companyId: companyId || '',
+        createdBy: userData?.uid,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      });
+      
+      toast.success('Budget entry saved!');
+      
+      // Clear form for next entry
+      setFormData({
+        department: '',
+        section: '',
+        designation: '',
+        actual2026: '',
+        required100_80: '',
+        required80_65: '',
+        required65_50: '',
+        requiredBelow50: ''
+      });
+      
+    } catch (error) {
+      toast.error('Failed to save: ' + error.message);
+    }
+  };
+
+  const handleSaveAndNewDept = async () => {
+    await handleSave();
+    // After save, modal stays open but form is cleared for new department
+    setShowAddModal(false);
+    setTimeout(() => setShowAddModal(true), 100);
   };
 
   const handleDelete = async (id) => {
-    if (!confirm('Are you sure you want to delete this budget entry?')) return;
+    if (!confirm('Delete this entry?')) return;
     try {
       await deleteDoc(doc(db, 'manpowerBudgets', id));
-      toast.success('Budget entry deleted');
+      toast.success('Deleted');
     } catch (error) {
-      toast.error('Error deleting: ' + error.message);
+      toast.error('Delete failed: ' + error.message);
     }
   };
 
-  const filteredBudgets = budgets.filter(budget => {
-    const matchesSearch = budget.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         budget.designation?.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesCompany = filterCompany === 'all' || budget.companyId === filterCompany;
-    return matchesSearch && matchesCompany;
-  });
-
-  const companyTotals = budgets.reduce((acc, budget) => {
-    const cid = budget.companyId || 'unassigned';
-    if (!acc[cid]) {
-      acc[cid] = { count: 0, total: 0, name: budget.companyName || cid };
-    }
-    acc[cid].count++;
-    acc[cid].total += budget.monthlySalary || 0;
-    return acc;
-  }, {});
+  const toggleDept = (dept) => {
+    setExpandedDepts(prev => ({ ...prev, [dept]: !prev[dept] }));
+  };
 
   const exportToCSV = () => {
-    const headers = ['Name', 'Designation', 'Basic Salary', 'Food', 'Transport', 'Phone', 'Other', 'Total Monthly'];
-    const rows = filteredBudgets.map(b => [
-      b.name,
+    const headers = ['Department', 'Section', 'Designation', 'Actual 2026', 'Required 100-80%', 'Required 80-65%', 'Required 65-50%', 'Required Below 50%'];
+    const rows = budgets?.map(b => [
+      b.department,
+      b.section,
       b.designation,
-      b.basicSalary,
-      b.foodAllowance,
-      b.transportAllowance,
-      b.phoneAllowance,
-      b.otherAllowance,
-      b.monthlySalary
-    ]);
+      b.actual2026,
+      b.requiredManpower?.['100_80'] || '',
+      b.requiredManpower?.['80_65'] || '',
+      b.requiredManpower?.['65_50'] || '',
+      b.requiredManpower?.below50 || ''
+    ]) || [];
     
-    const csvContent = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
-    const blob = new Blob([csvContent], { type: 'text/csv' });
-    const url = window.URL.createObjectURL(blob);
+    const csv = [headers, ...rows].map(r => r.join(',')).join('\n');
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `manpower_budget_${new Date().toISOString().split('T')[0]}.csv`;
+    a.download = 'manpower_budget_2026.csv';
     a.click();
+    toast.success('CSV exported!');
   };
 
-  if (loading) return <div className="p-6">Loading...</div>;
+  // Filter budgets
+  const filteredDepts = Object.entries(groupedByDepartment).filter(([dept, items]) => 
+    dept.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    items.some(i => i.section?.toLowerCase().includes(searchTerm.toLowerCase())) ||
+    items.some(i => i.designation?.toLowerCase().includes(searchTerm.toLowerCase()))
+  );
 
   return (
-    <div className="p-6 max-w-7xl mx-auto">
+    <div className="p-6">
       {/* Header */}
-      <div className="mb-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-              <FileSpreadsheet className="h-6 w-6" />
-              Manpower Budget 2026
-            </h1>
-            <p className="text-gray-600 mt-1">Manage employee salary budgets and projections</p>
-          </div>
-          <div className="flex gap-2">
-            <button
-              onClick={exportToCSV}
-              className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200"
-            >
-              <Download className="h-4 w-4" />
-              Export CSV
-            </button>
-            <button
-              onClick={() => setShowAddModal(true)}
-              className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-            >
-              <Plus className="h-4 w-4" />
-              Add Employee
-            </button>
-          </div>
+      <div className="flex justify-between items-center mb-6">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-800 flex items-center gap-2">
+            <FileSpreadsheet className="w-7 h-7 text-blue-600" />
+            Manpower Budget 2026
+          </h1>
+          <p className="text-gray-600 mt-1">Department → Section → Designation → Actual 2026 → Required Manpower</p>
         </div>
-      </div>
-
-      {/* Smart Checks Dashboard */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-        <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600">Total Budget (Monthly)</p>
-              <p className="text-2xl font-bold text-gray-900">
-                MVR {smartChecks.totalBudget.toLocaleString()}
-              </p>
-            </div>
-            <DollarSign className="h-8 w-8 text-green-500" />
-          </div>
-        </div>
-        
-        <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600">Total Employees</p>
-              <p className="text-2xl font-bold text-gray-900">{smartChecks.employeeCount}</p>
-            </div>
-            <Users className="h-8 w-8 text-blue-500" />
-          </div>
-        </div>
-        
-        <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600">Average Salary</p>
-              <p className="text-2xl font-bold text-gray-900">
-                MVR {Math.round(smartChecks.avgSalary).toLocaleString()}
-              </p>
-            </div>
-            <TrendingUp className="h-8 w-8 text-purple-500" />
-          </div>
-        </div>
-        
-        <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600">Annual Projection</p>
-              <p className="text-2xl font-bold text-gray-900">
-                MVR {(smartChecks.totalBudget * 12).toLocaleString()}
-              </p>
-            </div>
-            <TrendingUp className="h-8 w-8 text-orange-500" />
-          </div>
-        </div>
-      </div>
-
-      {/* Alerts */}
-      {smartChecks.alerts.length > 0 && (
-        <div className="mb-6 space-y-2">
-          {smartChecks.alerts.map((alert, idx) => (
-            <div key={idx} className={`p-3 rounded-lg flex items-center gap-2 ${
-              alert.type === 'error' ? 'bg-red-100 text-red-800' :
-              alert.type === 'warning' ? 'bg-yellow-100 text-yellow-800' :
-              'bg-blue-100 text-blue-800'
-            }`}>
-              {alert.type === 'error' ? <AlertCircle className="h-5 w-5" /> :
-               alert.type === 'warning' ? <AlertCircle className="h-5 w-5" /> :
-               <CheckCircle className="h-5 w-5" />}
-              {alert.message}
-            </div>
-          ))}
-        </div>
-      )}
-
-      {/* Filters */}
-      <div className="bg-white p-4 rounded-lg shadow-sm border border-gray-200 mb-6">
-        <div className="flex gap-4 items-center">
-          <div className="flex-1">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-              <input
-                type="text"
-                placeholder="Search by name or designation..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              />
-            </div>
-          </div>
-          <select
-            value={filterCompany}
-            onChange={(e) => setFilterCompany(e.target.value)}
-            className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+        <div className="flex gap-3">
+          <button
+            onClick={exportToCSV}
+            className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
           >
-            <option value="all">All Companies</option>
-            {Object.entries(companyTotals).map(([id, data]) => (
-              <option key={id} value={id}>{data.name}</option>
-            ))}
-          </select>
+            <Download className="w-4 h-4" />
+            Export CSV
+          </button>
+          <button
+            onClick={() => setShowAddModal(true)}
+            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+          >
+            <Plus className="w-4 h-4" />
+            Add Budget Entry
+          </button>
         </div>
       </div>
 
-      {/* Company Summary */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        {Object.entries(companyTotals).map(([cid, data]) => (
-          <div key={cid} className="bg-gradient-to-br from-blue-50 to-indigo-50 p-4 rounded-lg border border-blue-200">
-            <div className="flex items-center gap-2 mb-2">
-              <Building2 className="h-5 w-5 text-blue-600" />
-              <h3 className="font-semibold text-gray-900">{data.name}</h3>
+      {/* Stats */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+        <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-blue-600 font-medium">Departments</p>
+              <p className="text-2xl font-bold text-blue-800">{Object.keys(groupedByDepartment).length}</p>
             </div>
-            <p className="text-2xl font-bold text-gray-900">{data.count} employees</p>
-            <p className="text-sm text-gray-600">Monthly: MVR {data.total.toLocaleString()}</p>
+            <Building2 className="w-8 h-8 text-blue-600" />
           </div>
-        ))}
+        </div>
+        <div className="bg-green-50 p-4 rounded-lg border border-green-200">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-green-600 font-medium">Total Entries</p>
+              <p className="text-2xl font-bold text-green-800">{budgets?.length || 0}</p>
+            </div>
+            <FileSpreadsheet className="w-8 h-8 text-green-600" />
+          </div>
+        </div>
+        <div className="bg-purple-50 p-4 rounded-lg border border-purple-200">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-purple-600 font-medium">Sections</p>
+              <p className="text-2xl font-bold text-purple-800">
+                {new Set(budgets?.map(b => b.section)).size || 0}
+              </p>
+            </div>
+            <Users className="w-8 h-8 text-purple-600" />
+          </div>
+        </div>
+        <div className="bg-orange-50 p-4 rounded-lg border border-orange-200">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-orange-600 font-medium">Designations</p>
+              <p className="text-2xl font-bold text-orange-800">
+                {new Set(budgets?.map(b => b.designation)).size || 0}
+              </p>
+            </div>
+            <DollarSign className="w-8 h-8 text-orange-600" />
+          </div>
+        </div>
       </div>
 
-      {/* Budget Table */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-        <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-gray-50">
-            <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Employee</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Basic Salary</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Allowances</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total Monthly</th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Annual</th>
-              <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
-            </tr>
-          </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
-            {filteredBudgets.map((budget) => (
-              <tr key={budget.id} className="hover:bg-gray-50">
-                <td className="px-6 py-4">
-                  <div>
-                    <div className="text-sm font-medium text-gray-900">{budget.name}</div>
-                    <div className="text-sm text-gray-500">{budget.designation}</div>
-                  </div>
-                </td>
-                <td className="px-6 py-4 text-sm text-gray-900">
-                  MVR {budget.basicSalary?.toLocaleString()}
-                </td>
-                <td className="px-6 py-4 text-sm text-gray-900">
-                  <div className="text-xs space-y-1">
-                    <div>Food: MVR {budget.foodAllowance?.toLocaleString()}</div>
-                    <div>Transport: MVR {budget.transportAllowance?.toLocaleString()}</div>
-                    <div>Phone: MVR {budget.phoneAllowance?.toLocaleString()}</div>
-                  </div>
-                </td>
-                <td className="px-6 py-4 text-sm font-medium text-gray-900">
-                  MVR {budget.monthlySalary?.toLocaleString()}
-                </td>
-                <td className="px-6 py-4 text-sm text-gray-900">
-                  MVR {budget.projectedBudget?.toLocaleString()}
-                </td>
-                <td className="px-6 py-4 text-right">
-                  <button
-                    onClick={() => { setSelectedBudget(budget); setShowDetailModal(true); }}
-                    className="text-blue-600 hover:text-blue-900 mr-3"
-                  >
-                    <Eye className="h-4 w-4" />
-                  </button>
-                  <button
-                    onClick={() => handleDelete(budget.id)}
-                    className="text-red-600 hover:text-red-900"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+      {/* Search */}
+      <div className="mb-4">
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+          <input
+            type="text"
+            placeholder="Search department, section, or designation..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+          />
+        </div>
       </div>
 
-      {/* Add Employee Modal */}
+      {/* Department List */}
+      <div className="space-y-4">
+        {loading ? (
+          <div className="text-center py-8">Loading...</div>
+        ) : filteredDepts.length === 0 ? (
+          <div className="text-center py-8 text-gray-500">
+            No budget entries yet. Click "Add Budget Entry" to start.
+          </div>
+        ) : (
+          filteredDepts.map(([deptName, deptBudgets]) => (
+            <div key={deptName} className="bg-white rounded-lg shadow border border-gray-200">
+              <div 
+                className="flex items-center justify-between p-4 cursor-pointer bg-gray-50 hover:bg-gray-100 rounded-t-lg"
+                onClick={() => toggleDept(deptName)}
+              >
+                <div className="flex items-center gap-3">
+                  {expandedDepts[deptName] ? <ChevronDown className="w-5 h-5" /> : <ChevronRight className="w-5 h-5" />}
+                  <Building2 className="w-5 h-5 text-blue-600" />
+                  <span className="font-semibold text-lg">{deptName}</span>
+                  <span className="text-sm text-gray-500">({deptBudgets.length} entries)</span>
+                </div>
+              </div>
+              
+              {expandedDepts[deptName] && (
+                <div className="p-4 overflow-x-auto">
+                  <table className="w-full">
+                    <thead className="bg-gray-100">
+                      <tr>
+                        <th className="px-3 py-2 text-left text-sm font-medium">Section</th>
+                        <th className="px-3 py-2 text-left text-sm font-medium">Designation</th>
+                        <th className="px-3 py-2 text-center text-sm font-medium">Actual 2026</th>
+                        <th className="px-3 py-2 text-center text-sm font-medium bg-blue-100">100-80%</th>
+                        <th className="px-3 py-2 text-center text-sm font-medium bg-green-100">80-65%</th>
+                        <th className="px-3 py-2 text-center text-sm font-medium bg-yellow-100">65-50%</th>
+                        <th className="px-3 py-2 text-center text-sm font-medium bg-red-100">Below 50%</th>
+                        <th className="px-3 py-2 text-center text-sm font-medium">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {deptBudgets.map((budget) => (
+                        <tr key={budget.id} className="border-b hover:bg-gray-50">
+                          <td className="px-3 py-2">{budget.section}</td>
+                          <td className="px-3 py-2 font-medium">{budget.designation}</td>
+                          <td className="px-3 py-2 text-center">{budget.actual2026 || '-'}</td>
+                          <td className="px-3 py-2 text-center bg-blue-50/50">{budget.requiredManpower?.['100_80'] || '-'}</td>
+                          <td className="px-3 py-2 text-center bg-green-50/50">{budget.requiredManpower?.['80_65'] || '-'}</td>
+                          <td className="px-3 py-2 text-center bg-yellow-50/50">{budget.requiredManpower?.['65_50'] || '-'}</td>
+                          <td className="px-3 py-2 text-center bg-red-50/50">{budget.requiredManpower?.below50 || '-'}</td>
+                          <td className="px-3 py-2 text-center">
+                            <button
+                              onClick={() => handleDelete(budget.id)}
+                              className="p-1 text-red-600 hover:bg-red-100 rounded"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          ))
+        )}
+      </div>
+
+      {/* Add Modal */}
       {showAddModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-xl font-bold">Add Employee to Budget</h2>
-              <button onClick={() => setShowAddModal(false)}>
-                <X className="h-5 w-5" />
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg w-full max-w-4xl max-h-[90vh] overflow-y-auto m-4">
+            <div className="flex justify-between items-center p-4 border-b">
+              <h2 className="text-xl font-bold flex items-center gap-2">
+                <ArrowRight className="w-5 h-5 text-blue-600" />
+                Add Budget Entry
+              </h2>
+              <button onClick={() => setShowAddModal(false)} className="p-1 hover:bg-gray-100 rounded">
+                <X className="w-5 h-5" />
               </button>
             </div>
             
-            <form onSubmit={handleAddEmployee} className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
+            <div className="p-6 space-y-6">
+              {/* Workflow Steps */}
+              <div className="flex items-center gap-2 text-sm text-gray-600 mb-4">
+                <span className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full font-medium">1. Department</span>
+                <ArrowRight className="w-4 h-4" />
+                <span className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full font-medium">2. Section</span>
+                <ArrowRight className="w-4 h-4" />
+                <span className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full font-medium">3. Designation</span>
+                <ArrowRight className="w-4 h-4" />
+                <span className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full font-medium">4. Actual 2026</span>
+                <ArrowRight className="w-4 h-4" />
+                <span className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full font-medium">5. Required</span>
+              </div>
+
+              {/* Step 1-3: Department Info */}
+              <div className="grid grid-cols-3 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">Name</label>
+                  <label className="block text-sm font-medium mb-1">Department *</label>
                   <input
                     type="text"
-                    required
-                    value={formData.name}
-                    onChange={(e) => setFormData({...formData, name: e.target.value})}
-                    className="mt-1 block w-full rounded-md border-gray-300 border px-3 py-2"
+                    value={formData.department}
+                    onChange={(e) => handleInputChange('department', e.target.value)}
+                    placeholder="e.g. Engineering"
+                    className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">Designation</label>
+                  <label className="block text-sm font-medium mb-1">Section *</label>
+                  <input
+                    type="text"
+                    value={formData.section}
+                    onChange={(e) => handleInputChange('section', e.target.value)}
+                    placeholder="e.g. Software"
+                    className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1">Designation *</label>
                   <input
                     type="text"
                     value={formData.designation}
-                    onChange={(e) => setFormData({...formData, designation: e.target.value})}
-                    className="mt-1 block w-full rounded-md border-gray-300 border px-3 py-2"
+                    onChange={(e) => handleInputChange('designation', e.target.value)}
+                    placeholder="e.g. Senior Developer"
+                    className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Basic Salary (MVR)</label>
-                  <input
-                    type="number"
-                    min="0"
-                    value={formData.basicSalary}
-                    onChange={(e) => setFormData({...formData, basicSalary: parseFloat(e.target.value) || 0})}
-                    className="mt-1 block w-full rounded-md border-gray-300 border px-3 py-2"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Food Allowance (MVR)</label>
-                  <input
-                    type="number"
-                    min="0"
-                    value={formData.foodAllowance}
-                    onChange={(e) => setFormData({...formData, foodAllowance: parseFloat(e.target.value) || 0})}
-                    className="mt-1 block w-full rounded-md border-gray-300 border px-3 py-2"
-                  />
+              {/* Step 4: Actual 2026 */}
+              <div>
+                <label className="block text-sm font-medium mb-1">Actual 2026</label>
+                <input
+                  type="text"
+                  value={formData.actual2026}
+                  onChange={(e) => handleInputChange('actual2026', e.target.value)}
+                  placeholder="Current actual count or value for 2026"
+                  className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+
+              {/* Step 5: Required Manpower Tiers */}
+              <div>
+                <label className="block text-sm font-medium mb-3">Required Manpower</label>
+                <div className="grid grid-cols-4 gap-4">
+                  <div className="bg-blue-50 p-4 rounded-lg border-2 border-blue-200">
+                    <label className="block text-sm font-bold text-blue-800 mb-2 text-center">100 - 80%</label>
+                    <input
+                      type="number"
+                      value={formData.required100_80}
+                      onChange={(e) => handleInputChange('required100_80', e.target.value)}
+                      placeholder="Count"
+                      className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 text-center"
+                    />
+                  </div>
+                  <div className="bg-green-50 p-4 rounded-lg border-2 border-green-200">
+                    <label className="block text-sm font-bold text-green-800 mb-2 text-center">80 - 65%</label>
+                    <input
+                      type="number"
+                      value={formData.required80_65}
+                      onChange={(e) => handleInputChange('required80_65', e.target.value)}
+                      placeholder="Count"
+                      className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-green-500 text-center"
+                    />
+                  </div>
+                  <div className="bg-yellow-50 p-4 rounded-lg border-2 border-yellow-200">
+                    <label className="block text-sm font-bold text-yellow-800 mb-2 text-center">65 - 50%</label>
+                    <input
+                      type="number"
+                      value={formData.required65_50}
+                      onChange={(e) => handleInputChange('required65_50', e.target.value)}
+                      placeholder="Count"
+                      className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-yellow-500 text-center"
+                    />
+                  </div>
+                  <div className="bg-red-50 p-4 rounded-lg border-2 border-red-200">
+                    <label className="block text-sm font-bold text-red-800 mb-2 text-center">Below 50%</label>
+                    <input
+                      type="number"
+                      value={formData.requiredBelow50}
+                      onChange={(e) => handleInputChange('requiredBelow50', e.target.value)}
+                      placeholder="Count"
+                      className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-red-500 text-center"
+                    />
+                  </div>
                 </div>
               </div>
 
-              <div className="grid grid-cols-3 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Transport (MVR)</label>
-                  <input
-                    type="number"
-                    min="0"
-                    value={formData.transportAllowance}
-                    onChange={(e) => setFormData({...formData, transportAllowance: parseFloat(e.target.value) || 0})}
-                    className="mt-1 block w-full rounded-md border-gray-300 border px-3 py-2"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Phone (MVR)</label>
-                  <input
-                    type="number"
-                    min="0"
-                    value={formData.phoneAllowance}
-                    onChange={(e) => setFormData({...formData, phoneAllowance: parseFloat(e.target.value) || 0})}
-                    className="mt-1 block w-full rounded-md border-gray-300 border px-3 py-2"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Other (MVR)</label>
-                  <input
-                    type="number"
-                    min="0"
-                    value={formData.otherAllowance}
-                    onChange={(e) => setFormData({...formData, otherAllowance: parseFloat(e.target.value) || 0})}
-                    className="mt-1 block w-full rounded-md border-gray-300 border px-3 py-2"
-                  />
-                </div>
-              </div>
-
-              <div className="bg-gray-50 p-4 rounded-lg">
-                <p className="text-sm text-gray-600">Calculated Monthly Salary:</p>
-                <p className="text-xl font-bold text-gray-900">
-                  MVR {(
-                    parseFloat(formData.basicSalary || 0) +
-                    parseFloat(formData.foodAllowance || 0) +
-                    parseFloat(formData.transportAllowance || 0) +
-                    parseFloat(formData.phoneAllowance || 0) +
-                    parseFloat(formData.otherAllowance || 0)
-                  ).toLocaleString()}
-                </p>
-              </div>
-
-              <div className="flex justify-end gap-2">
+              {/* Action Buttons */}
+              <div className="flex gap-3 pt-4 border-t">
                 <button
-                  type="button"
+                  onClick={handleSave}
+                  className="flex items-center gap-2 px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                >
+                  <Save className="w-4 h-4" />
+                  Save Entry
+                </button>
+                <button
+                  onClick={handleSaveAndNewDept}
+                  className="flex items-center gap-2 px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
+                >
+                  <Plus className="w-4 h-4" />
+                  Save & New Entry
+                </button>
+                <button
                   onClick={() => setShowAddModal(false)}
-                  className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
+                  className="px-6 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
                 >
                   Cancel
                 </button>
-                <button
-                  type="submit"
-                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-                >
-                  Add to Budget
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* Detail Modal */}
-      {showDetailModal && selectedBudget && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-lg">
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="text-xl font-bold">Employee Budget Details</h2>
-              <button onClick={() => setShowDetailModal(false)}>
-                <X className="h-5 w-5" />
-              </button>
-            </div>
-            
-            <div className="space-y-4">
-              <div>
-                <h3 className="text-lg font-semibold">{selectedBudget.name}</h3>
-                <p className="text-gray-600">{selectedBudget.designation}</p>
-              </div>
-
-              <div className="border-t pt-4">
-                <h4 className="font-medium mb-2">Salary Breakdown</h4>
-                <div className="space-y-2 text-sm">
-                  <div className="flex justify-between">
-                    <span>Basic Salary:</span>
-                    <span>MVR {selectedBudget.basicSalary?.toLocaleString()}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Food Allowance:</span>
-                    <span>MVR {selectedBudget.foodAllowance?.toLocaleString()}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Transport Allowance:</span>
-                    <span>MVR {selectedBudget.transportAllowance?.toLocaleString()}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Phone Allowance:</span>
-                    <span>MVR {selectedBudget.phoneAllowance?.toLocaleString()}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span>Other Allowance:</span>
-                    <span>MVR {selectedBudget.otherAllowance?.toLocaleString()}</span>
-                  </div>
-                  <div className="border-t pt-2 flex justify-between font-semibold">
-                    <span>Total Monthly:</span>
-                    <span>MVR {selectedBudget.monthlySalary?.toLocaleString()}</span>
-                  </div>
-                  <div className="flex justify-between text-blue-600">
-                    <span>Annual Projection:</span>
-                    <span>MVR {selectedBudget.projectedBudget?.toLocaleString()}</span>
-                  </div>
-                </div>
               </div>
             </div>
           </div>
