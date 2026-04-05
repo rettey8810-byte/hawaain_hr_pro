@@ -34,8 +34,9 @@ import {
   Area
 } from 'recharts';
 import { useFirestore } from '../hooks/useFirestore';
-import { useCompany } from '../contexts/CompanyContext';
 import { useExpiryAlerts } from '../hooks/useExpiryAlerts';
+import { useCompany } from '../contexts/CompanyContext';
+import { HardHat, Users, Building2, Briefcase } from 'lucide-react';
 
 function StatCard({ title, value, icon: Icon, gradient, subtitle, href }) {
   const gradientClasses = {
@@ -44,7 +45,8 @@ function StatCard({ title, value, icon: Icon, gradient, subtitle, href }) {
     yellow: 'from-amber-500 to-orange-600',
     red: 'from-rose-500 to-pink-600',
     purple: 'from-violet-500 to-purple-600',
-    cyan: 'from-cyan-500 to-blue-600'
+    cyan: 'from-cyan-500 to-blue-600',
+    orange: 'from-orange-500 to-red-600'
   };
 
   return (
@@ -94,7 +96,7 @@ function AlertItem({ title, count, type, icon: Icon, href }) {
 }
 
 export default function Dashboard() {
-  const { companyId } = useCompany();
+  const { companyId, currentCompany, getCompanyDisplayName, isConstructionCompany, isExternalCompany } = useCompany();
   const { documents: employees } = useFirestore('employees');
   const { documents: passports } = useFirestore('passports');
   const { documents: visas } = useFirestore('visas');
@@ -113,7 +115,7 @@ export default function Dashboard() {
 
   // Calculate department distribution
   const departmentData = companyEmployees.reduce((acc, emp) => {
-    const dept = emp['Department '] || emp.Department || emp.department || 'Unassigned';
+    const dept = emp.department || 'Unassigned';
     acc[dept] = (acc[dept] || 0) + 1;
     return acc;
   }, {});
@@ -200,51 +202,138 @@ export default function Dashboard() {
         </div>
         <div className="min-w-0 flex-1 relative z-10">
           <h2 className="text-3xl font-bold leading-7">
-            📊 Dashboard
+            📊 {getCompanyDisplayName()} Dashboard
           </h2>
           <p className="mt-1 text-sm text-white/80">
             Overview of your HR and expatriate management system
           </p>
+          {isConstructionCompany() && (
+            <div className="mt-2 inline-flex items-center gap-2 px-3 py-1 bg-orange-500/30 rounded-full text-sm">
+              <HardHat className="h-4 w-4" />
+              Construction Workforce View
+            </div>
+          )}
+          {isExternalCompany() && (
+            <div className="mt-2 inline-flex items-center gap-2 px-3 py-1 bg-blue-500/30 rounded-full text-sm">
+              <Users className="h-4 w-4" />
+              External Staff & Visitor Management
+            </div>
+          )}
         </div>
       </div>
 
       {/* Stats Grid */}
       <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard
-          title="Total Employees"
-          value={employees.length}
-          icon={Users}
-          gradient="blue"
-          subtitle="Active workforce"
-          href="/employees"
-        />
-        <StatCard
-          title="Expiring Soon"
-          value={expiring30Count}
-          icon={AlertTriangle}
-          gradient="yellow"
-          subtitle="Within 30 days"
-          href="/notifications"
-        />
-        <StatCard
-          title="Expired Documents"
-          value={expiredCount}
-          icon={Clock}
-          gradient="red"
-          subtitle="Requires immediate action"
-          href="/notifications"
-        />
-        <StatCard
-          title="Valid Documents"
-          value={totalAlerts > 0 ? 'Review' : 'All Clear'}
-          icon={CheckCircle}
-          gradient="green"
-          subtitle={`${totalAlerts} alerts total`}
-          href="/notifications"
-        />
+        {isConstructionCompany() ? (
+          <>
+            <StatCard
+              title="Construction Workers"
+              value="View All"
+              icon={HardHat}
+              gradient="orange"
+              subtitle="Villa Construction Workforce"
+              href="/construction-workforce"
+            />
+            <StatCard
+              title="Work Permits"
+              value="Manage"
+              icon={Briefcase}
+              gradient="cyan"
+              subtitle="Construction WP Tracking"
+              href="/construction-workforce"
+            />
+            <StatCard
+              title="Expiring Soon"
+              value="Check"
+              icon={AlertTriangle}
+              gradient="yellow"
+              subtitle="Document Expiry Alerts"
+              href="/construction-workforce"
+            />
+            <StatCard
+              title="Export Data"
+              value="CSV"
+              icon={FileText}
+              gradient="green"
+              subtitle="Download Workforce Data"
+              href="/construction-workforce"
+            />
+          </>
+        ) : isExternalCompany() ? (
+          <>
+            <StatCard
+              title="External Staff"
+              value="Manage"
+              icon={Users}
+              gradient="blue"
+              subtitle="Villa Park & 3rd Party"
+              href="/external-staff"
+            />
+            <StatCard
+              title="Checked In"
+              value="View"
+              icon={Building2}
+              gradient="green"
+              subtitle="Currently on Property"
+              href="/external-staff"
+            />
+            <StatCard
+              title="Visitors"
+              value="Manage"
+              icon={Users}
+              gradient="purple"
+              subtitle="Visitor Management"
+              href="/external-staff"
+            />
+            <StatCard
+              title="Add Entry"
+              value="+ New"
+              icon={CheckCircle}
+              gradient="cyan"
+              subtitle="Register New Staff/Visitor"
+              href="/external-staff"
+            />
+          </>
+        ) : (
+          <>
+            <StatCard
+              title="Total Employees"
+              value={employees.length}
+              icon={Users}
+              gradient="blue"
+              subtitle="Active workforce"
+              href="/employees"
+            />
+            <StatCard
+              title="Expiring Soon"
+              value={expiring30Count}
+              icon={AlertTriangle}
+              gradient="yellow"
+              subtitle="Within 30 days"
+              href="/notifications"
+            />
+            <StatCard
+              title="Expired Documents"
+              value={expiredCount}
+              icon={Clock}
+              gradient="red"
+              subtitle="Requires immediate action"
+              href="/notifications"
+            />
+            <StatCard
+              title="Valid Documents"
+              value={totalAlerts > 0 ? 'Review' : 'All Clear'}
+              icon={CheckCircle}
+              gradient="green"
+              subtitle={`${totalAlerts} alerts total`}
+              href="/notifications"
+            />
+          </>
+        )}
       </div>
 
-      {/* Document Type Stats */}
+      {/* Document Type Stats - Only for Sun Island/Resort companies */}
+      {!isConstructionCompany() && !isExternalCompany() && (
       <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard
           title="Passports"
@@ -279,6 +368,7 @@ export default function Dashboard() {
           href="/medical"
         />
       </div>
+      )}
 
       {/* Analytics Widgets */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

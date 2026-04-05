@@ -83,8 +83,6 @@ import HRAnalytics from './components/HRAnalytics';
 import EmployeeDirectory from './components/EmployeeDirectory';
 import CompanyAnnouncements from './components/CompanyAnnouncements';
 import ShiftManagement from './components/ShiftManagement';
-import ExternalStaff from './components/ExternalStaff';
-import ConstructionWorkforce from './components/ConstructionWorkforce';
 
 // Advanced HR Feature Modules (v2.0.0)
 import TimeAttendance from './components/TimeAttendance';
@@ -92,6 +90,10 @@ import BenefitsManagement from './components/BenefitsManagement';
 import EmployeeEngagement from './components/EmployeeEngagement';
 import ComplianceCenter from './components/ComplianceCenter';
 import IntegrationsHub from './components/IntegrationsHub';
+
+// Multi-Company Support Modules
+import ConstructionWorkforce from './components/ConstructionWorkforce';
+import ExternalStaff from './components/ExternalStaff';
 
 function PrivateRoute({ children }) {
   const { user, loading } = useAuth();
@@ -717,24 +719,22 @@ function App() {
                 </PrivateRoute>
               } />
               
-              <Route path="/bulk-import-export" element={
+              {/* Multi-Company Support Routes */}
+              <Route path="/construction-workforce" element={
                 <PrivateRoute>
-                  <PermissionRoute feature="employees" action="create">
-                    <Layout><BulkImportExport /></Layout>
-                  </PermissionRoute>
+                  <Layout><ConstructionWorkforce /></Layout>
                 </PrivateRoute>
               } />
               <Route path="/external-staff" element={
                 <PrivateRoute>
-                  <PermissionRoute feature="employees" action="view">
-                    <Layout><ExternalStaff /></Layout>
-                  </PermissionRoute>
+                  <Layout><ExternalStaff /></Layout>
                 </PrivateRoute>
               } />
-              <Route path="/construction-workforce" element={
+              
+              <Route path="/bulk-import-export" element={
                 <PrivateRoute>
-                  <PermissionRoute feature="employees" action="view">
-                    <Layout><ConstructionWorkforce /></Layout>
+                  <PermissionRoute feature="employees" action="create">
+                    <Layout><BulkImportExport /></Layout>
                   </PermissionRoute>
                 </PrivateRoute>
               } />

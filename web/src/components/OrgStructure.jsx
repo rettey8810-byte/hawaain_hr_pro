@@ -10,8 +10,7 @@ import {
   Briefcase, 
   TrendingUp, 
   Search, 
-  Filter,
-  UserCircle
+  Filter 
 } from 'lucide-react';
 import { useFirestore } from '../hooks/useFirestore';
 import { useCompany } from '../contexts/CompanyContext';

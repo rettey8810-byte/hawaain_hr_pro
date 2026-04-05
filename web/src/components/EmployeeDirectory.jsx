@@ -483,10 +483,7 @@ export default function EmployeeDirectory() {
             </h3>
             <div className="space-y-2">
               {departments.map(dept => {
-                const count = employees.filter(e => {
-                  const empDept = e['Department '] || e.Department || e.department;
-                  return empDept === dept && (e.status || 'active') === 'active';
-                }).length;
+                const count = employees.filter(e => e.department === dept && e.status === 'active').length;
                 return (
                   <div 
                     key={dept} 
@@ -509,13 +506,13 @@ export default function EmployeeDirectory() {
             <div className="grid grid-cols-2 gap-4">
               <div className="text-center p-3 bg-blue-50 rounded-lg">
                 <p className="text-2xl font-bold text-blue-600">
-                  {employees.filter(e => (e.status || 'active') === 'active').length}
+                  {employees.filter(e => e.status === 'active').length}
                 </p>
                 <p className="text-xs text-blue-800">Active</p>
               </div>
               <div className="text-center p-3 bg-gray-50 rounded-lg">
                 <p className="text-2xl font-bold text-gray-600">
-                  {employees.filter(e => (e.status || 'active') !== 'active').length}
+                  {employees.filter(e => e.status !== 'active').length}
                 </p>
                 <p className="text-xs text-gray-800">Inactive</p>
               </div>
@@ -525,7 +522,7 @@ export default function EmployeeDirectory() {
               </div>
               <div className="text-center p-3 bg-purple-50 rounded-lg">
                 <p className="text-2xl font-bold text-purple-600">
-                  {new Set(employees.map(e => e.Designation || e.position).filter(Boolean)).size}
+                  {new Set(employees.map(e => e.position)).size}
                 </p>
                 <p className="text-xs text-purple-800">Positions</p>
               </div>

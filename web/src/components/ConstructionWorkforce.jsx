@@ -1,349 +1,215 @@
-import React, { useState, useEffect } from 'react';
-import { collection, addDoc, updateDoc, deleteDoc, doc, query, where, orderBy, onSnapshot, serverTimestamp, getDocs } from 'firebase/firestore';
-import { db } from '../firebase';
-import { useAuth } from '../contexts/AuthContext';
-import { useCompany } from '../contexts/CompanyContext';
+import { useState, useEffect, useMemo } from 'react';
 import { 
-  Users, Plus, Search, Edit2, Trash2, X, Building2, 
-  CheckCircle, AlertCircle, Calendar, Phone, Upload,
-  Download, HardHat, FileSpreadsheet, Filter, RefreshCw
+  HardHat, 
+  Search, 
+  Filter, 
+  Download, 
+  AlertTriangle, 
+  Calendar,
+  Users,
+  FileText,
+  ChevronDown,
+  ChevronUp,
+  Building2,
+  MapPin,
+  Briefcase,
+  Passport,
+  CreditCard,
+  HeartPulse,
+  Shield
 } from 'lucide-react';
+import { useCompany } from '../contexts/CompanyContext';
+
+// Import construction workforce data
 import constructionData from '../../../Construction_Work_Force.json';
 
-const STATUS_OPTIONS = [
-  { value: 'active', label: 'Active', color: 'bg-green-100 text-green-800' },
-  { value: 'expired_wp', label: 'Expired WP', color: 'bg-red-100 text-red-800' },
-  { value: 'expired_visa', label: 'Expired Visa', color: 'bg-red-100 text-red-800' },
-  { value: 'expired_medical', label: 'Expired Medical', color: 'bg-orange-100 text-orange-800' },
-  { value: 'expired_insurance', label: 'Expired Insurance', color: 'bg-orange-100 text-orange-800' },
-  { value: 'checked_out', label: 'Checked Out', color: 'bg-gray-100 text-gray-800' }
-];
+const STATUS_COLORS = {
+  active: 'bg-green-100 text-green-800',
+  expiring30: 'bg-red-100 text-red-800',
+  expiring60: 'bg-orange-100 text-orange-800',
+  expiring90: 'bg-yellow-100 text-yellow-800',
+  expired: 'bg-red-200 text-red-900'
+};
 
 export default function ConstructionWorkforce() {
-  const { user, userData, hasAccess } = useAuth();
-  const { currentCompany, companyId } = useCompany();
-  
-  const [workers, setWorkers] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [showImportModal, setShowImportModal] = useState(false);
-  const [showEditModal, setShowEditModal] = useState(false);
-  const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [selectedWorker, setSelectedWorker] = useState(null);
+  const { currentCompany, getCompanyDisplayName } = useCompany();
   const [searchTerm, setSearchTerm] = useState('');
-  const [filterStatus, setFilterStatus] = useState('all');
-  const [filterDepartment, setFilterDepartment] = useState('all');
-  const [message, setMessage] = useState({ type: '', text: '' });
-  const [importProgress, setImportProgress] = useState({ current: 0, total: 0 });
-  
-  const [formData, setFormData] = useState({
-    Name: '',
-    Designation: '',
-    Department: '',
-    Section: '',
-    Nationality: '',
-    PassportNo: '',
-    WP: '',
-    WPExpiry: '',
-    FeeExpiry: '',
-    MedicalExpiry: '',
-    InsuranceExpiry: '',
-    VIsaExpiry: '',
-    status: 'active',
-    notes: ''
-  });
+  const [filterDept, setFilterDept] = useState('all');
+  const [filterNationality, setFilterNationality] = useState('all');
+  const [sortField, setSortField] = useState('Name');
+  const [sortDirection, setSortDirection] = useState('asc');
+  const [expandedRow, setExpandedRow] = useState(null);
+  const [selectedWorkers, setSelectedWorkers] = useState([]);
 
-  // Fetch construction workers - filtered by company
-  useEffect(() => {
-    if (!companyId) return;
-    
-    setLoading(true);
-    
-    // Build query based on company context
-    let q;
-    if (companyId === 'construction') {
-      // For construction company, show all construction workers
-      q = query(
-        collection(db, 'externalStaff'),
-        where('type', '==', 'construction'),
-        orderBy('createdAt', 'desc')
-      );
-    } else if (companyId === 'sun_island') {
-      // For Sun Island, show all external staff including construction
-      q = query(
-        collection(db, 'externalStaff'),
-        where('type', '==', 'construction'),
-        orderBy('createdAt', 'desc')
-      );
-    } else {
-      // For other companies, show none
-      setWorkers([]);
-      setLoading(false);
-      return;
-    }
-    
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      setWorkers(data);
-      setLoading(false);
-    }, (error) => {
-      console.error('Error fetching construction workers:', error);
-      setLoading(false);
-    });
-    
-    return () => unsubscribe();
-  }, [companyId]);
-
-  // Calculate status based on expiry dates
-  const calculateStatus = (worker) => {
-    const today = new Date();
-    const wpExpiry = worker.wpExpiry || worker.WPExpiry;
-    const visaExpiry = worker.visaExpiry || worker.VIsaExpiry;
-    const medicalExpiry = worker.medicalExpiry || worker.MedicalExpiry;
-    const insuranceExpiry = worker.insuranceExpiry || worker.InsuranceExpiry;
-
-    const wpDate = wpExpiry ? new Date(wpExpiry) : null;
-    const visaDate = visaExpiry ? new Date(visaExpiry) : null;
-    const medicalDate = medicalExpiry ? new Date(medicalExpiry) : null;
-    const insuranceDate = insuranceExpiry ? new Date(insuranceExpiry) : null;
-
-    if (wpDate && wpDate < today) return 'expired_wp';
-    if (visaDate && visaDate < today) return 'expired_visa';
-    if (medicalDate && medicalDate < today) return 'expired_medical';
-    if (insuranceDate && insuranceDate < today) return 'expired_insurance';
-    return worker.status || 'active';
-  };
-
-  // Get expiring soon count (within 30 days)
-  const getExpiringSoon = () => {
-    const today = new Date();
-    const thirtyDaysFromNow = new Date(today.setDate(today.getDate() + 30));
-    
-    return workers.filter(w => {
-      const wpExpiry = (w.wpExpiry || w.WPExpiry) ? new Date(w.wpExpiry || w.WPExpiry) : null;
-      const visaExpiry = (w.visaExpiry || w.VIsaExpiry) ? new Date(w.visaExpiry || w.VIsaExpiry) : null;
-      const medicalExpiry = (w.medicalExpiry || w.MedicalExpiry) ? new Date(w.medicalExpiry || w.MedicalExpiry) : null;
-      const insuranceExpiry = (w.insuranceExpiry || w.InsuranceExpiry) ? new Date(w.insuranceExpiry || w.InsuranceExpiry) : null;
+  // Parse dates and calculate status
+  const workers = useMemo(() => {
+    return constructionData.map(worker => {
+      const today = new Date();
+      const wpExpiry = new Date(worker.WPExpiry);
+      const visaExpiry = new Date(worker.VIsaExpiry);
+      const medicalExpiry = new Date(worker.MedicalExpiry);
+      const insuranceExpiry = new Date(worker.InsuranceExpiry);
       
-      return (wpExpiry && wpExpiry <= thirtyDaysFromNow && wpExpiry > new Date()) ||
-             (visaExpiry && visaExpiry <= thirtyDaysFromNow && visaExpiry > new Date()) ||
-             (medicalExpiry && medicalExpiry <= thirtyDaysFromNow && medicalExpiry > new Date()) ||
-             (insuranceExpiry && insuranceExpiry <= thirtyDaysFromNow && insuranceExpiry > new Date());
-    }).length;
-  };
-
-  const handleImportFromJSON = async () => {
-    try {
-      setImportProgress({ current: 0, total: constructionData.length });
+      const daysUntil = (date) => Math.ceil((date - today) / (1000 * 60 * 60 * 24));
       
-      for (let i = 0; i < constructionData.length; i++) {
-        const worker = constructionData[i];
-        
-        // Map JSON fields to externalStaff schema
-        const workerData = {
-          // Company association
-          type: 'construction',
-          companyId: 'construction',
-          
-          // Basic info
-          name: worker.Name || '',
-          designation: worker.Designation || '',
-          department: worker.Department || '',
-          section: worker.Section || '',
-          nationality: worker.Nationality || '',
-          
-          // Documents
-          passportNumber: worker['Passport No'] || worker.PassportNo || '',
-          workPermitNumber: worker.WP || '',
-          
-          // Expiry dates
-          wpExpiry: worker.WPExpiry || null,
-          feeExpiry: worker.FeeExpiry || null,
-          medicalExpiry: worker.MedicalExpiry || null,
-          insuranceExpiry: worker.InsuranceExpiry || null,
-          visaExpiry: worker.VIsaExpiry || null,
-          
-          // Original data preserved
-          originalData: worker,
-          
-          // Metadata
-          source: 'construction_json_import',
-          importedAt: serverTimestamp(),
-          createdAt: serverTimestamp(),
-          createdBy: user?.uid,
-          status: 'active'
-        };
-        
-        await addDoc(collection(db, 'externalStaff'), workerData);
-        setImportProgress({ current: i + 1, total: constructionData.length });
+      const wpDays = daysUntil(wpExpiry);
+      const visaDays = daysUntil(visaExpiry);
+      const medicalDays = daysUntil(medicalExpiry);
+      const insuranceDays = daysUntil(insuranceExpiry);
+      
+      // Determine overall status
+      let status = 'active';
+      let statusReason = '';
+      
+      const minDays = Math.min(wpDays, visaDays, medicalDays, insuranceDays);
+      
+      if (minDays < 0) {
+        status = 'expired';
+        statusReason = 'Documents Expired';
+      } else if (minDays <= 30) {
+        status = 'expiring30';
+        statusReason = `${minDays} days remaining`;
+      } else if (minDays <= 60) {
+        status = 'expiring60';
+        statusReason = `${minDays} days remaining`;
+      } else if (minDays <= 90) {
+        status = 'expiring90';
+        statusReason = `${minDays} days remaining`;
       }
       
-      setShowImportModal(false);
-      setMessage({ type: 'success', text: `Successfully imported ${constructionData.length} construction workers!` });
-      setTimeout(() => setMessage({ type: '', text: '' }), 3000);
-    } catch (error) {
-      console.error('Import error:', error);
-      setMessage({ type: 'error', text: 'Failed to import workers. Please try again.' });
-    }
-  };
-
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
-  };
-
-  const handleUpdateWorker = async (e) => {
-    e.preventDefault();
-    if (!selectedWorker) return;
-    
-    try {
-      const updateData = {
-        ...formData,
-        updatedAt: serverTimestamp(),
-        updatedBy: userData?.uid
+      return {
+        ...worker,
+        wpDays,
+        visaDays,
+        medicalDays,
+        insuranceDays,
+        status,
+        statusReason
       };
-
-      await updateDoc(doc(db, 'constructionWorkforce', selectedWorker.id), updateData);
-      
-      setShowEditModal(false);
-      setSelectedWorker(null);
-      setMessage({ type: 'success', text: 'Worker updated successfully!' });
-      setTimeout(() => setMessage({ type: '', text: '' }), 3000);
-    } catch (error) {
-      console.error('Update error:', error);
-      setMessage({ type: 'error', text: 'Failed to update worker. Please try again.' });
-    }
-  };
-
-  const handleDeleteWorker = async () => {
-    if (!selectedWorker) return;
-    
-    try {
-      await deleteDoc(doc(db, 'constructionWorkforce', selectedWorker.id));
-      setShowDeleteModal(false);
-      setSelectedWorker(null);
-      setMessage({ type: 'success', text: 'Worker deleted successfully!' });
-      setTimeout(() => setMessage({ type: '', text: '' }), 3000);
-    } catch (error) {
-      console.error('Delete error:', error);
-      setMessage({ type: 'error', text: 'Failed to delete worker. Please try again.' });
-    }
-  };
-
-  const openEditModal = (worker) => {
-    setSelectedWorker(worker);
-    setFormData({
-      Name: worker.name || worker.Name || '',
-      Designation: worker.designation || worker.Designation || '',
-      Department: worker.department || worker.Department || '',
-      Section: worker.section || worker.Section || '',
-      Nationality: worker.nationality || worker.Nationality || '',
-      PassportNo: worker.passportNumber || worker['Passport No'] || worker.PassportNo || '',
-      WP: worker.workPermitNumber || worker.WP || '',
-      WPExpiry: worker.wpExpiry || worker.WPExpiry || '',
-      FeeExpiry: worker.feeExpiry || worker.FeeExpiry || '',
-      MedicalExpiry: worker.medicalExpiry || worker.MedicalExpiry || '',
-      InsuranceExpiry: worker.insuranceExpiry || worker.InsuranceExpiry || '',
-      VIsaExpiry: worker.visaExpiry || worker.VIsaExpiry || '',
-      status: worker.status || 'active',
-      notes: worker.notes || ''
     });
-    setShowEditModal(true);
-  };
+  }, []);
 
-  const openDeleteModal = (worker) => {
-    setSelectedWorker(worker);
-    setShowDeleteModal(true);
-  };
+  // Get unique departments and nationalities for filters
+  const departments = useMemo(() => [...new Set(workers.map(w => w.Department))], [workers]);
+  const nationalities = useMemo(() => [...new Set(workers.map(w => w.Nationality))], [workers]);
 
-  // Get unique departments
-  const departments = [...new Set(workers.map(w => w.department || w.Department).filter(Boolean))];
-
-  const filteredWorkers = workers.filter(w => {
-    const matchesSearch = 
-      (w.name || w.Name)?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (w.designation || w.Designation)?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (w.workPermitNumber || w.WP)?.includes(searchTerm) ||
-      (w.passportNumber || w['Passport No'])?.includes(searchTerm);
+  // Filter and sort workers
+  const filteredWorkers = useMemo(() => {
+    let result = workers.filter(worker => {
+      const matchesSearch = 
+        worker.Name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        worker.PassportNo?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        worker.WP?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        worker.Designation?.toLowerCase().includes(searchTerm.toLowerCase());
+      
+      const matchesDept = filterDept === 'all' || worker.Department === filterDept;
+      const matchesNationality = filterNationality === 'all' || worker.Nationality === filterNationality;
+      
+      return matchesSearch && matchesDept && matchesNationality;
+    });
     
-    const currentStatus = calculateStatus(w);
-    const matchesStatus = filterStatus === 'all' || currentStatus === filterStatus;
-    const matchesDept = filterDepartment === 'all' || (w.department || w.Department) === filterDepartment;
+    // Sort
+    result.sort((a, b) => {
+      let aVal = a[sortField] || '';
+      let bVal = b[sortField] || '';
+      
+      if (typeof aVal === 'string') aVal = aVal.toLowerCase();
+      if (typeof bVal === 'string') bVal = bVal.toLowerCase();
+      
+      if (sortDirection === 'asc') {
+        return aVal < bVal ? -1 : aVal > bVal ? 1 : 0;
+      } else {
+        return aVal > bVal ? -1 : aVal < bVal ? 1 : 0;
+      }
+    });
     
-    return matchesSearch && matchesStatus && matchesDept;
-  });
+    return result;
+  }, [workers, searchTerm, filterDept, filterNationality, sortField, sortDirection]);
 
-  // Summary statistics
-  const getSummaryStats = () => {
+  // Stats
+  const stats = useMemo(() => {
     const total = workers.length;
-    const active = workers.filter(w => calculateStatus(w) === 'active').length;
-    const expired = workers.filter(w => {
-      const status = calculateStatus(w);
-      return status.includes('expired');
-    }).length;
-    const expiringSoon = getExpiringSoon();
+    const expired = workers.filter(w => w.status === 'expired').length;
+    const expiring30 = workers.filter(w => w.status === 'expiring30').length;
+    const expiring60 = workers.filter(w => w.status === 'expiring60').length;
+    const expiring90 = workers.filter(w => w.status === 'expiring90').length;
+    const active = workers.filter(w => w.status === 'active').length;
     
-    return { total, active, expired, expiringSoon };
+    return { total, expired, expiring30, expiring60, expiring90, active };
+  }, [workers]);
+
+  const handleSort = (field) => {
+    if (sortField === field) {
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortField(field);
+      setSortDirection('asc');
+    }
   };
 
-  const stats = getSummaryStats();
+  const exportToCSV = () => {
+    const headers = ['ID', 'Name', 'Passport No', 'Nationality', 'WP', 'Department', 'Section', 'Designation', 'WP Expiry', 'Visa Expiry', 'Medical Expiry', 'Insurance Expiry'];
+    const csvContent = [
+      headers.join(','),
+      ...filteredWorkers.map(w => [
+        w.ID,
+        `"${w.Name}"`,
+        w['Passport No'],
+        w.Nationality,
+        w.WP,
+        w.Department,
+        w.Section,
+        w.Designation,
+        w.WPExpiry,
+        w.VIsaExpiry,
+        w.MedicalExpiry,
+        w.InsuranceExpiry
+      ].join(','))
+    ].join('\n');
+    
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `construction-workforce-${new Date().toISOString().split('T')[0]}.csv`;
+    a.click();
+  };
 
-  const canManageWorkers = () => {
-    // Temporarily allow all authenticated users to see the import button
-    // In production, restrict to: hasAccess('employees', 'edit') || ['hrm','gm','superadmin'].includes(userData?.role)
-    return true;
+  const toggleRowExpansion = (id) => {
+    setExpandedRow(expandedRow === id ? null : id);
   };
 
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <div className="flex items-center gap-2">
-            <HardHat className="h-8 w-8 text-orange-600" />
-            <h2 className="text-2xl font-bold text-gray-900">Construction Workforce</h2>
+          <div className="flex items-center gap-3">
+            <div className="p-3 bg-orange-100 rounded-xl">
+              <HardHat className="h-8 w-8 text-orange-600" />
+            </div>
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900">{getCompanyDisplayName()}</h1>
+              <p className="text-gray-600">Construction Workforce Management</p>
+            </div>
           </div>
-          <p className="text-gray-600 mt-1">Manage construction workers and track document expiries</p>
         </div>
-        <div className="flex gap-2">
-          {workers.length === 0 && canManageWorkers() && (
-            <button
-              onClick={() => setShowImportModal(true)}
-              className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
-            >
-              <Upload className="h-5 w-5" />
-              Import from JSON
-            </button>
-          )}
-          {canManageWorkers() && (
-            <button
-              onClick={() => setShowImportModal(true)}
-              className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-            >
-              <RefreshCw className="h-5 w-5" />
-              Re-import Data
-            </button>
-          )}
-        </div>
+        <button
+          onClick={exportToCSV}
+          className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+        >
+          <Download className="h-5 w-5" />
+          Export CSV
+        </button>
       </div>
 
-      {/* Message */}
-      {message.text && (
-        <div className={`p-4 rounded-lg flex items-center gap-2 ${
-          message.type === 'success' ? 'bg-green-50 text-green-700 border border-green-200' : 
-          'bg-red-50 text-red-700 border border-red-200'
-        }`}>
-          {message.type === 'success' ? <CheckCircle className="h-5 w-5" /> : <AlertCircle className="h-5 w-5" />}
-          {message.text}
-        </div>
-      )}
-
-      {/* Summary Cards */}
-      <div className="grid grid-cols-4 gap-4">
+      {/* Stats Cards */}
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
         <div className="bg-white p-4 rounded-xl shadow-sm border">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-gray-500">Total Workers</p>
-              <p className="text-2xl font-bold text-blue-600">{stats.total}</p>
+              <p className="text-2xl font-bold text-gray-900">{stats.total}</p>
             </div>
             <Users className="h-8 w-8 text-blue-200" />
           </div>
@@ -354,442 +220,227 @@ export default function ConstructionWorkforce() {
               <p className="text-sm text-gray-500">Active</p>
               <p className="text-2xl font-bold text-green-600">{stats.active}</p>
             </div>
-            <CheckCircle className="h-8 w-8 text-green-200" />
+            <Shield className="h-8 w-8 text-green-200" />
           </div>
         </div>
         <div className="bg-white p-4 rounded-xl shadow-sm border">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-500">Expired Documents</p>
-              <p className="text-2xl font-bold text-red-600">{stats.expired}</p>
+              <p className="text-sm text-gray-500">Expiring ≤30 Days</p>
+              <p className="text-2xl font-bold text-red-600">{stats.expiring30}</p>
             </div>
-            <AlertCircle className="h-8 w-8 text-red-200" />
+            <AlertTriangle className="h-8 w-8 text-red-200" />
           </div>
         </div>
         <div className="bg-white p-4 rounded-xl shadow-sm border">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-500">Expiring Soon (30d)</p>
-              <p className="text-2xl font-bold text-orange-600">{stats.expiringSoon}</p>
+              <p className="text-sm text-gray-500">Expiring ≤60 Days</p>
+              <p className="text-2xl font-bold text-orange-600">{stats.expiring60}</p>
             </div>
             <Calendar className="h-8 w-8 text-orange-200" />
+          </div>
+        </div>
+        <div className="bg-white p-4 rounded-xl shadow-sm border">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-gray-500">Expiring ≤90 Days</p>
+              <p className="text-2xl font-bold text-yellow-600">{stats.expiring90}</p>
+            </div>
+            <Calendar className="h-8 w-8 text-yellow-200" />
+          </div>
+        </div>
+        <div className="bg-white p-4 rounded-xl shadow-sm border">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-gray-500">Expired</p>
+              <p className="text-2xl font-bold text-red-700">{stats.expired}</p>
+            </div>
+            <AlertTriangle className="h-8 w-8 text-red-300" />
           </div>
         </div>
       </div>
 
       {/* Filters */}
-      <div className="flex gap-4">
-        <div className="flex-1 relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
-          <input
-            type="text"
-            placeholder="Search by name, designation, WP or passport..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 border rounded-lg"
-          />
+      <div className="bg-white p-4 rounded-xl shadow-sm border space-y-4">
+        <div className="flex flex-col md:flex-row gap-4">
+          <div className="flex-1 relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+            <input
+              type="text"
+              placeholder="Search by name, passport, WP number, or designation..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+            />
+          </div>
+          <select
+            value={filterDept}
+            onChange={(e) => setFilterDept(e.target.value)}
+            className="px-4 py-2 border rounded-lg"
+          >
+            <option value="all">All Departments</option>
+            {departments.map(dept => (
+              <option key={dept} value={dept}>{dept}</option>
+            ))}
+          </select>
+          <select
+            value={filterNationality}
+            onChange={(e) => setFilterNationality(e.target.value)}
+            className="px-4 py-2 border rounded-lg"
+          >
+            <option value="all">All Nationalities</option>
+            {nationalities.map(nat => (
+              <option key={nat} value={nat}>{nat}</option>
+            ))}
+          </select>
         </div>
-        <select
-          value={filterStatus}
-          onChange={(e) => setFilterStatus(e.target.value)}
-          className="px-4 py-2 border rounded-lg"
-        >
-          <option value="all">All Status</option>
-          {STATUS_OPTIONS.map(status => (
-            <option key={status.value} value={status.value}>{status.label}</option>
-          ))}
-        </select>
-        <select
-          value={filterDepartment}
-          onChange={(e) => setFilterDepartment(e.target.value)}
-          className="px-4 py-2 border rounded-lg"
-        >
-          <option value="all">All Departments</option>
-          {departments.map(dept => (
-            <option key={dept} value={dept}>{dept}</option>
-          ))}
-        </select>
+        <div className="text-sm text-gray-500">
+          Showing {filteredWorkers.length} of {workers.length} workers
+        </div>
       </div>
 
       {/* Workers Table */}
       <div className="bg-white rounded-xl shadow-sm border overflow-hidden">
-        <div className="overflow-x-auto -mx-4 sm:mx-0">
-          <div className="min-w-[1200px] sm:min-w-full px-4 sm:px-0">
-            <table className="w-full divide-y divide-gray-200">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Name</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Department</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Designation</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Passport</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">WP</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">WP Expiry</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Visa Expiry</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Medical</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Insurance</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
-                  {canManageWorkers() && (
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
-                  )}
-                </tr>
-              </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
-                {loading ? (
-                  <tr>
-                    <td colSpan={canManageWorkers() ? 11 : 10} className="px-6 py-4 text-center">
-                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead className="bg-gray-50">
+              <tr>
+                <th className="px-4 py-3 text-left">
+                  <button onClick={() => handleSort('Name')} className="flex items-center gap-1 font-medium text-gray-700">
+                    Name
+                    {sortField === 'Name' && (sortDirection === 'asc' ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />)}
+                  </button>
+                </th>
+                <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Passport/WP</th>
+                <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Nationality</th>
+                <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Department</th>
+                <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Designation</th>
+                <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Status</th>
+                <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Expirations</th>
+                <th className="px-4 py-3 text-left text-sm font-medium text-gray-700">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-200">
+              {filteredWorkers.map((worker) => (
+                <>
+                  <tr key={worker.ID} className="hover:bg-gray-50">
+                    <td className="px-4 py-3">
+                      <div className="font-medium text-gray-900">{worker.Name}</div>
+                      <div className="text-xs text-gray-500">ID: {worker.ID}</div>
                     </td>
-                  </tr>
-                ) : filteredWorkers.length === 0 ? (
-                  <tr>
-                    <td colSpan={canManageWorkers() ? 11 : 10} className="px-6 py-4 text-center text-gray-500">
-                      {workers.length === 0 ? (
-                        <div>
-                          <p className="mb-2">No construction workers found.</p>
-                          {canManageWorkers() && (
-                            <button
-                              onClick={() => setShowImportModal(true)}
-                              className="text-blue-600 hover:underline"
-                            >
-                              Import from Construction_Work_Force.json
-                            </button>
-                          )}
+                    <td className="px-4 py-3">
+                      <div className="text-sm text-gray-900">{worker['Passport No']}</div>
+                      <div className="text-xs text-gray-500">WP: {worker.WP}</div>
+                    </td>
+                    <td className="px-4 py-3">
+                      <span className="text-sm text-gray-900">{worker.Nationality}</span>
+                    </td>
+                    <td className="px-4 py-3">
+                      <div className="text-sm text-gray-900">{worker.Department}</div>
+                      <div className="text-xs text-gray-500">{worker.Section}</div>
+                    </td>
+                    <td className="px-4 py-3">
+                      <span className="text-sm text-gray-900">{worker.Designation}</span>
+                    </td>
+                    <td className="px-4 py-3">
+                      <span className={`px-2 py-1 text-xs rounded-full ${STATUS_COLORS[worker.status]}`}>
+                        {worker.status === 'active' ? 'Active' : worker.statusReason}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3">
+                      <div className="space-y-1 text-xs">
+                        <div className={`${worker.wpDays < 30 ? 'text-red-600 font-medium' : 'text-gray-600'}`}>
+                          WP: {worker.WPExpiry}
                         </div>
-                      ) : (
-                        'No workers found matching your criteria.'
-                      )}
+                        <div className={`${worker.visaDays < 30 ? 'text-red-600 font-medium' : 'text-gray-600'}`}>
+                          Visa: {worker.VIsaExpiry}
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-4 py-3">
+                      <button
+                        onClick={() => toggleRowExpansion(worker.ID)}
+                        className="text-blue-600 hover:text-blue-800 text-sm font-medium"
+                      >
+                        {expandedRow === worker.ID ? 'Hide Details' : 'View Details'}
+                      </button>
                     </td>
                   </tr>
-                ) : (
-                  filteredWorkers.map((worker) => {
-                    const status = calculateStatus(worker);
-                    const statusInfo = STATUS_OPTIONS.find(s => s.value === status) || STATUS_OPTIONS[0];
-                    
-                    const isExpired = (date) => {
-                      if (!date) return false;
-                      return new Date(date) < new Date();
-                    };
-                    
-                    const isExpiringSoon = (date) => {
-                      if (!date) return false;
-                      const expiry = new Date(date);
-                      const thirtyDays = new Date();
-                      thirtyDays.setDate(thirtyDays.getDate() + 30);
-                      return expiry <= thirtyDays && expiry > new Date();
-                    };
-                    
-                    return (
-                      <tr key={worker.id} className="hover:bg-gray-50">
-                        <td className="px-4 py-3">
-                          <div className="font-medium text-gray-900">{worker.name || worker.Name}</div>
-                          <div className="text-sm text-gray-500">{worker.nationality || worker.Nationality}</div>
-                        </td>
-                        <td className="px-4 py-3 text-sm text-gray-900">{worker.department || worker.Department || '-'}</td>
-                        <td className="px-4 py-3 text-sm text-gray-900">{worker.designation || worker.Designation || '-'}</td>
-                        <td className="px-4 py-3 text-sm font-mono text-gray-600">{worker.passportNumber || worker['Passport No'] || worker.PassportNo || '-'}</td>
-                        <td className="px-4 py-3 text-sm font-mono text-gray-600">{worker.workPermitNumber || worker.WP || '-'}</td>
-                        <td className="px-4 py-3">
-                          <div className={`text-sm ${isExpired(worker.wpExpiry || worker.WPExpiry) ? 'text-red-600 font-semibold' : isExpiringSoon(worker.wpExpiry || worker.WPExpiry) ? 'text-orange-600' : 'text-gray-600'}`}>
-                            {(worker.wpExpiry || worker.WPExpiry) ? new Date(worker.wpExpiry || worker.WPExpiry).toLocaleDateString() : '-'}
-                          </div>
-                        </td>
-                        <td className="px-4 py-3">
-                          <div className={`text-sm ${isExpired(worker.visaExpiry || worker.VIsaExpiry) ? 'text-red-600 font-semibold' : isExpiringSoon(worker.visaExpiry || worker.VIsaExpiry) ? 'text-orange-600' : 'text-gray-600'}`}>
-                            {(worker.visaExpiry || worker.VIsaExpiry) ? new Date(worker.visaExpiry || worker.VIsaExpiry).toLocaleDateString() : '-'}
-                          </div>
-                        </td>
-                        <td className="px-4 py-3">
-                          <div className={`text-sm ${isExpired(worker.medicalExpiry || worker.MedicalExpiry) ? 'text-red-600 font-semibold' : isExpiringSoon(worker.medicalExpiry || worker.MedicalExpiry) ? 'text-orange-600' : 'text-gray-600'}`}>
-                            {(worker.medicalExpiry || worker.MedicalExpiry) ? new Date(worker.medicalExpiry || worker.MedicalExpiry).toLocaleDateString() : '-'}
-                          </div>
-                        </td>
-                        <td className="px-4 py-3">
-                          <div className={`text-sm ${isExpired(worker.insuranceExpiry || worker.InsuranceExpiry) ? 'text-red-600 font-semibold' : isExpiringSoon(worker.insuranceExpiry || worker.InsuranceExpiry) ? 'text-orange-600' : 'text-gray-600'}`}>
-                            {(worker.insuranceExpiry || worker.InsuranceExpiry) ? new Date(worker.insuranceExpiry || worker.InsuranceExpiry).toLocaleDateString() : '-'}
-                          </div>
-                        </td>
-                        <td className="px-4 py-3">
-                          <span className={`px-2 py-1 text-xs rounded-full ${statusInfo.color}`}>
-                            {statusInfo.label}
-                          </span>
-                        </td>
-                        {canManageWorkers() && (
-                          <td className="px-4 py-3">
-                            <div className="flex gap-2">
-                              <button
-                                onClick={() => openEditModal(worker)}
-                                className="p-2 text-blue-600 hover:bg-blue-50 rounded"
-                                title="Edit"
-                              >
-                                <Edit2 className="h-4 w-4" />
-                              </button>
-                              <button
-                                onClick={() => openDeleteModal(worker)}
-                                className="p-2 text-red-600 hover:bg-red-50 rounded"
-                                title="Delete"
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </button>
+                  {expandedRow === worker.ID && (
+                    <tr className="bg-gray-50">
+                      <td colSpan={8} className="px-4 py-4">
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                          <div className="space-y-3">
+                            <h4 className="font-medium text-gray-900 flex items-center gap-2">
+                              <Passport className="h-4 w-4" />
+                              Documents
+                            </h4>
+                            <div className="space-y-2 text-sm">
+                              <div className="flex justify-between">
+                                <span className="text-gray-600">Passport:</span>
+                                <span className="font-medium">{worker['Passport No']}</span>
+                              </div>
+                              <div className="flex justify-between">
+                                <span className="text-gray-600">Work Permit:</span>
+                                <span className="font-medium">{worker.WP}</span>
+                              </div>
                             </div>
-                          </td>
-                        )}
-                      </tr>
-                    );
-                  })
-                )}
-              </tbody>
-            </table>
-          </div>
+                          </div>
+                          <div className="space-y-3">
+                            <h4 className="font-medium text-gray-900 flex items-center gap-2">
+                              <CreditCard className="h-4 w-4" />
+                              Work Permit Details
+                            </h4>
+                            <div className="space-y-2 text-sm">
+                              <div className="flex justify-between">
+                                <span className="text-gray-600">WP Expiry:</span>
+                                <span className={`font-medium ${worker.wpDays < 30 ? 'text-red-600' : ''}`}>
+                                  {worker.WPExpiry} ({worker.wpDays} days)
+                                </span>
+                              </div>
+                              <div className="flex justify-between">
+                                <span className="text-gray-600">Fee Expiry:</span>
+                                <span className="font-medium">{worker.FeeExpiry}</span>
+                              </div>
+                            </div>
+                          </div>
+                          <div className="space-y-3">
+                            <h4 className="font-medium text-gray-900 flex items-center gap-2">
+                              <HeartPulse className="h-4 w-4" />
+                              Health & Insurance
+                            </h4>
+                            <div className="space-y-2 text-sm">
+                              <div className="flex justify-between">
+                                <span className="text-gray-600">Medical:</span>
+                                <span className={`font-medium ${worker.medicalDays < 30 ? 'text-red-600' : ''}`}>
+                                  {worker.MedicalExpiry} ({worker.medicalDays} days)
+                                </span>
+                              </div>
+                              <div className="flex justify-between">
+                                <span className="text-gray-600">Insurance:</span>
+                                <span className={`font-medium ${worker.insuranceDays < 30 ? 'text-red-600' : ''}`}>
+                                  {worker.InsuranceExpiry} ({worker.insuranceDays} days)
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </td>
+                    </tr>
+                  )}
+                </>
+              ))}
+            </tbody>
+          </table>
         </div>
+        {filteredWorkers.length === 0 && (
+          <div className="text-center py-12">
+            <Users className="h-12 w-12 text-gray-300 mx-auto mb-4" />
+            <p className="text-gray-500">No workers found matching your filters</p>
+          </div>
+        )}
       </div>
-
-      {/* Import Modal */}
-      {showImportModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl max-w-md w-full p-6">
-            <div className="text-center">
-              <Upload className="h-12 w-12 text-blue-600 mx-auto mb-4" />
-              <h3 className="text-lg font-semibold mb-2">Import Construction Workers</h3>
-              <p className="text-gray-600 mb-4">
-                This will import {constructionData.length} workers from <code>Construction_Work_Force.json</code> into the Firestore database.
-              </p>
-              <p className="text-sm text-gray-500 mb-6">
-                Existing data will not be duplicated. Make sure to clear existing data first if you want a fresh import.
-              </p>
-              
-              {importProgress.total > 0 && (
-                <div className="mb-4">
-                  <div className="w-full bg-gray-200 rounded-full h-2.5">
-                    <div 
-                      className="bg-blue-600 h-2.5 rounded-full" 
-                      style={{ width: `${(importProgress.current / importProgress.total) * 100}%` }}
-                    ></div>
-                  </div>
-                  <p className="text-sm text-gray-600 mt-2">
-                    Importing {importProgress.current} of {importProgress.total} workers...
-                  </p>
-                </div>
-              )}
-              
-              <div className="flex gap-3">
-                <button
-                  onClick={handleImportFromJSON}
-                  disabled={importProgress.total > 0}
-                  className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
-                >
-                  {importProgress.total > 0 ? 'Importing...' : 'Start Import'}
-                </button>
-                <button
-                  onClick={() => { setShowImportModal(false); setImportProgress({ current: 0, total: 0 }); }}
-                  className="flex-1 px-4 py-2 border rounded-lg hover:bg-gray-50"
-                >
-                  Cancel
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Edit Modal */}
-      {showEditModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl max-w-2xl w-full max-h-[90vh] overflow-auto">
-            <div className="p-6 border-b flex justify-between items-center">
-              <h3 className="text-xl font-semibold">Edit Worker</h3>
-              <button onClick={() => setShowEditModal(false)} className="p-2 hover:bg-gray-100 rounded">
-                <X className="h-5 w-5" />
-              </button>
-            </div>
-            <form onSubmit={handleUpdateWorker} className="p-6 space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium mb-1">Full Name</label>
-                  <input
-                    type="text"
-                    name="Name"
-                    value={formData.Name}
-                    onChange={handleInputChange}
-                    className="w-full px-3 py-2 border rounded-lg"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium mb-1">Designation</label>
-                  <input
-                    type="text"
-                    name="Designation"
-                    value={formData.Designation}
-                    onChange={handleInputChange}
-                    className="w-full px-3 py-2 border rounded-lg"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium mb-1">Department</label>
-                  <input
-                    type="text"
-                    name="Department"
-                    value={formData.Department}
-                    onChange={handleInputChange}
-                    className="w-full px-3 py-2 border rounded-lg"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium mb-1">Section</label>
-                  <input
-                    type="text"
-                    name="Section"
-                    value={formData.Section}
-                    onChange={handleInputChange}
-                    className="w-full px-3 py-2 border rounded-lg"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium mb-1">Passport Number</label>
-                  <input
-                    type="text"
-                    name="PassportNo"
-                    value={formData.PassportNo}
-                    onChange={handleInputChange}
-                    className="w-full px-3 py-2 border rounded-lg"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium mb-1">Work Permit (WP)</label>
-                  <input
-                    type="text"
-                    name="WP"
-                    value={formData.WP}
-                    onChange={handleInputChange}
-                    className="w-full px-3 py-2 border rounded-lg"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium mb-1">WP Expiry</label>
-                  <input
-                    type="date"
-                    name="WPExpiry"
-                    value={formData.WPExpiry}
-                    onChange={handleInputChange}
-                    className="w-full px-3 py-2 border rounded-lg"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium mb-1">Visa Expiry</label>
-                  <input
-                    type="date"
-                    name="VIsaExpiry"
-                    value={formData.VIsaExpiry}
-                    onChange={handleInputChange}
-                    className="w-full px-3 py-2 border rounded-lg"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium mb-1">Medical Expiry</label>
-                  <input
-                    type="date"
-                    name="MedicalExpiry"
-                    value={formData.MedicalExpiry}
-                    onChange={handleInputChange}
-                    className="w-full px-3 py-2 border rounded-lg"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium mb-1">Insurance Expiry</label>
-                  <input
-                    type="date"
-                    name="InsuranceExpiry"
-                    value={formData.InsuranceExpiry}
-                    onChange={handleInputChange}
-                    className="w-full px-3 py-2 border rounded-lg"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium mb-1">Status</label>
-                <select
-                  name="status"
-                  value={formData.status}
-                  onChange={handleInputChange}
-                  className="w-full px-3 py-2 border rounded-lg"
-                >
-                  {STATUS_OPTIONS.map(status => (
-                    <option key={status.value} value={status.value}>{status.label}</option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium mb-1">Notes</label>
-                <textarea
-                  name="notes"
-                  value={formData.notes}
-                  onChange={handleInputChange}
-                  className="w-full px-3 py-2 border rounded-lg"
-                  rows="3"
-                />
-              </div>
-
-              <div className="flex gap-3 pt-4 border-t">
-                <button
-                  type="submit"
-                  className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-                >
-                  Update Worker
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setShowEditModal(false)}
-                  className="px-4 py-2 border rounded-lg hover:bg-gray-50"
-                >
-                  Cancel
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* Delete Modal */}
-      {showDeleteModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl max-w-md w-full p-6">
-            <div className="text-center">
-              <AlertCircle className="h-12 w-12 text-red-600 mx-auto mb-4" />
-              <h3 className="text-lg font-semibold mb-2">Delete Worker</h3>
-              <p className="text-gray-600 mb-6">
-                Are you sure you want to delete <strong>{selectedWorker?.name || selectedWorker?.Name}</strong>? This action cannot be undone.
-              </p>
-              <div className="flex gap-3">
-                <button
-                  onClick={handleDeleteWorker}
-                  className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
-                >
-                  Delete
-                </button>
-                <button
-                  onClick={() => { setShowDeleteModal(false); setSelectedWorker(null); }}
-                  className="flex-1 px-4 py-2 border rounded-lg hover:bg-gray-50"
-                >
-                  Cancel
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
