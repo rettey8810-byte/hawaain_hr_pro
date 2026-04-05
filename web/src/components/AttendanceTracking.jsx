@@ -478,17 +478,17 @@ export default function AttendanceTracking() {
             </thead>
             <tbody className="divide-y divide-gray-200">
               {employees
-                .filter(emp => emp.name?.toLowerCase().includes(searchTerm.toLowerCase()))
+                .filter(emp => (emp.FullName || emp.name || '')?.toLowerCase().includes(searchTerm.toLowerCase()))
                 .map((employee) => {
                   const record = getEmployeeAttendance(employee.id);
                   return (
                     <tr key={employee.id} className="hover:bg-gray-50">
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="font-medium text-gray-900">{employee.name}</div>
-                        <div className="text-sm text-gray-500">{employee.position}</div>
+                        <div className="font-medium text-gray-900">{employee.FullName || employee.name || 'N/A'}</div>
+                        <div className="text-sm text-gray-500">{employee.Designation || employee.position || 'N/A'}</div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                        {employee.department}
+                        {employee['Department '] || employee.Department || employee.department || 'N/A'}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
                         {record?.checkIn ? (
@@ -611,7 +611,7 @@ export default function AttendanceTracking() {
                 >
                   <option value="">Select Employee</option>
                   {employees.map(emp => (
-                    <option key={emp.id} value={emp.id}>{emp.name} - {emp.position}</option>
+                    <option key={emp.id} value={emp.id}>{emp.FullName || emp.name || 'N/A'} - {emp.Designation || emp.position || 'N/A'}</option>
                   ))}
                 </select>
               </div>

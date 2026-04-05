@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Briefcase, Users, Calendar, Filter, Search, Plus, CheckCircle, Clock, Loader2, Mail, Phone, X, Star, MapPin, DollarSign } from 'lucide-react';
 import { useFirestore } from '../hooks/useFirestore';
 import { useCompany } from '../contexts/CompanyContext';
+import { recruitmentService } from '../services/recruitmentService';
 
 export default function Recruitment() {
   const [activeTab, setActiveTab] = useState('jobs');

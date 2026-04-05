@@ -100,15 +100,15 @@ export default function LeaveApplication() {
   const filteredEmployees = useMemo(() => {
     if (!employeeSearchTerm) return employees;
     return employees.filter(emp => 
-      emp.name?.toLowerCase().includes(employeeSearchTerm.toLowerCase()) ||
-      emp.employeeCode?.toLowerCase().includes(employeeSearchTerm.toLowerCase())
+      (emp.FullName || emp.name || '')?.toLowerCase().includes(employeeSearchTerm.toLowerCase()) ||
+      (emp.EmpID || emp.employeeCode || '')?.toLowerCase().includes(employeeSearchTerm.toLowerCase())
     );
   }, [employees, employeeSearchTerm]);
 
   // Get selected employee name
   const selectedEmployeeName = useMemo(() => {
     const emp = employees.find(e => e.id === formData.employeeId);
-    return emp ? `${emp.name} - ${emp.employeeCode || emp.id.slice(-6)}` : '';
+    return emp ? `${emp.FullName || emp.name || 'N/A'} - ${emp.EmpID || emp.employeeCode || emp.id.slice(-6)}` : '';
   }, [employees, formData.employeeId]);
 
   // Auto-save draft every 30 seconds
@@ -444,12 +444,12 @@ export default function LeaveApplication() {
                           }`}
                         >
                           <div className="h-10 w-10 rounded-full bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center text-white font-bold text-sm mr-3">
-                            {emp.name?.charAt(0) || '?'}
+                            {(emp.FullName || emp.name || '?')?.charAt(0)}
                           </div>
                           <div className="flex-1">
-                            <p className="font-medium text-gray-900">{emp.name}</p>
+                            <p className="font-medium text-gray-900">{emp.FullName || emp.name || 'N/A'}</p>
                             <p className="text-sm text-gray-500">
-                              {emp.employeeCode || emp.id.slice(-6)} • {emp.department || 'No department'} • {emp.position || 'No position'}
+                              {emp.EmpID || emp.employeeCode || emp.id.slice(-6)} • {emp['Department '] || emp.Department || emp.department || 'No department'} • {emp.Designation || emp.position || 'No position'}
                             </p>
                           </div>
                           {formData.employeeId === emp.id && (
@@ -466,7 +466,7 @@ export default function LeaveApplication() {
               {formData.employeeId && (
                 <div className="mt-3 p-3 bg-emerald-50 rounded-xl border border-emerald-200 flex items-center">
                   <div className="h-8 w-8 rounded-full bg-emerald-500 flex items-center justify-center text-white font-bold text-sm mr-2">
-                    {employees.find(e => e.id === formData.employeeId)?.name?.charAt(0) || '?'}
+                    {(employees.find(e => e.id === formData.employeeId)?.FullName || employees.find(e => e.id === formData.employeeId)?.name || '?')?.charAt(0)}
                   </div>
                   <span className="text-sm font-medium text-emerald-800">
                     Selected: {selectedEmployeeName}
