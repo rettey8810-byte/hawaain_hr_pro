@@ -58,6 +58,7 @@ import Compliance from './components/Compliance';
 import OrgStructure from './components/OrgStructure';
 import SelfService from './components/SelfService';
 import ApprovalWorkflowSettings from './components/ApprovalWorkflowSettings';
+import BulkImportExport from './components/BulkImportExport';
 import DataFixUtility from './components/DataFixUtility';
 
 // Approval Workflow Modules
