@@ -203,8 +203,10 @@ export default function PerformanceReviews() {
   };
 
   const filteredReviews = reviews.filter(review => {
-    const matchesSearch = review.employeeName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         review.employeeDepartment?.toLowerCase().includes(searchTerm.toLowerCase());
+    const empName = review.employeeName || review.employeeFullName || '';
+    const empDept = review.employeeDepartment || '';
+    const matchesSearch = empName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         empDept.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = filterStatus === 'all' || review.status === filterStatus;
     const matchesCycle = filterCycle === 'all' || review.reviewCycle === filterCycle;
     return matchesSearch && matchesStatus && matchesCycle;
@@ -346,11 +348,11 @@ export default function PerformanceReviews() {
             {filteredReviews.map((review) => (
               <tr key={review.id} className="hover:bg-gray-50">
                 <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="font-medium text-gray-900">{review.employeeName}</div>
-                  <div className="text-sm text-gray-500">{review.employeePosition}</div>
+                  <div className="font-medium text-gray-900">{review.employeeName || review.employeeFullName || 'N/A'}</div>
+                  <div className="text-sm text-gray-500">{review.employeePosition || review.employeeDesignation || 'N/A'}</div>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                  {review.employeeDepartment}
+                  {review.employeeDepartment || 'N/A'}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
                   {review.reviewCycle}
@@ -429,7 +431,7 @@ export default function PerformanceReviews() {
                 >
                   <option value="">Select Employee</option>
                   {employees.map(emp => (
-                    <option key={emp.id} value={emp.id}>{emp.name} - {emp.position}</option>
+                    <option key={emp.id} value={emp.id}>{emp.FullName || emp.name || 'N/A'} - {emp.Designation || emp.position || 'N/A'}</option>
                   ))}
                 </select>
               </div>

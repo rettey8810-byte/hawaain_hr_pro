@@ -127,7 +127,10 @@ export default function Training() {
                 return (
                   <tr key={cert.id} className="border-b hover:bg-gray-50">
                     <td className="py-3 px-4">
-                      {employees.find(e => e.id === cert.employeeId)?.name || 'Unknown'}
+                      {(() => {
+                        const emp = employees.find(e => e.id === cert.employeeId);
+                        return emp ? (emp.FullName || emp.name || 'N/A') : 'Unknown';
+                      })()}
                     </td>
                     <td className="py-3 px-4">{cert.name}</td>
                     <td className="py-3 px-4">{cert.expiryDate}</td>
