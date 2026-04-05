@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Save, DollarSign } from 'lucide-react';
+import { ArrowLeft, Save, DollarSign, User, Phone, Mail, MapPin, Briefcase, Building2, Calendar, Heart, Shield, CreditCard, Users } from 'lucide-react';
 import { useFirestore } from '../hooks/useFirestore';
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '../firebase/config';
@@ -13,34 +13,93 @@ export default function EmployeeForm() {
   const { addDocument, updateDocument } = useFirestore('employees');
   const { isHRorGM } = useAuth();
   const [loading, setLoading] = useState(false);
+  const [activeTab, setActiveTab] = useState('personal');
+
+  // Comprehensive form state matching Excel structure
   const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    phone: '',
-    employeeId: '',
-    department: '',
-    position: '',
-    location: '',
-    joinDate: '',
+    // Basic Info
+    EmpID: '',
+    FullName: '',
+    ShortName: '',
+    FingerPrintID: '',
+    
+    // Employment Details
+    Division: '',
+    'Department ': '',
+    Section: '',
+    Designation: '',
+    Superior: '',
+    'Date of Join': '',
     status: 'active',
-    nationality: '',
-    passportNumber: '',
-    dateOfBirth: '',
-    photoURL: '',
-    emergencyContact: {
-      name: '',
-      phone: '',
-      relationship: ''
-    },
-    salary: {
-      basic: '',
-      housingAllowance: '',
-      transportAllowance: '',
-      otherAllowances: '',
-      bankName: '',
-      bankAccount: '',
-      iban: ''
-    }
+    
+    // Personal Info
+    Gender: '',
+    DOB: '',
+    MaritalStatus: '',
+    BloodGroup: '',
+    Nationality: '',
+    Religion: '',
+    
+    // Contact Info
+    PhoneNo: '',
+    AlternateContactNo: '',
+    EmailID: '',
+    PersonalEmailID: '',
+    
+    // Present Address
+    PresentCountry: '',
+    PresentState: '',
+    PresentCity: '',
+    PresentAddress: '',
+    
+    // Permanent Address
+    PermanentCountry: '',
+    PermanentState: '',
+    PermanentCity: '',
+    PermanentAddress: '',
+    
+    // ID Documents
+    NICNo: '',
+    NICExpiry: '',
+    PassportNo: '',
+    PassportExpiry: '',
+    
+    // Emergency Contact 1
+    EmergencyContactName1: '',
+    EmergencyPhoneNo1: '',
+    EmergencyRelation1: '',
+    EmergencyAddress1: '',
+    
+    // Emergency Contact 2
+    EmergencyContactName2: '',
+    EmergencyPhoneNo2: '',
+    EmergencyRelation2: '',
+    EmergencyAddress2: '',
+    
+    // Salary Info
+    'Fixed(USD)': '',
+    'Fixed(MVR)': '',
+    'Basic(MVR)': '',
+    'Basic(USD)': '',
+    'TotalSalary(MVR)': '',
+    'TotalSalary(USD)': '',
+    
+    // Bank Info - Primary
+    PayThrough1: '',
+    CompanyBankName1: '',
+    CompanyAccountNo1: '',
+    BankName1: '',
+    AccountName1: '',
+    AccountNo1: '',
+    
+    // Bank Info - Secondary
+    PayThrough2: '',
+    BankName2: '',
+    AccountName2: '',
+    AccountNo2: '',
+    
+    // Photo
+    photoURL: ''
   });
 
   useEffect(() => {
@@ -56,15 +115,7 @@ export default function EmployeeForm() {
       const data = docSnap.data();
       setFormData(prev => ({
         ...prev,
-        ...data,
-        emergencyContact: {
-          ...prev.emergencyContact,
-          ...(data.emergencyContact || {})
-        },
-        salary: {
-          ...prev.salary,
-          ...(data.salary || {})
-        }
+        ...data
       }));
     }
   };
@@ -73,10 +124,16 @@ export default function EmployeeForm() {
     e.preventDefault();
     setLoading(true);
     try {
+      // Add companyId if not present
+      const dataToSave = {
+        ...formData,
+        companyId: formData.companyId || ''
+      };
+      
       if (id) {
-        await updateDocument(id, formData);
+        await updateDocument(id, dataToSave);
       } else {
-        await addDocument(formData);
+        await addDocument(dataToSave);
       }
       navigate('/employees');
     } catch (error) {
@@ -89,19 +146,60 @@ export default function EmployeeForm() {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    if (name.includes('.')) {
-      const [parent, child] = name.split('.');
-      setFormData(prev => ({
-        ...prev,
-        [parent]: {
-          ...prev[parent],
-          [child]: value
-        }
-      }));
-    } else {
-      setFormData(prev => ({ ...prev, [name]: value }));
-    }
+    setFormData(prev => ({ ...prev, [name]: value }));
   };
+
+  const TabButton = ({ id, label, icon: Icon }) => (
+    <button
+      type="button"
+      onClick={() => setActiveTab(id)}
+      className={`flex items-center gap-2 px-4 py-3 font-medium rounded-t-lg border-b-2 transition-colors ${
+        activeTab === id 
+          ? 'border-blue-600 text-blue-600 bg-blue-50' 
+          : 'border-transparent text-gray-500 hover:text-gray-700 hover:bg-gray-50'
+      }`}
+    >
+      <Icon className="h-4 w-4" />
+      {label}
+    </button>
+  );
+
+  const InputField = ({ label, name, type = 'text', placeholder = '', required = false }) => (
+    <div>
+      <label className="block text-sm font-medium text-gray-700 mb-1">
+        {label} {required && <span className="text-red-500">*</span>}
+      </label>
+      <input
+        type={type}
+        name={name}
+        value={formData[name] || ''}
+        onChange={handleChange}
+        placeholder={placeholder}
+        required={required}
+        className="block w-full rounded-md border-gray-300 border px-3 py-2 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+      />
+    </div>
+  );
+
+  const SelectField = ({ label, name, options, required = false }) => (
+    <div>
+      <label className="block text-sm font-medium text-gray-700 mb-1">
+        {label} {required && <span className="text-red-500">*</span>}
+      </label>
+      <select
+        name={name}
+        value={formData[name] || ''}
+        onChange={handleChange}
+        required={required}
+        className="block w-full rounded-md border-gray-300 border px-3 py-2 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+      >
+        <option value="">Select...</option>
+        {options.map(opt => (
+          <option key={opt} value={opt}>{opt}</option>
+        ))}
+      </select>
+    </div>
+  );
 
   return (
     <div className="space-y-6">
@@ -122,289 +220,248 @@ export default function EmployeeForm() {
       </div>
 
       <form onSubmit={handleSubmit} className="bg-white rounded-lg shadow">
+        {/* Avatar Upload */}
+        <div className="p-6 border-b">
+          <div className="flex justify-center">
+            <AvatarUpload
+              currentPhoto={formData.photoURL}
+              onUpload={(url) => setFormData(prev => ({ ...prev, photoURL: url }))}
+              employeeId={id}
+              size="lg"
+            />
+          </div>
+        </div>
+
+        {/* Tabs */}
+        <div className="border-b border-gray-200">
+          <nav className="flex space-x-1 px-6" aria-label="Tabs">
+            <TabButton id="personal" label="Personal" icon={User} />
+            <TabButton id="employment" label="Employment" icon={Briefcase} />
+            <TabButton id="contact" label="Contact" icon={Phone} />
+            <TabButton id="address" label="Address" icon={MapPin} />
+            <TabButton id="emergency" label="Emergency" icon={Heart} />
+            <TabButton id="documents" label="ID Documents" icon={Shield} />
+            {isHRorGM() && (
+              <>
+                <TabButton id="salary" label="Salary" icon={DollarSign} />
+                <TabButton id="bank" label="Bank" icon={CreditCard} />
+              </>
+            )}
+          </nav>
+        </div>
+
         <div className="p-6 space-y-6">
-          {/* Personal Information */}
-          <div>
-            <h3 className="text-lg font-medium text-gray-900 mb-4">Personal Information</h3>
-            
-            {/* Avatar Upload */}
-            <div className="mb-6 flex justify-center">
-              <AvatarUpload
-                currentPhoto={formData.photoURL}
-                onUpload={(url) => setFormData(prev => ({ ...prev, photoURL: url }))}
-                employeeId={id}
-                size="lg"
-              />
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Full Name</label>
-                <input
-                  type="text"
-                  name="name"
-                  required
-                  value={formData.name}
-                  onChange={handleChange}
-                  className="mt-1 block w-full rounded-md border-gray-300 border px-3 py-2 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Employee ID</label>
-                <input
-                  type="text"
-                  name="employeeId"
-                  value={formData.employeeId}
-                  onChange={handleChange}
-                  className="mt-1 block w-full rounded-md border-gray-300 border px-3 py-2 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Email</label>
-                <input
-                  type="email"
-                  name="email"
-                  required
-                  value={formData.email}
-                  onChange={handleChange}
-                  className="mt-1 block w-full rounded-md border-gray-300 border px-3 py-2 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Phone</label>
-                <input
-                  type="tel"
-                  name="phone"
-                  value={formData.phone}
-                  onChange={handleChange}
-                  className="mt-1 block w-full rounded-md border-gray-300 border px-3 py-2 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Date of Birth</label>
-                <input
-                  type="date"
-                  name="dateOfBirth"
-                  value={formData.dateOfBirth}
-                  onChange={handleChange}
-                  className="mt-1 block w-full rounded-md border-gray-300 border px-3 py-2 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Nationality</label>
-                <input
-                  type="text"
-                  name="nationality"
-                  value={formData.nationality}
-                  onChange={handleChange}
-                  className="mt-1 block w-full rounded-md border-gray-300 border px-3 py-2 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+          {/* Personal Information Tab */}
+          {activeTab === 'personal' && (
+            <div className="space-y-6">
+              <h3 className="text-lg font-medium text-gray-900 flex items-center gap-2">
+                <User className="h-5 w-5 text-blue-600" />
+                Personal Information
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <InputField label="Full Name" name="FullName" required />
+                <InputField label="Short Name" name="ShortName" />
+                <InputField label="Employee ID" name="EmpID" required />
+                <InputField label="Fingerprint ID" name="FingerPrintID" />
+                <SelectField label="Gender" name="Gender" options={['Male', 'Female', 'Other']} />
+                <InputField label="Date of Birth" name="DOB" type="date" />
+                <SelectField label="Marital Status" name="MaritalStatus" options={['Single', 'Married', 'Divorced', 'Widowed']} />
+                <InputField label="Blood Group" name="BloodGroup" placeholder="e.g., O+" />
+                <InputField label="Nationality" name="Nationality" />
+                <InputField label="Religion" name="Religion" />
+                <SelectField 
+                  label="Status" 
+                  name="status" 
+                  options={['active', 'inactive', 'on_leave', 'terminated']}
                 />
               </div>
             </div>
-          </div>
+          )}
 
-          {/* Employment Information */}
-          <div className="border-t pt-6">
-            <h3 className="text-lg font-medium text-gray-900 mb-4">Employment Information</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Department</label>
-                <input
-                  type="text"
-                  name="department"
-                  value={formData.department}
-                  onChange={handleChange}
-                  className="mt-1 block w-full rounded-md border-gray-300 border px-3 py-2 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Position</label>
-                <input
-                  type="text"
-                  name="position"
-                  value={formData.position}
-                  onChange={handleChange}
-                  className="mt-1 block w-full rounded-md border-gray-300 border px-3 py-2 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Location</label>
-                <input
-                  type="text"
-                  name="location"
-                  value={formData.location}
-                  onChange={handleChange}
-                  className="mt-1 block w-full rounded-md border-gray-300 border px-3 py-2 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Join Date</label>
-                <input
-                  type="date"
-                  name="joinDate"
-                  value={formData.joinDate}
-                  onChange={handleChange}
-                  className="mt-1 block w-full rounded-md border-gray-300 border px-3 py-2 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Status</label>
-                <select
-                  name="status"
-                  value={formData.status}
-                  onChange={handleChange}
-                  className="mt-1 block w-full rounded-md border-gray-300 border px-3 py-2 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                >
-                  <option value="active">Active</option>
-                  <option value="inactive">Inactive</option>
-                  <option value="on_leave">On Leave</option>
-                  <option value="terminated">Terminated</option>
-                </select>
+          {/* Employment Information Tab */}
+          {activeTab === 'employment' && (
+            <div className="space-y-6">
+              <h3 className="text-lg font-medium text-gray-900 flex items-center gap-2">
+                <Briefcase className="h-5 w-5 text-blue-600" />
+                Employment Information
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <InputField label="Division" name="Division" />
+                <InputField label="Department" name="Department " />
+                <InputField label="Section" name="Section" />
+                <InputField label="Designation" name="Designation" />
+                <InputField label="Superior/Manager" name="Superior" />
+                <InputField label="Date of Join" name="Date of Join" type="date" />
               </div>
             </div>
-          </div>
+          )}
 
-          {/* Emergency Contact */}
-          <div className="border-t pt-6">
-            <h3 className="text-lg font-medium text-gray-900 mb-4">Emergency Contact</h3>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Name</label>
-                <input
-                  type="text"
-                  name="emergencyContact.name"
-                  value={formData.emergencyContact.name}
-                  onChange={handleChange}
-                  className="mt-1 block w-full rounded-md border-gray-300 border px-3 py-2 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Phone</label>
-                <input
-                  type="tel"
-                  name="emergencyContact.phone"
-                  value={formData.emergencyContact.phone}
-                  onChange={handleChange}
-                  className="mt-1 block w-full rounded-md border-gray-300 border px-3 py-2 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Relationship</label>
-                <input
-                  type="text"
-                  name="emergencyContact.relationship"
-                  value={formData.emergencyContact.relationship}
-                  onChange={handleChange}
-                  className="mt-1 block w-full rounded-md border-gray-300 border px-3 py-2 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                />
+          {/* Contact Information Tab */}
+          {activeTab === 'contact' && (
+            <div className="space-y-6">
+              <h3 className="text-lg font-medium text-gray-900 flex items-center gap-2">
+                <Phone className="h-5 w-5 text-blue-600" />
+                Contact Information
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <InputField label="Primary Phone" name="PhoneNo" type="tel" />
+                <InputField label="Alternate Phone" name="AlternateContactNo" type="tel" />
+                <InputField label="Work Email" name="EmailID" type="email" />
+                <InputField label="Personal Email" name="PersonalEmailID" type="email" />
               </div>
             </div>
-          </div>
+          )}
 
-          {/* Salary Information - HR/GM Only */}
-          {isHRorGM() && (
-            <div className="border-t pt-6">
-              <h3 className="text-lg font-medium text-gray-900 mb-4 flex items-center gap-2">
-                <DollarSign className="h-5 w-5" />
-                Salary & Bank Information
+          {/* Address Tab */}
+          {activeTab === 'address' && (
+            <div className="space-y-6">
+              <h3 className="text-lg font-medium text-gray-900 flex items-center gap-2">
+                <MapPin className="h-5 w-5 text-blue-600" />
+                Address Information
+              </h3>
+              
+              <div className="bg-blue-50 p-4 rounded-lg">
+                <h4 className="font-medium text-blue-900 mb-4">Present Address</h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <InputField label="Country" name="PresentCountry" />
+                  <InputField label="State" name="PresentState" />
+                  <InputField label="City" name="PresentCity" />
+                  <InputField label="Address" name="PresentAddress" />
+                </div>
+              </div>
+
+              <div className="bg-green-50 p-4 rounded-lg">
+                <h4 className="font-medium text-green-900 mb-4">Permanent Address</h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <InputField label="Country" name="PermanentCountry" />
+                  <InputField label="State" name="PermanentState" />
+                  <InputField label="City" name="PermanentCity" />
+                  <InputField label="Address" name="PermanentAddress" />
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Emergency Contact Tab */}
+          {activeTab === 'emergency' && (
+            <div className="space-y-6">
+              <h3 className="text-lg font-medium text-gray-900 flex items-center gap-2">
+                <Heart className="h-5 w-5 text-red-600" />
+                Emergency Contacts
+              </h3>
+              
+              <div className="bg-orange-50 p-4 rounded-lg">
+                <h4 className="font-medium text-orange-900 mb-4">Emergency Contact 1</h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <InputField label="Name" name="EmergencyContactName1" />
+                  <InputField label="Phone" name="EmergencyPhoneNo1" type="tel" />
+                  <InputField label="Relationship" name="EmergencyRelation1" />
+                  <InputField label="Address" name="EmergencyAddress1" />
+                </div>
+              </div>
+
+              <div className="bg-yellow-50 p-4 rounded-lg">
+                <h4 className="font-medium text-yellow-900 mb-4">Emergency Contact 2</h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <InputField label="Name" name="EmergencyContactName2" />
+                  <InputField label="Phone" name="EmergencyPhoneNo2" type="tel" />
+                  <InputField label="Relationship" name="EmergencyRelation2" />
+                  <InputField label="Address" name="EmergencyAddress2" />
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* ID Documents Tab */}
+          {activeTab === 'documents' && (
+            <div className="space-y-6">
+              <h3 className="text-lg font-medium text-gray-900 flex items-center gap-2">
+                <Shield className="h-5 w-5 text-blue-600" />
+                ID Documents
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <InputField label="NIC Number" name="NICNo" />
+                <InputField label="NIC Expiry" name="NICExpiry" type="date" />
+                <InputField label="Passport Number" name="PassportNo" />
+                <InputField label="Passport Expiry" name="PassportExpiry" type="date" />
+              </div>
+            </div>
+          )}
+
+          {/* Salary Tab - HR/GM Only */}
+          {activeTab === 'salary' && isHRorGM() && (
+            <div className="space-y-6">
+              <h3 className="text-lg font-medium text-gray-900 flex items-center gap-2">
+                <DollarSign className="h-5 w-5 text-green-600" />
+                Salary Information
                 <span className="text-xs font-normal text-gray-500 bg-gray-100 px-2 py-1 rounded">HR/GM Only</span>
               </h3>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Basic Salary</label>
-                  <input
-                    type="number"
-                    name="salary.basic"
-                    value={formData.salary.basic}
-                    onChange={handleChange}
-                    className="mt-1 block w-full rounded-md border-gray-300 border px-3 py-2 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                    placeholder="0.00"
-                  />
+                <InputField label="Fixed (USD)" name="Fixed(USD)" type="number" />
+                <InputField label="Fixed (MVR)" name="Fixed(MVR)" type="number" />
+                <InputField label="Basic (MVR)" name="Basic(MVR)" type="number" />
+                <InputField label="Basic (USD)" name="Basic(USD)" type="number" />
+                <InputField label="Total Salary (MVR)" name="TotalSalary(MVR)" type="number" />
+                <InputField label="Total Salary (USD)" name="TotalSalary(USD)" type="number" />
+              </div>
+            </div>
+          )}
+
+          {/* Bank Tab - HR/GM Only */}
+          {activeTab === 'bank' && isHRorGM() && (
+            <div className="space-y-6">
+              <h3 className="text-lg font-medium text-gray-900 flex items-center gap-2">
+                <CreditCard className="h-5 w-5 text-purple-600" />
+                Bank Information
+                <span className="text-xs font-normal text-gray-500 bg-gray-100 px-2 py-1 rounded">HR/GM Only</span>
+              </h3>
+              
+              <div className="bg-blue-50 p-4 rounded-lg">
+                <h4 className="font-medium text-blue-900 mb-4">Primary Bank Account</h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <InputField label="Pay Through" name="PayThrough1" />
+                  <InputField label="Company Bank Name" name="CompanyBankName1" />
+                  <InputField label="Company Account No" name="CompanyAccountNo1" />
+                  <InputField label="Bank Name" name="BankName1" />
+                  <InputField label="Account Name" name="AccountName1" />
+                  <InputField label="Account Number" name="AccountNo1" />
                 </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Housing Allowance</label>
-                  <input
-                    type="number"
-                    name="salary.housingAllowance"
-                    value={formData.salary.housingAllowance}
-                    onChange={handleChange}
-                    className="mt-1 block w-full rounded-md border-gray-300 border px-3 py-2 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                    placeholder="0.00"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Transport Allowance</label>
-                  <input
-                    type="number"
-                    name="salary.transportAllowance"
-                    value={formData.salary.transportAllowance}
-                    onChange={handleChange}
-                    className="mt-1 block w-full rounded-md border-gray-300 border px-3 py-2 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                    placeholder="0.00"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Other Allowances</label>
-                  <input
-                    type="number"
-                    name="salary.otherAllowances"
-                    value={formData.salary.otherAllowances}
-                    onChange={handleChange}
-                    className="mt-1 block w-full rounded-md border-gray-300 border px-3 py-2 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                    placeholder="0.00"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Bank Name</label>
-                  <input
-                    type="text"
-                    name="salary.bankName"
-                    value={formData.salary.bankName}
-                    onChange={handleChange}
-                    className="mt-1 block w-full rounded-md border-gray-300 border px-3 py-2 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Bank Account Number</label>
-                  <input
-                    type="text"
-                    name="salary.bankAccount"
-                    value={formData.salary.bankAccount}
-                    onChange={handleChange}
-                    className="mt-1 block w-full rounded-md border-gray-300 border px-3 py-2 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">IBAN</label>
-                  <input
-                    type="text"
-                    name="salary.iban"
-                    value={formData.salary.iban}
-                    onChange={handleChange}
-                    className="mt-1 block w-full rounded-md border-gray-300 border px-3 py-2 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                  />
+              </div>
+
+              <div className="bg-purple-50 p-4 rounded-lg">
+                <h4 className="font-medium text-purple-900 mb-4">Secondary Bank Account</h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <InputField label="Pay Through" name="PayThrough2" />
+                  <InputField label="Bank Name" name="BankName2" />
+                  <InputField label="Account Name" name="AccountName2" />
+                  <InputField label="Account Number" name="AccountNo2" />
                 </div>
               </div>
             </div>
           )}
         </div>
 
-        <div className="bg-gray-50 px-6 py-4 flex justify-end space-x-3 rounded-b-lg">
-          <button
-            type="button"
-            onClick={() => navigate('/employees')}
-            className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
-          >
-            Cancel
-          </button>
-          <button
-            type="submit"
-            disabled={loading}
-            className="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 disabled:opacity-50"
-          >
-            <Save className="h-4 w-4 mr-2" />
-            {loading ? 'Saving...' : 'Save Employee'}
-          </button>
+        <div className="bg-gray-50 px-6 py-4 flex justify-between items-center rounded-b-lg">
+          <div className="text-sm text-gray-500">
+            Tab: {activeTab.charAt(0).toUpperCase() + activeTab.slice(1)}
+          </div>
+          <div className="flex space-x-3">
+            <button
+              type="button"
+              onClick={() => navigate('/employees')}
+              className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={loading}
+              className="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 disabled:opacity-50"
+            >
+              <Save className="h-4 w-4 mr-2" />
+              {loading ? 'Saving...' : 'Save Employee'}
+            </button>
+          </div>
         </div>
       </form>
     </div>
