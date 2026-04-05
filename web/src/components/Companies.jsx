@@ -235,10 +235,11 @@ export default function Companies() {
         </div>
         {canManageCompanies() && (
           <button
+            type="button"
             onClick={() => setShowCreateModal(true)}
-            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors cursor-pointer"
           >
-            <Plus className="h-5 w-5" />
+            <Plus className="h-5 w-5 pointer-events-none" />
             Add Company
           </button>
         )}
