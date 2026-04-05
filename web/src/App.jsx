@@ -73,7 +73,6 @@ import JobDescription from './components/JobDescription';
 import ContractsAndLetters from './components/ContractsAndLetters';
 import FormTemplates from './components/FormTemplates';
 import ManpowerBudget from './components/ManpowerBudget';
-import VisitorsAndStaff from './components/VisitorsAndStaff';
 
 // Additional HR Feature Modules (v1.5.0)
 import PerformanceReviews from './components/PerformanceReviews';
@@ -720,15 +719,6 @@ function App() {
                 <PrivateRoute>
                   <PermissionRoute feature="employees" action="create">
                     <Layout><BulkImportExport /></Layout>
-                  </PermissionRoute>
-                </PrivateRoute>
-              } />
-
-              {/* Visitors and Staff Management */}
-              <Route path="/visitors-and-staff" element={
-                <PrivateRoute>
-                  <PermissionRoute feature="employees" action="view">
-                    <Layout><VisitorsAndStaff /></Layout>
                   </PermissionRoute>
                 </PrivateRoute>
               } />

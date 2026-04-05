@@ -15,9 +15,7 @@ import {
   Minus,
   BarChart3,
   PieChart,
-  Activity,
-  HardHat,
-  Building2
+  Activity
 } from 'lucide-react';
 import { 
   BarChart, 
@@ -36,8 +34,8 @@ import {
   Area
 } from 'recharts';
 import { useFirestore } from '../hooks/useFirestore';
-import { useExpiryAlerts } from '../hooks/useExpiryAlerts';
 import { useCompany } from '../contexts/CompanyContext';
+import { useExpiryAlerts } from '../hooks/useExpiryAlerts';
 
 function StatCard({ title, value, icon: Icon, gradient, subtitle, href }) {
   const gradientClasses = {
@@ -46,8 +44,7 @@ function StatCard({ title, value, icon: Icon, gradient, subtitle, href }) {
     yellow: 'from-amber-500 to-orange-600',
     red: 'from-rose-500 to-pink-600',
     purple: 'from-violet-500 to-purple-600',
-    cyan: 'from-cyan-500 to-blue-600',
-    orange: 'from-orange-500 to-red-600'
+    cyan: 'from-cyan-500 to-blue-600'
   };
 
   return (
@@ -97,13 +94,8 @@ function AlertItem({ title, count, type, icon: Icon, href }) {
 }
 
 export default function Dashboard() {
-  const { companyId, currentCompany, getCompanyDisplayName, isConstructionCompany, isExternalCompany } = useCompany();
-  
-  // Fetch different data based on company type
+  const { companyId } = useCompany();
   const { documents: employees } = useFirestore('employees');
-  const { documents: constructionWorkers } = useFirestore('constructionWorkers');
-  const { documents: externalStaff } = useFirestore('externalStaff');
-  
   const { documents: passports } = useFirestore('passports');
   const { documents: visas } = useFirestore('visas');
   const { documents: workPermits } = useFirestore('workPermits');
@@ -115,24 +107,8 @@ export default function Dashboard() {
     setMounted(true);
   }, []);
 
-  // Get the correct workforce data based on company type
-  const getWorkforceData = () => {
-    if (isConstructionCompany()) {
-      return constructionWorkers.filter(w => w.companyId === companyId);
-    } else if (isExternalCompany()) {
-      return externalStaff.filter(s => s.companyId === companyId);
-    } else {
-      // For Sun Island/default company, show all employees (existing data may not have companyId)
-      return employees.filter(e => 
-        e.companyId === companyId || 
-        e.companyId === 'sun-island' || 
-        !e.companyId || 
-        e.companyId === ''
-      );
-    }
-  };
-
-  const companyEmployees = getWorkforceData();
+  // Filter by company
+  const companyEmployees = employees.filter(e => e.companyId === companyId);
   const companyLeaves = leaves.filter(l => l.companyId === companyId);
 
   // Calculate department distribution
@@ -224,138 +200,51 @@ export default function Dashboard() {
         </div>
         <div className="min-w-0 flex-1 relative z-10">
           <h2 className="text-3xl font-bold leading-7">
-            📊 {getCompanyDisplayName()} Dashboard
+            📊 Dashboard
           </h2>
           <p className="mt-1 text-sm text-white/80">
             Overview of your HR and expatriate management system
           </p>
-          {isConstructionCompany() && (
-            <div className="mt-2 inline-flex items-center gap-2 px-3 py-1 bg-orange-500/30 rounded-full text-sm">
-              <HardHat className="h-4 w-4" />
-              Construction Workforce View
-            </div>
-          )}
-          {isExternalCompany() && (
-            <div className="mt-2 inline-flex items-center gap-2 px-3 py-1 bg-blue-500/30 rounded-full text-sm">
-              <Users className="h-4 w-4" />
-              External Staff & Visitor Management
-            </div>
-          )}
         </div>
       </div>
 
       {/* Stats Grid */}
       <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
-        {isConstructionCompany() ? (
-          <>
-            <StatCard
-              title="Construction Workers"
-              value={companyEmployees.length}
-              icon={HardHat}
-              gradient="orange"
-              subtitle="Villa Construction Workforce"
-              href="/construction-workforce"
-            />
-            <StatCard
-              title="Work Permits"
-              value={companyEmployees.filter(w => w.wpDays > 0).length}
-              icon={Briefcase}
-              gradient="cyan"
-              subtitle="Active Work Permits"
-              href="/construction-workforce"
-            />
-            <StatCard
-              title="Expiring Soon"
-              value={companyEmployees.filter(w => w.status === 'expiring30').length}
-              icon={AlertTriangle}
-              gradient="yellow"
-              subtitle="Within 30 days"
-              href="/construction-workforce"
-            />
-            <StatCard
-              title="Expired"
-              value={companyEmployees.filter(w => w.status === 'expired').length}
-              icon={Clock}
-              gradient="red"
-              subtitle="Requires immediate action"
-              href="/construction-workforce"
-            />
-          </>
-        ) : isExternalCompany() ? (
-          <>
-            <StatCard
-              title="External Staff"
-              value={companyEmployees.length}
-              icon={Users}
-              gradient="blue"
-              subtitle="Total Staff & Visitors"
-              href="/external-staff"
-            />
-            <StatCard
-              title="Checked In"
-              value={companyEmployees.filter(s => s.status === 'checked-in').length}
-              icon={Building2}
-              gradient="green"
-              subtitle="Currently on Property"
-              href="/external-staff"
-            />
-            <StatCard
-              title="Visitors"
-              value={companyEmployees.filter(s => s.type === 'visitor').length}
-              icon={Users}
-              gradient="purple"
-              subtitle="Visitor Count"
-              href="/external-staff"
-            />
-            <StatCard
-              title="3rd Party"
-              value={companyEmployees.filter(s => s.type === '3rd-party').length}
-              icon={Briefcase}
-              gradient="cyan"
-              subtitle="Contractor Staff"
-              href="/external-staff"
-            />
-          </>
-        ) : (
-          <>
-            <StatCard
-              title="Total Employees"
-              value={companyEmployees.length}
-              icon={Users}
-              gradient="blue"
-              subtitle="Active workforce"
-              href="/employees"
-            />
-            <StatCard
-              title="Expiring Soon"
-              value={expiring30Count}
-              icon={AlertTriangle}
-              gradient="yellow"
-              subtitle="Within 30 days"
-              href="/notifications"
-            />
-            <StatCard
-              title="Expired Documents"
-              value={expiredCount}
-              icon={Clock}
-              gradient="red"
-              subtitle="Requires immediate action"
-              href="/notifications"
-            />
-            <StatCard
-              title="Valid Documents"
-              value={totalAlerts > 0 ? 'Review' : 'All Clear'}
-              icon={CheckCircle}
-              gradient="green"
-              subtitle={`${totalAlerts} alerts total`}
-              href="/notifications"
-            />
-          </>
-        )}
+        <StatCard
+          title="Total Employees"
+          value={employees.length}
+          icon={Users}
+          gradient="blue"
+          subtitle="Active workforce"
+          href="/employees"
+        />
+        <StatCard
+          title="Expiring Soon"
+          value={expiring30Count}
+          icon={AlertTriangle}
+          gradient="yellow"
+          subtitle="Within 30 days"
+          href="/notifications"
+        />
+        <StatCard
+          title="Expired Documents"
+          value={expiredCount}
+          icon={Clock}
+          gradient="red"
+          subtitle="Requires immediate action"
+          href="/notifications"
+        />
+        <StatCard
+          title="Valid Documents"
+          value={totalAlerts > 0 ? 'Review' : 'All Clear'}
+          icon={CheckCircle}
+          gradient="green"
+          subtitle={`${totalAlerts} alerts total`}
+          href="/notifications"
+        />
       </div>
 
-      {/* Document Type Stats - Only for Sun Island/Resort companies */}
-      {!isConstructionCompany() && !isExternalCompany() && (
+      {/* Document Type Stats */}
       <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard
           title="Passports"
@@ -390,7 +279,6 @@ export default function Dashboard() {
           href="/medical"
         />
       </div>
-      )}
 
       {/* Analytics Widgets */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

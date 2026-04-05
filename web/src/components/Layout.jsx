@@ -83,7 +83,6 @@ export default function Layout({ children }) {
         { name: 'Employees', href: '/employees', icon: Users, feature: 'employees', action: 'view' },
         { name: 'Employee Directory', href: '/employee-directory', icon: Network, feature: 'employees', action: 'view' },
         { name: 'Org Structure', href: '/org-structure', icon: Network, feature: 'employees', action: 'view' },
-        { name: 'Visitors & Staff', href: '/visitors-and-staff', icon: UserPlus, feature: 'employees', action: 'view' },
         { name: 'Recruitment', href: '/recruitment', icon: Briefcase, feature: 'recruitment', action: 'view' },
         { name: 'Bulk Import/Export', href: '/bulk-import-export', icon: FileSpreadsheet, feature: 'employees', action: 'create' },
       ]
