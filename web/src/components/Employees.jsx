@@ -89,12 +89,15 @@ export default function Employees() {
         where('companyId', '==', companyId)
       );
       const snapshot = await getDocs(q);
-      const allDocs = snapshot.docs.map(d => ({ 
-        id: d.id, 
-        status: d.data().status,
-        department: d.data().department,
-        country: d.data().country
-      }));
+      const allDocs = snapshot.docs.map(d => {
+        const data = d.data();
+        return { 
+          id: d.id, 
+          status: data.status,
+          department: data['Department '] || data.Department || data.department,
+          country: data.Nationality || data.country
+        };
+      });
       setAllEmployees(allDocs);
     } catch (err) {
       console.error('Error fetching all employees for stats:', err);
