@@ -1,7 +1,8 @@
 import { createContext, useContext, useState, useEffect } from 'react';
-import { doc, getDoc, collection, query, where, getDocs } from 'firebase/firestore';
-import { db } from '../firebase/config';
 import { useAuth } from './AuthContext';
+import { db } from '../firebase';
+import { collection, doc, getDocs, getDoc } from 'firebase/firestore';
+import { useNavigate } from 'react-router-dom';
 
 const CompanyContext = createContext();
 
@@ -58,6 +59,7 @@ const PREDEFINED_COMPANIES = [
 
 export function CompanyProvider({ children }) {
   const { user, userData } = useAuth();
+  const navigate = useNavigate();
   const [currentCompany, setCurrentCompany] = useState(null);
   const [companies, setCompanies] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -141,12 +143,18 @@ export function CompanyProvider({ children }) {
   };
 
   const switchCompany = (companyId) => {
+    console.log('switchCompany called with:', companyId);
+    console.log('Available companies:', companies.map(c => c.id));
     const company = companies.find(c => c.id === companyId);
+    console.log('Found company:', company);
     if (company) {
       setCurrentCompany(company);
       localStorage.setItem('selectedCompanyId', companyId);
-      // Reload page to ensure all components get fresh data
-      window.location.reload();
+      // Navigate to dashboard instead of reloading
+      navigate('/', { replace: true });
+    } else {
+      console.error('Company not found:', companyId);
+      alert('Company not found. Please refresh the page.');
     }
   };
 
