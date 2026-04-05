@@ -43,7 +43,8 @@ import {
   Megaphone,
   Award,
   Receipt,
-  CalendarDays
+  CalendarDays,
+  HardHat
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useNotifications } from '../contexts/NotificationContext';
