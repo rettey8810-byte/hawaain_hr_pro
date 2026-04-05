@@ -8,7 +8,7 @@ import {
   CheckCircle, AlertCircle, Calendar, Phone, Upload,
   Download, HardHat, FileSpreadsheet, Filter, RefreshCw
 } from 'lucide-react';
-import constructionData from '../../Construction_Work_Force.json';
+import constructionData from '../../../Construction_Work_Force.json';
 
 const STATUS_OPTIONS = [
   { value: 'active', label: 'Active', color: 'bg-green-100 text-green-800' },
