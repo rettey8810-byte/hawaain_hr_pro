@@ -163,9 +163,9 @@ export default function ExpenseClaims() {
       const employee = employees.find(e => e.id === formData.employeeId);
       const expenseData = {
         ...formData,
-        employeeName: employee?.name || userData?.name,
-        department: employee?.department || userData?.department,
-        position: employee?.position,
+        employeeName: employee?.FullName || employee?.name || userData?.name || 'N/A',
+        department: employee?.['Department '] || employee?.Department || employee?.department || userData?.department || 'N/A',
+        position: employee?.Designation || employee?.position || userData?.position,
         submittedAt: formData.status !== 'draft' ? Timestamp.now() : null,
         companyId,
         createdBy: userData.uid,
@@ -283,8 +283,10 @@ export default function ExpenseClaims() {
   };
 
   const filteredExpenses = expenses.filter(expense => {
-    const matchesSearch = expense.employeeName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         expense.description?.toLowerCase().includes(searchTerm.toLowerCase());
+    const empName = expense.employeeName || '';
+    const desc = expense.description || '';
+    const matchesSearch = empName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         desc.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = filterStatus === 'all' || expense.status === filterStatus;
     const matchesCategory = filterCategory === 'all' || expense.category === filterCategory;
     return matchesSearch && matchesStatus && matchesCategory;
@@ -454,8 +456,8 @@ export default function ExpenseClaims() {
                   {expense.date}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="font-medium text-gray-900">{expense.employeeName}</div>
-                  <div className="text-sm text-gray-500">{expense.department}</div>
+                  <div className="font-medium text-gray-900">{expense.employeeName || 'N/A'}</div>
+                  <div className="text-sm text-gray-500">{expense.department || 'N/A'}</div>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
                   {EXPENSE_CATEGORIES.find(c => c.id === expense.category)?.name || expense.category}
