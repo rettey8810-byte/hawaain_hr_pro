@@ -52,16 +52,34 @@ export default function ConstructionWorkforce() {
     notes: ''
   });
 
-  // Fetch construction workers
+  // Fetch construction workers - filtered by company
   useEffect(() => {
     if (!companyId) return;
     
     setLoading(true);
     
-    const q = query(
-      collection(db, 'constructionWorkforce'),
-      orderBy('createdAt', 'desc')
-    );
+    // Build query based on company context
+    let q;
+    if (companyId === 'construction') {
+      // For construction company, show all construction workers
+      q = query(
+        collection(db, 'externalStaff'),
+        where('type', '==', 'construction'),
+        orderBy('createdAt', 'desc')
+      );
+    } else if (companyId === 'sun_island') {
+      // For Sun Island, show all external staff including construction
+      q = query(
+        collection(db, 'externalStaff'),
+        where('type', '==', 'construction'),
+        orderBy('createdAt', 'desc')
+      );
+    } else {
+      // For other companies, show none
+      setWorkers([]);
+      setLoading(false);
+      return;
+    }
     
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
@@ -78,15 +96,20 @@ export default function ConstructionWorkforce() {
   // Calculate status based on expiry dates
   const calculateStatus = (worker) => {
     const today = new Date();
-    const wpExpiry = worker.WPExpiry ? new Date(worker.WPExpiry) : null;
-    const visaExpiry = worker.VIsaExpiry ? new Date(worker.VIsaExpiry) : null;
-    const medicalExpiry = worker.MedicalExpiry ? new Date(worker.MedicalExpiry) : null;
-    const insuranceExpiry = worker.InsuranceExpiry ? new Date(worker.InsuranceExpiry) : null;
+    const wpExpiry = worker.wpExpiry || worker.WPExpiry;
+    const visaExpiry = worker.visaExpiry || worker.VIsaExpiry;
+    const medicalExpiry = worker.medicalExpiry || worker.MedicalExpiry;
+    const insuranceExpiry = worker.insuranceExpiry || worker.InsuranceExpiry;
 
-    if (wpExpiry && wpExpiry < today) return 'expired_wp';
-    if (visaExpiry && visaExpiry < today) return 'expired_visa';
-    if (medicalExpiry && medicalExpiry < today) return 'expired_medical';
-    if (insuranceExpiry && insuranceExpiry < today) return 'expired_insurance';
+    const wpDate = wpExpiry ? new Date(wpExpiry) : null;
+    const visaDate = visaExpiry ? new Date(visaExpiry) : null;
+    const medicalDate = medicalExpiry ? new Date(medicalExpiry) : null;
+    const insuranceDate = insuranceExpiry ? new Date(insuranceExpiry) : null;
+
+    if (wpDate && wpDate < today) return 'expired_wp';
+    if (visaDate && visaDate < today) return 'expired_visa';
+    if (medicalDate && medicalDate < today) return 'expired_medical';
+    if (insuranceDate && insuranceDate < today) return 'expired_insurance';
     return worker.status || 'active';
   };
 
@@ -96,10 +119,10 @@ export default function ConstructionWorkforce() {
     const thirtyDaysFromNow = new Date(today.setDate(today.getDate() + 30));
     
     return workers.filter(w => {
-      const wpExpiry = w.WPExpiry ? new Date(w.WPExpiry) : null;
-      const visaExpiry = w.VIsaExpiry ? new Date(w.VIsaExpiry) : null;
-      const medicalExpiry = w.MedicalExpiry ? new Date(w.MedicalExpiry) : null;
-      const insuranceExpiry = w.InsuranceExpiry ? new Date(w.InsuranceExpiry) : null;
+      const wpExpiry = (w.wpExpiry || w.WPExpiry) ? new Date(w.wpExpiry || w.WPExpiry) : null;
+      const visaExpiry = (w.visaExpiry || w.VIsaExpiry) ? new Date(w.visaExpiry || w.VIsaExpiry) : null;
+      const medicalExpiry = (w.medicalExpiry || w.MedicalExpiry) ? new Date(w.medicalExpiry || w.MedicalExpiry) : null;
+      const insuranceExpiry = (w.insuranceExpiry || w.InsuranceExpiry) ? new Date(w.insuranceExpiry || w.InsuranceExpiry) : null;
       
       return (wpExpiry && wpExpiry <= thirtyDaysFromNow && wpExpiry > new Date()) ||
              (visaExpiry && visaExpiry <= thirtyDaysFromNow && visaExpiry > new Date()) ||
@@ -114,21 +137,48 @@ export default function ConstructionWorkforce() {
       
       for (let i = 0; i < constructionData.length; i++) {
         const worker = constructionData[i];
+        
+        // Map JSON fields to externalStaff schema
         const workerData = {
-          ...worker,
-          source: 'json_import',
+          // Company association
+          type: 'construction',
+          companyId: 'construction',
+          
+          // Basic info
+          name: worker.Name || '',
+          designation: worker.Designation || '',
+          department: worker.Department || '',
+          section: worker.Section || '',
+          nationality: worker.Nationality || '',
+          
+          // Documents
+          passportNumber: worker['Passport No'] || worker.PassportNo || '',
+          workPermitNumber: worker.WP || '',
+          
+          // Expiry dates
+          wpExpiry: worker.WPExpiry || null,
+          feeExpiry: worker.FeeExpiry || null,
+          medicalExpiry: worker.MedicalExpiry || null,
+          insuranceExpiry: worker.InsuranceExpiry || null,
+          visaExpiry: worker.VIsaExpiry || null,
+          
+          // Original data preserved
+          originalData: worker,
+          
+          // Metadata
+          source: 'construction_json_import',
           importedAt: serverTimestamp(),
           createdAt: serverTimestamp(),
           createdBy: user?.uid,
           status: 'active'
         };
         
-        await addDoc(collection(db, 'constructionWorkforce'), workerData);
+        await addDoc(collection(db, 'externalStaff'), workerData);
         setImportProgress({ current: i + 1, total: constructionData.length });
       }
       
       setShowImportModal(false);
-      setMessage({ type: 'success', text: `Successfully imported ${constructionData.length} workers!` });
+      setMessage({ type: 'success', text: `Successfully imported ${constructionData.length} construction workers!` });
       setTimeout(() => setMessage({ type: '', text: '' }), 3000);
     } catch (error) {
       console.error('Import error:', error);
@@ -182,18 +232,18 @@ export default function ConstructionWorkforce() {
   const openEditModal = (worker) => {
     setSelectedWorker(worker);
     setFormData({
-      Name: worker.Name || '',
-      Designation: worker.Designation || '',
-      Department: worker.Department || '',
-      Section: worker.Section || '',
-      Nationality: worker.Nationality || '',
-      PassportNo: worker['Passport No'] || worker.PassportNo || '',
-      WP: worker.WP || '',
-      WPExpiry: worker.WPExpiry || '',
-      FeeExpiry: worker.FeeExpiry || '',
-      MedicalExpiry: worker.MedicalExpiry || '',
-      InsuranceExpiry: worker.InsuranceExpiry || '',
-      VIsaExpiry: worker.VIsaExpiry || '',
+      Name: worker.name || worker.Name || '',
+      Designation: worker.designation || worker.Designation || '',
+      Department: worker.department || worker.Department || '',
+      Section: worker.section || worker.Section || '',
+      Nationality: worker.nationality || worker.Nationality || '',
+      PassportNo: worker.passportNumber || worker['Passport No'] || worker.PassportNo || '',
+      WP: worker.workPermitNumber || worker.WP || '',
+      WPExpiry: worker.wpExpiry || worker.WPExpiry || '',
+      FeeExpiry: worker.feeExpiry || worker.FeeExpiry || '',
+      MedicalExpiry: worker.medicalExpiry || worker.MedicalExpiry || '',
+      InsuranceExpiry: worker.insuranceExpiry || worker.InsuranceExpiry || '',
+      VIsaExpiry: worker.visaExpiry || worker.VIsaExpiry || '',
       status: worker.status || 'active',
       notes: worker.notes || ''
     });
@@ -206,18 +256,18 @@ export default function ConstructionWorkforce() {
   };
 
   // Get unique departments
-  const departments = [...new Set(workers.map(w => w.Department).filter(Boolean))];
+  const departments = [...new Set(workers.map(w => w.department || w.Department).filter(Boolean))];
 
   const filteredWorkers = workers.filter(w => {
     const matchesSearch = 
-      w.Name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      w.Designation?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      w.WP?.includes(searchTerm) ||
-      w['Passport No']?.includes(searchTerm);
+      (w.name || w.Name)?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (w.designation || w.Designation)?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (w.workPermitNumber || w.WP)?.includes(searchTerm) ||
+      (w.passportNumber || w['Passport No'])?.includes(searchTerm);
     
     const currentStatus = calculateStatus(w);
     const matchesStatus = filterStatus === 'all' || currentStatus === filterStatus;
-    const matchesDept = filterDepartment === 'all' || w.Department === filterDepartment;
+    const matchesDept = filterDepartment === 'all' || (w.department || w.Department) === filterDepartment;
     
     return matchesSearch && matchesStatus && matchesDept;
   });
@@ -429,31 +479,31 @@ export default function ConstructionWorkforce() {
                     return (
                       <tr key={worker.id} className="hover:bg-gray-50">
                         <td className="px-4 py-3">
-                          <div className="font-medium text-gray-900">{worker.Name}</div>
-                          <div className="text-sm text-gray-500">{worker.Nationality}</div>
+                          <div className="font-medium text-gray-900">{worker.name || worker.Name}</div>
+                          <div className="text-sm text-gray-500">{worker.nationality || worker.Nationality}</div>
                         </td>
-                        <td className="px-4 py-3 text-sm text-gray-900">{worker.Department || '-'}</td>
-                        <td className="px-4 py-3 text-sm text-gray-900">{worker.Designation || '-'}</td>
-                        <td className="px-4 py-3 text-sm font-mono text-gray-600">{worker['Passport No'] || worker.PassportNo || '-'}</td>
-                        <td className="px-4 py-3 text-sm font-mono text-gray-600">{worker.WP || '-'}</td>
+                        <td className="px-4 py-3 text-sm text-gray-900">{worker.department || worker.Department || '-'}</td>
+                        <td className="px-4 py-3 text-sm text-gray-900">{worker.designation || worker.Designation || '-'}</td>
+                        <td className="px-4 py-3 text-sm font-mono text-gray-600">{worker.passportNumber || worker['Passport No'] || worker.PassportNo || '-'}</td>
+                        <td className="px-4 py-3 text-sm font-mono text-gray-600">{worker.workPermitNumber || worker.WP || '-'}</td>
                         <td className="px-4 py-3">
-                          <div className={`text-sm ${isExpired(worker.WPExpiry) ? 'text-red-600 font-semibold' : isExpiringSoon(worker.WPExpiry) ? 'text-orange-600' : 'text-gray-600'}`}>
-                            {worker.WPExpiry ? new Date(worker.WPExpiry).toLocaleDateString() : '-'}
+                          <div className={`text-sm ${isExpired(worker.wpExpiry || worker.WPExpiry) ? 'text-red-600 font-semibold' : isExpiringSoon(worker.wpExpiry || worker.WPExpiry) ? 'text-orange-600' : 'text-gray-600'}`}>
+                            {(worker.wpExpiry || worker.WPExpiry) ? new Date(worker.wpExpiry || worker.WPExpiry).toLocaleDateString() : '-'}
                           </div>
                         </td>
                         <td className="px-4 py-3">
-                          <div className={`text-sm ${isExpired(worker.VIsaExpiry) ? 'text-red-600 font-semibold' : isExpiringSoon(worker.VIsaExpiry) ? 'text-orange-600' : 'text-gray-600'}`}>
-                            {worker.VIsaExpiry ? new Date(worker.VIsaExpiry).toLocaleDateString() : '-'}
+                          <div className={`text-sm ${isExpired(worker.visaExpiry || worker.VIsaExpiry) ? 'text-red-600 font-semibold' : isExpiringSoon(worker.visaExpiry || worker.VIsaExpiry) ? 'text-orange-600' : 'text-gray-600'}`}>
+                            {(worker.visaExpiry || worker.VIsaExpiry) ? new Date(worker.visaExpiry || worker.VIsaExpiry).toLocaleDateString() : '-'}
                           </div>
                         </td>
                         <td className="px-4 py-3">
-                          <div className={`text-sm ${isExpired(worker.MedicalExpiry) ? 'text-red-600 font-semibold' : isExpiringSoon(worker.MedicalExpiry) ? 'text-orange-600' : 'text-gray-600'}`}>
-                            {worker.MedicalExpiry ? new Date(worker.MedicalExpiry).toLocaleDateString() : '-'}
+                          <div className={`text-sm ${isExpired(worker.medicalExpiry || worker.MedicalExpiry) ? 'text-red-600 font-semibold' : isExpiringSoon(worker.medicalExpiry || worker.MedicalExpiry) ? 'text-orange-600' : 'text-gray-600'}`}>
+                            {(worker.medicalExpiry || worker.MedicalExpiry) ? new Date(worker.medicalExpiry || worker.MedicalExpiry).toLocaleDateString() : '-'}
                           </div>
                         </td>
                         <td className="px-4 py-3">
-                          <div className={`text-sm ${isExpired(worker.InsuranceExpiry) ? 'text-red-600 font-semibold' : isExpiringSoon(worker.InsuranceExpiry) ? 'text-orange-600' : 'text-gray-600'}`}>
-                            {worker.InsuranceExpiry ? new Date(worker.InsuranceExpiry).toLocaleDateString() : '-'}
+                          <div className={`text-sm ${isExpired(worker.insuranceExpiry || worker.InsuranceExpiry) ? 'text-red-600 font-semibold' : isExpiringSoon(worker.insuranceExpiry || worker.InsuranceExpiry) ? 'text-orange-600' : 'text-gray-600'}`}>
+                            {(worker.insuranceExpiry || worker.InsuranceExpiry) ? new Date(worker.insuranceExpiry || worker.InsuranceExpiry).toLocaleDateString() : '-'}
                           </div>
                         </td>
                         <td className="px-4 py-3">
@@ -718,7 +768,7 @@ export default function ConstructionWorkforce() {
               <AlertCircle className="h-12 w-12 text-red-600 mx-auto mb-4" />
               <h3 className="text-lg font-semibold mb-2">Delete Worker</h3>
               <p className="text-gray-600 mb-6">
-                Are you sure you want to delete <strong>{selectedWorker?.Name}</strong>? This action cannot be undone.
+                Are you sure you want to delete <strong>{selectedWorker?.name || selectedWorker?.Name}</strong>? This action cannot be undone.
               </p>
               <div className="flex gap-3">
                 <button
