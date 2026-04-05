@@ -9,6 +9,7 @@ import {
   X, 
   LogOut,
   Shield,
+  DollarSign,
   Briefcase,
   Plane,
   HeartPulse,
@@ -131,7 +132,6 @@ export default function Layout({ children }) {
       icon: DollarSign,
       items: [
         { name: 'Manpower Budget', href: '/manpower-budget', icon: FileSpreadsheet, feature: 'payroll', action: 'view' },
-        { name: 'Budget Analytics', href: '/budget-analytics', icon: TrendingUp, feature: 'reports', action: 'view' },
       ]
     },
     {

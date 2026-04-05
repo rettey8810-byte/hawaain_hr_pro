@@ -6,34 +6,28 @@ import {
   DollarSign, 
   Users, 
   TrendingUp, 
-  Building2, 
   Plus, 
-  Edit2, 
   Trash2, 
-  ChevronDown, 
-  ChevronRight,
   AlertCircle,
   CheckCircle,
   FileSpreadsheet,
   Search,
-  Filter,
   Download,
   Eye,
   X
 } from 'lucide-react';
-import { collection, addDoc, updateDoc, deleteDoc, doc, query, where, getDocs } from 'firebase/firestore';
+import { collection, addDoc, deleteDoc, doc } from 'firebase/firestore';
 import { db } from '../firebase/config';
 import { toast } from 'react-hot-toast';
 
 export default function ManpowerBudget() {
   const { companyId } = useCompany();
-  const { userData, isSuperAdmin } = useAuth();
+  const { userData } = useAuth();
   const { documents: budgets, loading } = useFirestore('manpowerBudgets');
   
   const [showAddModal, setShowAddModal] = useState(false);
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [selectedBudget, setSelectedBudget] = useState(null);
-  const [expandedCompanies, setExpandedCompanies] = useState({});
   const [searchTerm, setSearchTerm] = useState('');
   const [filterCompany, setFilterCompany] = useState('all');
   
