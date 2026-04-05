@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useCompany } from '../contexts/CompanyContext';
 import { useFirestoreAdmin } from '../hooks/useFirestore';
 import { useAuth } from '../contexts/AuthContext';
-import { Plus, Building2, Users, Edit2, X, CheckCircle } from 'lucide-react';
+import { Plus, Building2, Users, Edit2, X, CheckCircle, AlertCircle } from 'lucide-react';
 import { collection, addDoc, updateDoc, doc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../firebase';
 
@@ -14,6 +14,8 @@ export default function CompanyAdmin() {
   const [showNewModal, setShowNewModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [selectedCompany, setSelectedCompany] = useState(null);
+  const [message, setMessage] = useState({ type: '', text: '' });
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
     code: '',
@@ -30,6 +32,12 @@ export default function CompanyAdmin() {
   }, []);
 
   const handleCreate = async () => {
+    if (!formData.name || !formData.code) {
+      setMessage({ type: 'error', text: 'Company name and code are required' });
+      return;
+    }
+    
+    setIsSubmitting(true);
     try {
       await addDoc(collection(db, 'companies'), {
         ...formData,
@@ -38,8 +46,13 @@ export default function CompanyAdmin() {
       });
       setShowNewModal(false);
       setFormData({ name: '', code: '', address: '', phone: '', email: '', maxUsers: 10, status: 'active' });
+      setMessage({ type: 'success', text: 'Company created successfully!' });
+      setTimeout(() => setMessage({ type: '', text: '' }), 3000);
     } catch (error) {
       console.error('Error creating company:', error);
+      setMessage({ type: 'error', text: 'Failed to create company: ' + error.message });
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -90,6 +103,17 @@ export default function CompanyAdmin() {
           </button>
         </div>
       </div>
+
+      {/* Message */}
+      {message.text && (
+        <div className={`p-4 rounded-lg flex items-center gap-2 ${
+          message.type === 'success' ? 'bg-green-50 text-green-700 border border-green-200' : 
+          'bg-red-50 text-red-700 border border-red-200'
+        }`}>
+          {message.type === 'success' ? <CheckCircle className="h-5 w-5" /> : <AlertCircle className="h-5 w-5" />}
+          {message.text}
+        </div>
+      )}
 
       {/* Companies Table */}
       <div className="bg-white rounded-lg shadow overflow-hidden">
@@ -248,9 +272,10 @@ export default function CompanyAdmin() {
             <div className="flex gap-3 mt-6">
               <button
                 onClick={handleCreate}
-                className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                disabled={isSubmitting}
+                className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-400"
               >
-                Create
+                {isSubmitting ? 'Creating...' : 'Create'}
               </button>
               <button
                 onClick={() => setShowNewModal(false)}
