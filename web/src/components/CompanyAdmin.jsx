@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useCompany } from '../contexts/CompanyContext';
 import { useFirestoreAdmin } from '../hooks/useFirestore';
 import { useAuth } from '../contexts/AuthContext';
-import { Plus, Building2, Users, Edit2, X } from 'lucide-react';
+import { Plus, Building2, Users, Edit2, X, CheckCircle } from 'lucide-react';
 import { collection, addDoc, updateDoc, doc, serverTimestamp } from 'firebase/firestore';
 import { db } from '../firebase';
 
