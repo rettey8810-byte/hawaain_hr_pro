@@ -54,10 +54,11 @@ import ToastContainer from './ToastContainer';
 export default function Layout({ children }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [companyDropdownOpen, setCompanyDropdownOpen] = useState(false);
   const [expandedCategories, setExpandedCategories] = useState(['Dashboard']);
   const { user, userData, logout, isHR, isHRorGM, hasAccess } = useAuth();
   const { unreadCount } = useNotifications();
-  const { currentCompany, isSuperAdmin } = useCompany();
+  const { currentCompany, companies, switchCompany, isSuperAdmin } = useCompany();
   const { darkMode, toggleDarkMode } = useTheme();
   const navigate = useNavigate();
   const location = useLocation();
@@ -314,6 +315,48 @@ export default function Layout({ children }) {
               >
                 {darkMode ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
               </button>
+              
+              {/* Company Switcher for GM and Superadmin */}
+              {(isSuperAdmin() || isGM()) && companies.length > 1 && (
+                <div className="relative">
+                  <button
+                    onClick={() => setCompanyDropdownOpen(!companyDropdownOpen)}
+                    className="flex items-center gap-2 px-3 py-2 bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100 transition-colors"
+                  >
+                    <Building2 className="h-4 w-4" />
+                    <span className="hidden md:block text-sm font-medium">
+                      {currentCompany?.name || 'Select Company'}
+                    </span>
+                    <ChevronDown className="h-4 w-4" />
+                  </button>
+                  
+                  {companyDropdownOpen && (
+                    <div className="absolute right-0 mt-2 w-56 origin-top-right rounded-md bg-white py-1 shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none z-50">
+                      <div className="px-3 py-2 text-xs text-gray-500 border-b">
+                        Switch Company
+                      </div>
+                      {companies.map((company) => (
+                        <button
+                          key={company.id}
+                          onClick={() => {
+                            switchCompany(company.id);
+                            setCompanyDropdownOpen(false);
+                          }}
+                          className={`flex w-full items-center px-3 py-2 text-sm hover:bg-gray-100 ${
+                            currentCompany?.id === company.id ? 'bg-blue-50 text-blue-700' : 'text-gray-700'
+                          }`}
+                        >
+                          <Building2 className="h-4 w-4 mr-2" />
+                          {company.name}
+                          {currentCompany?.id === company.id && (
+                            <span className="ml-auto text-xs text-blue-600 font-medium">Current</span>
+                          )}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
               
               <div className="relative">
                 <button

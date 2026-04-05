@@ -28,8 +28,8 @@ export function CompanyProvider({ children }) {
   const loadCompanies = async () => {
     setLoading(true);
     try {
-      // If super admin, load all companies
-      if (userData.role === 'superadmin') {
+      // If super admin OR GM, load all companies
+      if (userData.role === 'superadmin' || userData.role === 'gm') {
         const companiesSnap = await getDocs(collection(db, 'companies'));
         const companiesList = companiesSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
         setCompanies(companiesList);
