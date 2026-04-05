@@ -188,9 +188,9 @@ export default function Employees() {
     const dept = emp['Department '] || emp.Department || emp.department || '';
     
     const matchesSearch = !searchTerm || 
-      name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      empId.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      nationality.toLowerCase().includes(searchTerm.toLowerCase());
+      String(name).toLowerCase().includes(searchTerm.toLowerCase()) ||
+      String(empId).toLowerCase().includes(searchTerm.toLowerCase()) ||
+      String(nationality).toLowerCase().includes(searchTerm.toLowerCase());
     const matchesDept = !filterDepartment || dept === filterDepartment;
     return matchesSearch && matchesDept;
   });
