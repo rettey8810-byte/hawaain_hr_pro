@@ -71,6 +71,9 @@ export default function Layout({ children }) {
 
   // Navigation categories with sub-items and permissions
   const navigationCategories = useMemo(() => {
+    const isConstruction = isConstructionCompany && isConstructionCompany();
+    const isExternal = isExternalCompany && isExternalCompany();
+    
     // Base categories that all companies see
     const baseCategories = [
       {
@@ -82,57 +85,35 @@ export default function Layout({ children }) {
       }
     ];
 
-    // Construction company specific categories
-    if (isConstructionCompany && isConstructionCompany()) {
-      return [
-        ...baseCategories,
-        {
-          name: 'Workforce',
-          icon: HardHat,
-          items: [
-            { name: 'Construction Workforce', href: '/construction-workforce', icon: HardHat, feature: 'employees', action: 'view' },
-            { name: 'Export Data', href: '/construction-workforce', icon: FileSpreadsheet, feature: 'employees', action: 'view' },
-          ]
-        },
-        {
-          name: 'Utilities',
-          icon: Settings,
-          items: [
-            { name: 'Notifications', href: '/notifications', icon: Bell, badge: unreadCount, feature: 'settings', action: 'view' },
-            { name: 'Settings', href: '/settings', icon: Settings, feature: 'settings', action: 'view' },
-            { name: 'Help', href: '/help', icon: HelpCircle },
-          ]
-        },
-      ];
-    }
+    // Add Construction Workforce menu item for construction company
+    const constructionMenu = isConstruction ? [
+      {
+        name: 'Workforce',
+        icon: HardHat,
+        items: [
+          { name: 'Construction Workforce', href: '/construction-workforce', icon: HardHat, feature: 'employees', action: 'view' },
+          { name: 'Export Data', href: '/construction-workforce', icon: FileSpreadsheet, feature: 'employees', action: 'view' },
+        ]
+      }
+    ] : [];
 
-    // External company categories (Villa Park, 3rd Party, Visitors, Sister Property)
-    if (isExternalCompany && isExternalCompany()) {
-      return [
-        ...baseCategories,
-        {
-          name: 'External Staff',
-          icon: Users,
-          items: [
-            { name: 'Manage Staff', href: '/external-staff', icon: Users, feature: 'employees', action: 'view' },
-            { name: 'Add New Entry', href: '/external-staff', icon: UserPlus, feature: 'employees', action: 'create' },
-          ]
-        },
-        {
-          name: 'Utilities',
-          icon: Settings,
-          items: [
-            { name: 'Notifications', href: '/notifications', icon: Bell, badge: unreadCount, feature: 'settings', action: 'view' },
-            { name: 'Settings', href: '/settings', icon: Settings, feature: 'settings', action: 'view' },
-            { name: 'Help', href: '/help', icon: HelpCircle },
-          ]
-        },
-      ];
-    }
+    // Add External Staff menu for external companies
+    const externalMenu = isExternal ? [
+      {
+        name: 'External Staff',
+        icon: Users,
+        items: [
+          { name: 'Manage Staff', href: '/external-staff', icon: Users, feature: 'employees', action: 'view' },
+          { name: 'Add New Entry', href: '/external-staff', icon: UserPlus, feature: 'employees', action: 'create' },
+        ]
+      }
+    ] : [];
 
-    // Sun Island / Resort company - full navigation
+    // Full navigation for all companies
     return [
       ...baseCategories,
+      ...constructionMenu,
+      ...externalMenu,
       {
         name: 'People',
         icon: Users,
