@@ -333,11 +333,47 @@ export default function DataFixUtility() {
 
         {foundInDb.length > 0 && (
           <div className="mb-4">
-            <h4 className="font-medium text-green-700 mb-2">Found Employees ({foundInDb.length}):</h4>
+            <div className="flex justify-between items-center mb-2">
+              <h4 className="font-medium text-green-700">Found Employees ({foundInDb.length}):</h4>
+              <button
+                onClick={async () => {
+                  setFixing(true);
+                  let fixed = 0;
+                  const villaCompany = companies.find(c => c.name?.toLowerCase().includes('villa'));
+                  if (!villaCompany) {
+                    setMessage({ type: 'error', text: 'Villa Construction company not found' });
+                    setFixing(false);
+                    return;
+                  }
+                  
+                  for (const {employee} of foundInDb) {
+                    try {
+                      await updateDoc(doc(db, 'employees', employee.id), {
+                        companyId: villaCompany.id,
+                        company: 'Villa Construction',
+                        updatedAt: new Date().toISOString()
+                      });
+                      fixed++;
+                    } catch (error) {
+                      console.error('Error fixing employee:', error);
+                    }
+                  }
+                  
+                  setMessage({ type: 'success', text: `Fixed ${fixed} employees to Villa Construction` });
+                  setFixing(false);
+                  loadData();
+                }}
+                disabled={fixing}
+                className="px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700 disabled:bg-gray-400 text-sm"
+              >
+                {fixing ? 'Assigning...' : `Assign All ${foundInDb.length} to Villa`}
+              </button>
+            </div>
             <div className="max-h-40 overflow-y-auto bg-green-50 p-3 rounded-lg">
               {foundInDb.map(({name, employee}, idx) => (
-                <div key={idx} className="text-sm text-green-800 py-1 border-b border-green-200 last:border-0">
-                  ✓ {name} → {employee.FullName || employee.name} (ID: {employee.EmpID || employee.employeeId || 'N/A'})
+                <div key={idx} className="text-sm text-green-800 py-1 border-b border-green-200 last:border-0 flex justify-between">
+                  <span>✓ {name} → {employee.FullName || employee.name} (ID: {employee.EmpID || employee.employeeId || 'N/A'})</span>
+                  <span className="text-xs text-gray-500">Current: {employee.companyId?.slice(0,8) || 'NONE'}...</span>
                 </div>
               ))}
             </div>
