@@ -5,6 +5,53 @@ All notable changes to Hawaain HR Pro will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.2.1] - 2026-04-05
+
+### 🚀 Added - Company Admin & Data Management
+
+#### Data Fix Utility (`DataFixUtility.jsx`)
+- **Company ID Mismatch Detection** - Identifies employees with incorrect companyId assignments
+- **Villa Construction Employee Import** - Searches for 109 employees from Construction_Work_Force.json
+- **Bulk Assignment** - "Assign All 22 to Villa" button to fix found employees
+- **Missing Employee Detection** - Shows which employees are not in the database
+- **Route:** `/data-fix`
+- **Access:** Superadmin only
+
+#### User Management Enhancement
+- **Company Column** - Added company name display in user list table
+- **Company Assignment** - Dropdown to change user company in edit modal
+- **Company Visibility** - See which company each user belongs to
+
+#### Company Switcher for GM Users
+- **Multi-Company Access** - GM users can now switch between all companies
+- **Header Dropdown** - Company selector in top navigation bar
+- **No Logout Required** - Switch companies instantly without re-authentication
+- **Data Filtering** - All data updates automatically when switching companies
+
+### 🔧 Fixed - Field Mapping Issues
+
+#### Employee Field Mappings (Excel Import Compatible)
+- **Payroll.jsx** - Updated employee name, department, salary fields to use Excel-imported data (`FullName`, `Department `, `Designation`)
+- **ExpenseClaims.jsx** - Fixed employee field mappings with fallbacks for missing data
+- **PromotionManagement.jsx** - Corrected employee selection and proposed department/position fields
+- **DisciplinaryManagement.jsx** - Fixed employee dropdown and detail modal field mappings
+- **RecruitmentApproval.jsx** - Dynamic department dropdown from employee data
+- **PositionQuota.jsx** - Dynamic department population from employee data
+
+#### UI/UX Fixes
+- **CompanyAdmin.jsx** - Added missing modals, success/error messages, loading states
+- **CheckCircle Import** - Fixed `CheckCircle is not defined` error
+- **Companies.jsx** - Fixed `toLowerCase` error in search filter, debugged "Add Company" button
+- **Employees.jsx** - Fixed `toLowerCase` error in employee search
+- **Layout.jsx** - Fixed `isGM is not defined` error, added company switcher dropdown
+
+### 🔧 Changed
+- **CompanyContext.jsx** - GM users now load all companies like superadmin
+- **useFilteredFirestore.js** - GM role now sees all employees in their company
+- **AuthContext.jsx** - Data visibility rules updated for GM multi-company access
+
+---
+
 ## [2.2.0] - 2026-04-05
 
 ### 🚀 Added - Multi-Tenant Company Structure
