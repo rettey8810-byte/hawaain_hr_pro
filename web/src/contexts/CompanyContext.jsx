@@ -80,6 +80,7 @@ export function CompanyProvider({ children }) {
       
       // If super admin or GM/HRM, they can access all predefined companies
       if (userData.role === 'superadmin' || userData.role === 'gm' || userData.role === 'hrm') {
+        // Start with predefined companies
         availableCompanies = [...PREDEFINED_COMPANIES];
         
         // Also load any custom companies from Firestore
@@ -90,12 +91,17 @@ export function CompanyProvider({ children }) {
           type: doc.data().type || 'custom'
         }));
         
-        // Merge without duplicates
+        // Merge without duplicates (only add custom companies not in predefined)
         customCompanies.forEach(custom => {
           if (!availableCompanies.find(c => c.id === custom.id)) {
             availableCompanies.push(custom);
           }
         });
+        
+        // Ensure Sun Island is always included
+        if (!availableCompanies.find(c => c.id === 'sun-island')) {
+          availableCompanies.unshift(PREDEFINED_COMPANIES[0]);
+        }
       } else {
         // Regular user - only their assigned company
         if (userData.companyId) {

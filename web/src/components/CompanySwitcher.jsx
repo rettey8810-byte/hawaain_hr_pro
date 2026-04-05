@@ -53,8 +53,14 @@ export default function CompanySwitcher() {
   }
 
   const handleSwitch = (companyId) => {
+    console.log('Switching to company:', companyId, 'Current:', currentCompany?.id);
     if (companyId !== currentCompany?.id) {
-      switchCompany(companyId);
+      try {
+        switchCompany(companyId);
+      } catch (error) {
+        console.error('Error switching company:', error);
+        alert('Failed to switch company. Please try again.');
+      }
     }
     setIsOpen(false);
   };
