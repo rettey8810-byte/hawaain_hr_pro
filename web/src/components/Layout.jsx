@@ -43,7 +43,8 @@ import {
   Megaphone,
   Award,
   Receipt,
-  CalendarDays
+  CalendarDays,
+  HardHat
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useNotifications } from '../contexts/NotificationContext';
@@ -86,6 +87,7 @@ export default function Layout({ children }) {
         { name: 'Org Structure', href: '/org-structure', icon: Network, feature: 'employees', action: 'view' },
         { name: 'Recruitment', href: '/recruitment', icon: Briefcase, feature: 'recruitment', action: 'view' },
         { name: 'External Staff', href: '/external-staff', icon: UserCircle, feature: 'employees', action: 'view' },
+        { name: 'Construction Workforce', href: '/construction-workforce', icon: HardHat, feature: 'employees', action: 'view' },
         { name: 'Bulk Import/Export', href: '/bulk-import-export', icon: FileSpreadsheet, feature: 'employees', action: 'create' },
       ]
     },

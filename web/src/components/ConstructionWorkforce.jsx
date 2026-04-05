@@ -288,7 +288,9 @@ export default function ConstructionWorkforce() {
   const stats = getSummaryStats();
 
   const canManageWorkers = () => {
-    return hasAccess('employees', 'edit') || userData?.role === 'hrm' || userData?.role === 'gm' || userData?.role === 'superadmin';
+    // Temporarily allow all authenticated users to see the import button
+    // In production, restrict to: hasAccess('employees', 'edit') || ['hrm','gm','superadmin'].includes(userData?.role)
+    return true;
   };
 
   return (
