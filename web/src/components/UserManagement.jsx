@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Plus, Edit2, Trash2, Mail, Shield, User, Lock, ChevronDown, ChevronRight } from 'lucide-react';
+import { Plus, Edit2, Trash2, Mail, Shield, User, Lock, ChevronDown, ChevronRight, Building2 } from 'lucide-react';
 import { useFirestore } from '../hooks/useFirestore';
 import { useCompany } from '../contexts/CompanyContext';
 import { useAuth } from '../contexts/AuthContext';
@@ -8,7 +8,7 @@ import { db } from '../firebase/config';
 import { ROLE_HIERARCHY, getCreatableRoles, canManageUser, DEFAULT_FEATURE_PERMISSIONS, FEATURES } from '../config/rolePermissions';
 
 export default function UserManagement() {
-  const { companyId } = useCompany();
+  const { companyId, companies } = useCompany();
   const { userData, signup, canManageOtherUser, getAllowedRolesToCreate, isSuperAdmin } = useAuth();
   const { documents: allUsers, loading } = useFirestore('users');
   const [showAddModal, setShowAddModal] = useState(false);
@@ -29,7 +29,8 @@ export default function UserManagement() {
     password: '',
     confirmPassword: '',
     role: '',
-    department: ''
+    department: '',
+    companyId: ''
   });
 
   const [customPermissions, setCustomPermissions] = useState({});
@@ -82,13 +83,13 @@ export default function UserManagement() {
         password: formData.password,
         name: formData.name,
         role: formData.role,
-        companyId: isSuperAdmin() ? null : companyId,
+        companyId: isSuperAdmin() ? formData.companyId || null : companyId,
         createdBy: userData?.uid,
-        customPermissions: customPermissions // Save custom feature permissions
+        customPermissions: customPermissions
       });
 
       setShowAddModal(false);
-      setFormData({ name: '', email: '', password: '', confirmPassword: '', role: '' });
+      setFormData({ name: '', email: '', password: '', confirmPassword: '', role: '', companyId: '' });
       setCustomPermissions({});
       setMessage('User created successfully!');
       setTimeout(() => setMessage(''), 3000);
@@ -430,9 +431,25 @@ export default function UserManagement() {
               )}
 
               {isSuperAdmin() && (
-                <div className="p-3 bg-yellow-50 rounded-md">
-                  <p className="text-xs text-yellow-800">
-                    <strong>Superadmin:</strong> This user will be created without company assignment unless specified.
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">
+                    <Building2 className="h-4 w-4 inline mr-1" />
+                    Company
+                  </label>
+                  <select
+                    value={formData.companyId}
+                    onChange={(e) => setFormData({...formData, companyId: e.target.value})}
+                    className="mt-1 block w-full rounded-md border-gray-300 border px-3 py-2"
+                  >
+                    <option value="">Select a company...</option>
+                    {companies.map(company => (
+                      <option key={company.id} value={company.id}>
+                        {company.name}
+                      </option>
+                    ))}
+                  </select>
+                  <p className="mt-1 text-xs text-gray-500">
+                    Select the company this user belongs to
                   </p>
                 </div>
               )}

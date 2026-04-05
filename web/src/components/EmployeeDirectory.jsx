@@ -61,7 +61,7 @@ export default function EmployeeDirectory() {
       setEmployees(employeesData);
 
       // Extract unique departments
-      const deptSet = new Set(employeesData.map(e => e.department).filter(Boolean));
+      const deptSet = new Set(employeesData.map(e => e['Department '] || e.Department || e.department).filter(Boolean));
       setDepartments(Array.from(deptSet).sort());
 
       // Auto-expand all nodes initially
@@ -87,39 +87,47 @@ export default function EmployeeDirectory() {
 
   const getFilteredEmployees = () => {
     return employees.filter(emp => {
-      const matchesSearch = 
-        emp.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        emp.position?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        emp.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        emp.employeeId?.toLowerCase().includes(searchTerm.toLowerCase());
+      const name = emp.FullName || emp.name || '';
+      const position = emp.Designation || emp.position || '';
+      const email = emp.PersonalEmailID || emp.EmailID || emp.email || '';
+      const empId = emp.EmpID || emp.employeeId || '';
+      const dept = emp['Department '] || emp.Department || emp.department || '';
       
-      const matchesDept = filterDepartment === 'all' || emp.department === filterDepartment;
+      const matchesSearch = 
+        name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        position.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        empId.toLowerCase().includes(searchTerm.toLowerCase());
+      
+      const matchesDept = filterDepartment === 'all' || dept === filterDepartment;
       
       return matchesSearch && matchesDept;
     });
   };
 
   const getDepartmentHead = (department) => {
-    return employees.find(e => 
-      e.department === department && 
-      (e.position?.toLowerCase().includes('head') || e.position?.toLowerCase().includes('manager'))
-    );
+    return employees.find(e => {
+      const dept = e['Department '] || e.Department || e.department || '';
+      const pos = e.Designation || e.position || '';
+      return dept === department && 
+        (pos.toLowerCase().includes('head') || pos.toLowerCase().includes('manager'));
+    });
   };
 
   const getDirectReports = (managerId) => {
-    return employees.filter(e => e.reportsTo === managerId);
+    return employees.filter(e => e.Superior === managerId || e.reportsTo === managerId);
   };
 
   const exportToCSV = () => {
     const headers = ['Name', 'Employee ID', 'Department', 'Position', 'Email', 'Phone', 'Status'];
     const rows = getFilteredEmployees().map(emp => [
-      emp.name,
-      emp.employeeId,
-      emp.department,
-      emp.position,
-      emp.email,
-      emp.phone,
-      emp.status
+      emp.FullName || emp.name,
+      emp.EmpID || emp.employeeId,
+      emp['Department '] || emp.Department || emp.department,
+      emp.Designation || emp.position,
+      emp.PersonalEmailID || emp.EmailID || emp.email,
+      emp.PhoneNo || emp.phone,
+      emp.status || 'active'
     ]);
     
     const csvContent = [headers, ...rows].map(row => row.join(',')).join('\n');
@@ -164,14 +172,14 @@ export default function EmployeeDirectory() {
           </div>
           
           <div className="flex-1">
-            <p className="font-medium text-gray-900">{employee.name}</p>
-            <p className="text-sm text-gray-500">{employee.position}</p>
+            <p className="font-medium text-gray-900">{employee.FullName || employee.name || 'N/A'}</p>
+            <p className="text-sm text-gray-500">{employee.Designation || employee.position || 'N/A'}</p>
           </div>
           
           <span className={`px-2 py-1 text-xs font-semibold rounded-full ${
-            employee.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
+            (employee.status || 'active') === 'active' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
           }`}>
-            {employee.status}
+            {employee.status || 'active'}
           </span>
         </div>
         
@@ -322,28 +330,28 @@ export default function EmployeeDirectory() {
                             <UserCircle className="h-5 w-5 text-blue-600" />
                           </div>
                           <div>
-                            <div className="font-medium text-gray-900">{employee.name}</div>
-                            <div className="text-sm text-gray-500">{employee.email}</div>
+                            <div className="font-medium text-gray-900">{employee.FullName || employee.name || 'N/A'}</div>
+                            <div className="text-sm text-gray-500">{employee.PersonalEmailID || employee.EmailID || employee.email || '-'}</div>
                           </div>
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                        {employee.employeeId || '-'}
+                        {employee.EmpID || employee.employeeId || '-'}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                        {employee.department}
+                        {employee['Department '] || employee.Department || employee.department || '-'}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                        {employee.position}
+                        {employee.Designation || employee.position || '-'}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                        {employee.phone || '-'}
+                        {employee.PhoneNo || employee.phone || '-'}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span className={`px-2 py-1 text-xs font-semibold rounded-full ${
-                          employee.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
+                          (employee.status || 'active') === 'active' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
                         }`}>
-                          {employee.status}
+                          {employee.status || 'active'}
                         </span>
                       </td>
                     </tr>
@@ -367,29 +375,29 @@ export default function EmployeeDirectory() {
                       <UserCircle className="h-8 w-8 text-blue-600" />
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="font-semibold text-gray-900 truncate">{employee.name}</p>
-                      <p className="text-sm text-gray-500">{employee.position}</p>
-                      <p className="text-sm text-gray-400">{employee.department}</p>
+                      <p className="font-semibold text-gray-900 truncate">{employee.FullName || employee.name || 'N/A'}</p>
+                      <p className="text-sm text-gray-500">{employee.Designation || employee.position || 'N/A'}</p>
+                      <p className="text-sm text-gray-400">{employee['Department '] || employee.Department || employee.department || 'N/A'}</p>
                       
                       <div className="mt-3 space-y-1">
-                        {employee.email && (
+                        {(employee.PersonalEmailID || employee.EmailID || employee.email) && (
                           <p className="text-xs text-gray-500 flex items-center gap-1">
                             <Mail className="h-3 w-3" />
-                            {employee.email}
+                            {employee.PersonalEmailID || employee.EmailID || employee.email}
                           </p>
                         )}
-                        {employee.phone && (
+                        {(employee.PhoneNo || employee.phone) && (
                           <p className="text-xs text-gray-500 flex items-center gap-1">
                             <Phone className="h-3 w-3" />
-                            {employee.phone}
+                            {employee.PhoneNo || employee.phone}
                           </p>
                         )}
                       </div>
                       
                       <span className={`mt-3 inline-block px-2 py-1 text-xs font-semibold rounded-full ${
-                        employee.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
+                        (employee.status || 'active') === 'active' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
                       }`}>
-                        {employee.status}
+                        {employee.status || 'active'}
                       </span>
                     </div>
                   </div>
@@ -416,47 +424,47 @@ export default function EmployeeDirectory() {
                   <UserCircle className="h-10 w-10 text-blue-600" />
                 </div>
                 <div>
-                  <h3 className="font-semibold text-lg text-gray-900">{selectedEmployee.name}</h3>
-                  <p className="text-gray-500">{selectedEmployee.position}</p>
+                  <h3 className="font-semibold text-lg text-gray-900">{selectedEmployee.FullName || selectedEmployee.name || 'N/A'}</h3>
+                  <p className="text-gray-500">{selectedEmployee.Designation || selectedEmployee.position || 'N/A'}</p>
                 </div>
               </div>
               
               <div className="space-y-3 text-sm">
                 <div className="flex items-center gap-2">
                   <Building2 className="h-4 w-4 text-gray-400" />
-                  <span className="text-gray-600">{selectedEmployee.department}</span>
+                  <span className="text-gray-600">{selectedEmployee['Department '] || selectedEmployee.Department || selectedEmployee.department || 'N/A'}</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <Briefcase className="h-4 w-4 text-gray-400" />
-                  <span className="text-gray-600">{selectedEmployee.employeeId || 'No ID'}</span>
+                  <span className="text-gray-600">{selectedEmployee.EmpID || selectedEmployee.employeeId || 'No ID'}</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <Mail className="h-4 w-4 text-gray-400" />
-                  <a href={`mailto:${selectedEmployee.email}`} className="text-blue-600 hover:underline">
-                    {selectedEmployee.email}
+                  <a href={`mailto:${selectedEmployee.PersonalEmailID || selectedEmployee.EmailID || selectedEmployee.email || ''}`} className="text-blue-600 hover:underline">
+                    {selectedEmployee.PersonalEmailID || selectedEmployee.EmailID || selectedEmployee.email || '-'}
                   </a>
                 </div>
-                {selectedEmployee.phone && (
+                {(selectedEmployee.PhoneNo || selectedEmployee.phone) && (
                   <div className="flex items-center gap-2">
                     <Phone className="h-4 w-4 text-gray-400" />
-                    <a href={`tel:${selectedEmployee.phone}`} className="text-blue-600 hover:underline">
-                      {selectedEmployee.phone}
+                    <a href={`tel:${selectedEmployee.PhoneNo || selectedEmployee.phone}`} className="text-blue-600 hover:underline">
+                      {selectedEmployee.PhoneNo || selectedEmployee.phone}
                     </a>
                   </div>
                 )}
-                {selectedEmployee.location && (
+                {(selectedEmployee.PresentCity || selectedEmployee.location) && (
                   <div className="flex items-center gap-2">
                     <MapPin className="h-4 w-4 text-gray-400" />
-                    <span className="text-gray-600">{selectedEmployee.location}</span>
+                    <span className="text-gray-600">{selectedEmployee.PresentCity || selectedEmployee.location}</span>
                   </div>
                 )}
               </div>
 
               <div className="mt-4 pt-4 border-t">
                 <span className={`px-3 py-1 text-sm font-semibold rounded-full ${
-                  selectedEmployee.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
+                  (selectedEmployee.status || 'active') === 'active' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
                 }`}>
-                  {selectedEmployee.status}
+                  {selectedEmployee.status || 'active'}
                 </span>
               </div>
             </div>
@@ -475,7 +483,10 @@ export default function EmployeeDirectory() {
             </h3>
             <div className="space-y-2">
               {departments.map(dept => {
-                const count = employees.filter(e => e.department === dept && e.status === 'active').length;
+                const count = employees.filter(e => {
+                  const empDept = e['Department '] || e.Department || e.department;
+                  return empDept === dept && (e.status || 'active') === 'active';
+                }).length;
                 return (
                   <div 
                     key={dept} 
@@ -498,13 +509,13 @@ export default function EmployeeDirectory() {
             <div className="grid grid-cols-2 gap-4">
               <div className="text-center p-3 bg-blue-50 rounded-lg">
                 <p className="text-2xl font-bold text-blue-600">
-                  {employees.filter(e => e.status === 'active').length}
+                  {employees.filter(e => (e.status || 'active') === 'active').length}
                 </p>
                 <p className="text-xs text-blue-800">Active</p>
               </div>
               <div className="text-center p-3 bg-gray-50 rounded-lg">
                 <p className="text-2xl font-bold text-gray-600">
-                  {employees.filter(e => e.status !== 'active').length}
+                  {employees.filter(e => (e.status || 'active') !== 'active').length}
                 </p>
                 <p className="text-xs text-gray-800">Inactive</p>
               </div>
@@ -514,7 +525,7 @@ export default function EmployeeDirectory() {
               </div>
               <div className="text-center p-3 bg-purple-50 rounded-lg">
                 <p className="text-2xl font-bold text-purple-600">
-                  {new Set(employees.map(e => e.position)).size}
+                  {new Set(employees.map(e => e.Designation || e.position).filter(Boolean)).size}
                 </p>
                 <p className="text-xs text-purple-800">Positions</p>
               </div>

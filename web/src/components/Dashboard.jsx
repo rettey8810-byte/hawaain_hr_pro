@@ -113,7 +113,7 @@ export default function Dashboard() {
 
   // Calculate department distribution
   const departmentData = companyEmployees.reduce((acc, emp) => {
-    const dept = emp.department || 'Unassigned';
+    const dept = emp['Department '] || emp.Department || emp.department || 'Unassigned';
     acc[dept] = (acc[dept] || 0) + 1;
     return acc;
   }, {});
