@@ -116,6 +116,16 @@ A comprehensive HR management system with expatriate compliance tracking, docume
 - **Provider Management** - Insurance and benefit providers
 - **Eligibility Rules** - Service period and employee type requirements
 
+### 📊 Manpower Budget (NEW v2.1)
+- **Budget Planning** - Annual manpower budget allocation by company/department
+- **Employee Budget Entries** - Track individual employee salary projections
+- **Smart Checks** - Auto-detect duplicates, zero salaries, high earners
+- **Allowance Management** - Food, transport, phone, and other allowances
+- **CSV Export** - Export budget data for reporting
+- **Multi-company Support** - Separate budgets per company
+- **Budget Analytics** - Total budget, employee count, average salary metrics
+- **CRUD Operations** - Add, edit, delete budget entries with Firebase sync
+
 ### 🔐 Compliance & Legal (v2.0)
 - **Audit Trail** - Complete action history with 30-day retention
 - **GDPR Compliance** - Data subject request management (Access, Rectification, Erasure, Portability, Restriction)
@@ -398,6 +408,12 @@ npx expo start
 - name, email, role
 - createdAt, updatedAt
 
+### manpowerBudgets
+- name, designation, companyId
+- basicSalary, foodAllowance, transportAllowance, phoneAllowance, otherAllowance
+- totalAllowances, monthlySalary, projectedBudget, actualBudget
+- status, createdAt, createdBy
+
 ---
 
 ## 🔐 Security Rules
@@ -453,6 +469,44 @@ vercel
 # Follow prompts to link project
 ```
 
+### Auto-Deploy from GitHub (Recommended)
+
+Set up automatic deployments when pushing to GitHub:
+
+**1. Connect GitHub to Vercel:**
+1. Go to [vercel.com](https://vercel.com) → Login
+2. Click "Add New Project"
+3. Import your GitHub repository (`rettey8810-byte/hawaain_hr_pro`)
+4. Select framework: `Vite`
+5. Configure:
+   - **Root Directory**: `web`
+   - **Build Command**: `npm run build`
+   - **Output Directory**: `dist`
+
+**2. vercel.json Configuration (Already in repo):**
+```json
+{
+  "version": 2,
+  "rewrites": [{"source": "/(.*)", "destination": "/index.html"}],
+  "headers": [{
+    "source": "/assets/(.*)",
+    "headers": [{"key": "Cache-Control", "value": "public, max-age=31536000, immutable"}]
+  }]
+}
+```
+
+**3. Deploy on Every Push:**
+- Push to `main` branch → Auto-deploys to production
+- Push to any branch → Creates preview deployment
+- View deployments at: `https://vercel.com/<username>/<project-name>`
+
+**4. Environment Variables (if needed):**
+```bash
+vercel env add VITE_FIREBASE_API_KEY
+vercel env add VITE_FIREBASE_AUTH_DOMAIN
+# etc.
+```
+
 ### Mobile (Expo)
 
 ```bash
@@ -487,6 +541,7 @@ expo eas build
 ✅ **Compliance Center (v2.0)** - Audit trail, GDPR requests, document templates  
 ✅ **HR Analytics (v2.0)** - Retention risk AI, diversity metrics, custom reports  
 ✅ **Integrations Hub (v2.0)** - Calendar, Slack, job boards, accounting sync  
+✅ **Manpower Budget (v2.1)** - Annual budget planning, smart checks, CSV export  
 ✅ **Recruitment & ATS** - Job postings and candidate pipeline  
 ✅ **Payroll Management** - Monthly payroll runs with payslip generation  
 ✅ **Payroll Approval Workflow** - HRM → GM approval process  

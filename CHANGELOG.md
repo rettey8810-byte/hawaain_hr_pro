@@ -5,6 +5,35 @@ All notable changes to Hawaain HR Pro will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.1.0] - 2026-04-05
+
+### 🚀 Added - Manpower Budget Module
+
+#### Manpower Budget (`ManpowerBudget.jsx`)
+- **Budget Planning** - Annual manpower budget allocation by company/department
+- **Employee Budget Entries** - Track individual employee salary projections
+- **Smart Checks** - Auto-detect duplicates, zero salaries, high earners (>50k MVR)
+- **Allowance Management** - Food, transport, phone, and other allowances
+- **CSV Export** - Export budget data for reporting and analysis
+- **Multi-company Support** - Separate budgets per company with data isolation
+- **Budget Analytics Dashboard** - Total budget, employee count, average salary metrics
+- **CRUD Operations** - Add, edit, delete budget entries with real-time Firebase sync
+- **Search & Filter** - Search by employee name, filter by company
+- **Detail View Modal** - View complete employee budget breakdown
+- **Navigation** - New "Budget" category in sidebar with "Manpower Budget" sub-item
+- **Route:** `/manpower-budget`
+- **Access:** HRM/GM/Superadmin (view), HRM/GM (create/edit/delete)
+- **Firestore Collection:** `manpowerBudgets`
+
+#### Infrastructure
+- **vercel.json** - SPA routing configuration for Vercel deployments
+- **.gitignore** - Root-level ignore file for secrets and build artifacts
+
+### 🔧 Fixed
+- Fixed missing `DollarSign` icon import in Layout.jsx causing build failure
+- Removed non-existent `/budget-analytics` route from navigation
+- Fixed Firebase API key configuration for production deployment
+
 ## [2.0.0] - 2026-04-02
 
 ### 🚀 Added - Advanced HR Suite (6 Major Modules)

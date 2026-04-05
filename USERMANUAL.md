@@ -8,17 +8,18 @@
 5. [Employee Management](#employee-management)
 6. [Recruitment & ATS](#recruitment--ats)
 7. [Payroll & Payslips](#payroll--payslips)
-8. [Leave Planner](#leave-planner)
-9. [Leave Reports & Analytics](#leave-reports--analytics)
-10. [Leave Policy Settings](#leave-policy-settings)
-11. [Document Management](#document-management)
-12. [Notifications & Alerts](#notifications--alerts)
-13. [Settings](#settings)
-14. [Troubleshooting](#troubleshooting)
-15. [Tips & Best Practices](#tips--best-practices)
-16. [Keyboard Shortcuts](#keyboard-shortcuts)
-17. [Contact & Support](#contact--support)
-18. [FAQ](#faq)
+8. [Manpower Budget](#manpower-budget)
+9. [Leave Planner](#leave-planner)
+10. [Leave Reports & Analytics](#leave-reports--analytics)
+11. [Leave Policy Settings](#leave-policy-settings)
+12. [Document Management](#document-management)
+13. [Notifications & Alerts](#notifications--alerts)
+14. [Settings](#settings)
+15. [Troubleshooting](#troubleshooting)
+16. [Tips & Best Practices](#tips--best-practices)
+17. [Keyboard Shortcuts](#keyboard-shortcuts)
+18. [Contact & Support](#contact--support)
+19. [FAQ](#faq)
 
 ---
 
@@ -776,6 +777,47 @@ Process monthly payroll and manage compensation.
 3. Review gratuity and deductions
 4. Generate final settlement
 
+### Manpower Budget (HR Only)
+
+Plan and manage annual manpower budgets across companies.
+
+**Accessing Manpower Budget:**
+1. Go to "Budget" → "Manpower Budget" in the sidebar
+2. View dashboard with budget statistics
+3. See smart check alerts for data issues
+
+**Adding Budget Entry:**
+1. Click "Add Employee Budget"
+2. Enter employee details:
+   - Name and Designation
+   - Basic Salary
+   - Food Allowance
+   - Transport Allowance
+   - Phone Allowance
+   - Other Allowances
+3. System auto-calculates total monthly salary
+4. Save to Firestore
+
+**Budget Analytics:**
+- Total annual budget across all entries
+- Employee count and average salary
+- Smart check alerts:
+  - Duplicate employees
+  - Zero salary warnings
+  - High earner notifications (>50k MVR)
+
+**Managing Budgets:**
+- Search by employee name
+- Filter by company (multi-company support)
+- Edit or delete entries
+- Export to CSV for reporting
+- View detailed breakdown per employee
+
+**Exporting Budget Data:**
+1. Click "Export CSV" button
+2. Download complete budget spreadsheet
+3. Use for financial planning and reporting
+
 ### Attendance & Time Tracking (HR & Employees)
 
 Monitor employee attendance and working hours.
@@ -1312,6 +1354,15 @@ A: Go to "Management" → "Training" → "Certifications" to view expiry dates a
 **Q: How do I process monthly payroll?**
 A: Go to "Management" → "Payroll", select month/year, review calculations, and click "Process Payroll" to generate payslips.
 
+**Q: How do I add a manpower budget entry?**
+A: Go to "Budget" → "Manpower Budget", click "Add Employee Budget", fill in salary and allowance details, then save.
+
+**Q: How do I export the manpower budget?**
+A: In the Manpower Budget page, click "Export CSV" to download the complete budget data for reporting.
+
+**Q: What are smart checks in the budget module?**
+A: Smart checks automatically detect duplicate employees, zero salaries, and high earners (>50,000 MVR) to ensure data quality.
+
 **Q: How do I calculate end of service benefits?**
 A: Access employee profile → "Calculate End of Service" to view gratuity and generate final settlement.
 
@@ -1602,7 +1653,7 @@ A: GM (General Manager) is higher in the hierarchy and can create HRMs. GM has a
 
 ---
 
-**Current Version:** 1.3.0
+**Current Version:** 2.1.0
 **Last Updated:** April 2026
 
 For detailed technical changes, see [CHANGELOG.md](./CHANGELOG.md)
