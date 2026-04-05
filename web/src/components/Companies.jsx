@@ -212,9 +212,9 @@ export default function Companies() {
   };
 
   const filteredCompanies = companies.filter(company => 
-    company.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    company.code?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    company.email?.toLowerCase().includes(searchTerm.toLowerCase())
+    String(company.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+    String(company.code || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+    String(company.email || '').toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const getStatusColor = (status) => {
