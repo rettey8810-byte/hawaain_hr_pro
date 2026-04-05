@@ -56,7 +56,7 @@ export default function Layout({ children }) {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [companyDropdownOpen, setCompanyDropdownOpen] = useState(false);
   const [expandedCategories, setExpandedCategories] = useState(['Dashboard']);
-  const { user, userData, logout, isHR, isHRorGM, hasAccess } = useAuth();
+  const { user, userData, logout, isHR, isGM, isHRorGM, hasAccess } = useAuth();
   const { unreadCount } = useNotifications();
   const { currentCompany, companies, switchCompany, isSuperAdmin } = useCompany();
   const { darkMode, toggleDarkMode } = useTheme();
