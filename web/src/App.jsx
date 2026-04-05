@@ -72,6 +72,7 @@ import PositionQuota from './components/PositionQuota';
 import JobDescription from './components/JobDescription';
 import ContractsAndLetters from './components/ContractsAndLetters';
 import FormTemplates from './components/FormTemplates';
+import ManpowerBudget from './components/ManpowerBudget';
 
 // Additional HR Feature Modules (v1.5.0)
 import PerformanceReviews from './components/PerformanceReviews';
@@ -179,10 +180,16 @@ function App() {
     <ToastProvider>
     <AuthProvider>
       <LeaveQuotaProvider>
-      <CompanyProvider>
-        <NotificationProvider>
-          <OfflineProvider>
-          <Router>
+        <CompanyProvider>
+          <NotificationProvider>
+            <OfflineProvider>
+              <TimeAttendanceProvider>
+                <BenefitsProvider>
+                  <EngagementProvider>
+                    <ComplianceProvider>
+                      <AnalyticsProvider>
+                        <IntegrationsProvider>
+                          <Router>
             <Routes>
               {/* Public Routes */}
               <Route path="/login" element={<Login />} />
@@ -588,6 +595,13 @@ function App() {
                   </PermissionRoute>
                 </PrivateRoute>
               } />
+              <Route path="/manpower-budget" element={
+                <PrivateRoute>
+                  <PermissionRoute feature="payroll" action="view">
+                    <Layout><ManpowerBudget /></Layout>
+                  </PermissionRoute>
+                </PrivateRoute>
+              } />
               <Route path="/job-descriptions" element={
                 <PrivateRoute>
                   <PermissionRoute feature="employees" action="view">
@@ -709,18 +723,18 @@ function App() {
                 </PrivateRoute>
               } />
               </Routes>
-              </Router>
-            </IntegrationsProvider>
-            </AnalyticsProvider>
-            </ComplianceProvider>
-            </EngagementProvider>
-            </BenefitsProvider>
-            </TimeAttendanceProvider>
+            </Router>
+          </IntegrationsProvider>
+        </AnalyticsProvider>
+      </ComplianceProvider>
+    </EngagementProvider>
+  </BenefitsProvider>
+</TimeAttendanceProvider>
           </OfflineProvider>
         </NotificationProvider>
       </CompanyProvider>
-      </LeaveQuotaProvider>
-    </AuthProvider>
+    </LeaveQuotaProvider>
+  </AuthProvider>
     </ToastProvider>
     </ThemeProvider>
   );

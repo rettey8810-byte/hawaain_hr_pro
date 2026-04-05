@@ -121,8 +121,17 @@ export default function Layout({ children }) {
         { name: 'Disciplinary', href: '/disciplinary', icon: AlertTriangle, feature: 'employees', action: 'view' },
         { name: 'Recruitment Approval', href: '/recruitment/approval', icon: UserPlus, feature: 'recruitment', action: 'view' },
         { name: 'Form Templates', href: '/form-templates', icon: FileSpreadsheet, feature: 'settings', action: 'view' },
+        { name: 'Position Quotas', href: '/position-quotas', icon: Users, feature: 'employees', action: 'view' },
         { name: 'Engagement', href: '/engagement', icon: Heart, feature: 'employees', action: 'view' },
         { name: 'Operations', href: '/operations', icon: AlertCircle, feature: 'employees', action: 'view' },
+      ]
+    },
+    {
+      name: 'Budget',
+      icon: DollarSign,
+      items: [
+        { name: 'Manpower Budget', href: '/manpower-budget', icon: FileSpreadsheet, feature: 'payroll', action: 'view' },
+        { name: 'Budget Analytics', href: '/budget-analytics', icon: TrendingUp, feature: 'reports', action: 'view' },
       ]
     },
     {
