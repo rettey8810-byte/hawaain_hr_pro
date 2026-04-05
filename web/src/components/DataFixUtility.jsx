@@ -14,10 +14,21 @@ export default function DataFixUtility() {
   const [message, setMessage] = useState({ type: '', text: '' });
   const [fixing, setFixing] = useState(false);
 
+  const [villaEmployees, setVillaEmployees] = useState([]);
+  const [foundInDb, setFoundInDb] = useState([]);
+  const [notInDb, setNotInDb] = useState([]);
+
   // Load all companies and employees
   useEffect(() => {
     loadData();
   }, []);
+
+  // Check for Villa Construction employees when data loads
+  useEffect(() => {
+    if (employees.length > 0) {
+      checkVillaEmployees();
+    }
+  }, [employees]);
 
   const loadData = async () => {
     setLoading(true);
@@ -45,7 +56,62 @@ export default function DataFixUtility() {
     }
   };
 
-  // Find employees with mismatched companyId
+  // Check which Villa Construction employees from JSON exist in database
+  const checkVillaEmployees = () => {
+    // Names from Construction_Work_Force.json - Villa Construction employees
+    const villaNames = [
+      "SUNNY", "SANTHOSH KUMAR PAUL", "ANIL PAUL", "Anish Vijayan", "Sujan Dasaiyan",
+      "Jobayed Hossain", "Kadir Ansari", "AJIM ALAM", "MD Abdul Kader", "Md Alomgir Hossain",
+      "Md Shahinoor Rahman", "MIRAJ UDDIN", "MD MOJAHID ALI", "MD MASUD RANA",
+      "MOHAMMED JASHIM UDDIN", "MD ROBIUL ISLAM", "PINTU DAS", "MD HELAL UDDIN",
+      "MOHAMMAD JAHANGIR", "MD SHOFIUL ISLAM", "MAHBUBUR RAHMAN", "MD HARUNUR RASHID",
+      "MD HAFIJUR RAHMAN", "MD REJAUL ISLAM", "MD HARUNOR RASHID", "BABUL SHAIK",
+      "MILON SHAIK", "BISAWJIT DAS", "ASHIK SHAIK", "AZIZUL SHAIK", "BISHU",
+      "MD JAHIRUL ISLAM", "Arifuzzaman Mallick", "MD EMON SHAIK", "Nipon Das",
+      "SABUJ SHAIK", "KOUSHIK DAS", "SHAHIN SHAIK", "MD SAJID ISLAM", "MD NUR ISLAM",
+      "MD NAZMUL ISLAM", "ABDUR RAHMAN", "MINTU DAS", "MD SOHEL RANA", "GOLAM RABBI",
+      "MD JASIM UDDIN", "MD ROBIN SHAIK", "SALMAN Mollah", "MD RASHIDUL ISLAM",
+      "MD SADDAM HOSSAIN", "MD RAKIBUL ISLAM", "KHALILUR RAHMAN", "ABUL HOSSAIN",
+      "IMRAN", "TALAT HOSSAIN", "MD JIAUL ISLAM", "MD SALIM", "ALomgir Hossain",
+      "MD ZAHID HOSSAIN", "MD ROMJAN ALI", "MD MIRAZ", "MD SAIFUL ISLAM",
+      "MD AKASH SHAIK", "MD JALAL UDDIN", "MD SUMON SHAIK", "MD SHAHIDUL ISLAM",
+      "MD NUR ALAM", "MD SAYEED AHMAD", "MD AKHTARUZZAMAN", "MD AKRAM HOSSAIN",
+      "MD AMANULLAH", "MD SHORIFUL ISLAM", "MD JUWEL RANA", "MD SIZAN",
+      "MD RUBEL SHAIK", "MD BILLAL HOSSAIN", "MD JAKIR HOSSAIN", "MD BADAL SHAIK",
+      "RAJ", "MD JIBON SHAIK", "MD RANA SHAIK", "MD SHAKHAwat", "MD JAMAL",
+      "MD BASHIR", "MD Uzzal", "IMRAN2", "SUMON", "MD BABU", "MD JIBON MIAH",
+      "MD SAGAR HOSSAIN", "MD NURUL ISLAM", "MD TAUHIDUL ISLAM", "ABU TALHA",
+      "MD ROBIUL AWAL", "MD MIRAZUL ISLAM", "MD AKASH MIA", "ASHRAFUL ISLAM",
+      "MD ARIFUL ISLAM", "MD RABBI SHAIK", "MD BADOL SHAIK", "MD SOHEL MIAH",
+      "MD JAHID HOSSAIN", "MD RAHAT", "MD MOJNU MIAH", "MD ARMAN HOSSAIN",
+      "MD RUBEL SHAIK2", "MD ARIF HOSSAIN", "MD ABDUR RAHIM", "TITU"
+    ];
+    
+    const found = [];
+    const notFound = [];
+    
+    villaNames.forEach(name => {
+      const match = employees.find(emp => {
+        const fullName = (emp.FullName || emp.name || '').toLowerCase().trim();
+        return fullName === name.toLowerCase().trim() || 
+               fullName.includes(name.toLowerCase().trim()) ||
+               name.toLowerCase().trim().includes(fullName);
+      });
+      
+      if (match) {
+        found.push({ name, employee: match });
+      } else {
+        notFound.push(name);
+      }
+    });
+    
+    setVillaEmployees(villaNames);
+    setFoundInDb(found);
+    setNotInDb(notFound);
+    
+    console.log(`Found ${found.length} out of ${villaNames.length} Villa employees`);
+    console.log('Not found:', notFound);
+  };
   const findMismatchedEmployees = () => {
     if (!selectedCompany) return [];
     
@@ -246,6 +312,51 @@ export default function DataFixUtility() {
           </div>
         </div>
       )}
+
+      {/* Villa Construction Employee Check */}
+      <div className="bg-white rounded-lg shadow p-6">
+        <h3 className="text-lg font-semibold mb-4">Villa Construction Employee Check</h3>
+        <p className="text-sm text-gray-600 mb-4">
+          Checking {villaEmployees.length} employees from Construction_Work_Force.json
+        </p>
+        
+        <div className="grid grid-cols-2 gap-4 mb-4">
+          <div className="bg-green-50 p-4 rounded-lg">
+            <p className="text-green-800 font-bold text-2xl">{foundInDb.length}</p>
+            <p className="text-green-600 text-sm">Found in Database</p>
+          </div>
+          <div className="bg-red-50 p-4 rounded-lg">
+            <p className="text-red-800 font-bold text-2xl">{notInDb.length}</p>
+            <p className="text-red-600 text-sm">Not Found in Database</p>
+          </div>
+        </div>
+
+        {foundInDb.length > 0 && (
+          <div className="mb-4">
+            <h4 className="font-medium text-green-700 mb-2">Found Employees ({foundInDb.length}):</h4>
+            <div className="max-h-40 overflow-y-auto bg-green-50 p-3 rounded-lg">
+              {foundInDb.map(({name, employee}, idx) => (
+                <div key={idx} className="text-sm text-green-800 py-1 border-b border-green-200 last:border-0">
+                  ✓ {name} → {employee.FullName || employee.name} (ID: {employee.EmpID || employee.employeeId || 'N/A'})
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {notInDb.length > 0 && (
+          <div>
+            <h4 className="font-medium text-red-700 mb-2">Missing Employees ({notInDb.length}):</h4>
+            <div className="max-h-40 overflow-y-auto bg-red-50 p-3 rounded-lg">
+              {notInDb.map((name, idx) => (
+                <div key={idx} className="text-sm text-red-800 py-1 border-b border-red-200 last:border-0">
+                  ✗ {name}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
 
       {/* Debug Info */}
       <div className="bg-gray-100 rounded-lg p-6">
