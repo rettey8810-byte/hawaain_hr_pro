@@ -4,12 +4,13 @@ import { getFirestore } from 'firebase/firestore';
 import { getStorage } from 'firebase/storage';
 
 const firebaseConfig = {
-  apiKey: "AIzaSyAwfgswf9xgHm1Fa81g4VsGxE2oVKhRZyg",
-  authDomain: "hawaain-hr-pro.firebaseapp.com",
-  projectId: "hawaain-hr-pro",
-  storageBucket: "hawaain-hr-pro.firebasestorage.app",
-  messagingSenderId: "677637131407",
-  appId: "1:677637131407:web:078b36b5ad6c1259dff4fa"
+  apiKey: "AIzaSyAJJ0SEyrJBj8K06inSptRjG5VYkvhKeR8",
+  authDomain: "hawaain-hr-pro-e8574.firebaseapp.com",
+  projectId: "hawaain-hr-pro-e8574",
+  storageBucket: "hawaain-hr-pro-e8574.firebasestorage.app",
+  messagingSenderId: "819292919841",
+  appId: "1:819292919841:web:38afa35d769901d2e6ab60",
+  measurementId: "G-8MGDGTR865"
 };
 
 const app = initializeApp(firebaseConfig);

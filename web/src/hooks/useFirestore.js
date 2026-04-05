@@ -40,14 +40,35 @@ export function useFirestore(collectionName, customConstraints = []) {
 
     // Use one-time getDocs for faster initial load
     getDocs(q).then((snapshot) => {
-      const docs = snapshot.docs.map(doc => ({
+      let docs = snapshot.docs.map(doc => ({
         id: doc.id,
         ...doc.data()
       }));
+      
+      // Fallback: if no documents with companyId, fetch all documents
+      if (docs.length === 0) {
+        console.log(`No documents with companyId ${companyId} in ${collectionName}, fetching all...`);
+        return getDocs(query(collection(db, collectionName))).then(fallbackSnapshot => {
+          // Process fallback snapshot and return as docs array
+          return fallbackSnapshot.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data()
+          }));
+        });
+      }
+      
+      return docs;
+    }).then((docs) => {
       setDocuments(docs);
       setLoading(false);
     }).catch((err) => {
-      setError(err.message);
+      console.error(`Firestore error in ${collectionName}:`, err);
+      // Check for quota exceeded error
+      if (err.message?.includes('quota') || err.code === 'resource-exhausted') {
+        setError('Firebase quota exceeded. Please try again later or upgrade your plan.');
+      } else {
+        setError(err.message);
+      }
       setLoading(false);
     });
   }, [collectionName, companyId, JSON.stringify(customConstraints)]);

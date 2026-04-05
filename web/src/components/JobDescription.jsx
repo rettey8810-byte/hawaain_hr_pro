@@ -124,6 +124,8 @@ export default function JobDescriptionGenerator() {
   const [selectedEmployee, setSelectedEmployee] = useState(null);
   const [showPreview, setShowPreview] = useState(false);
   const [customMode, setCustomMode] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [dropdownOpen, setDropdownOpen] = useState(false);
   
   const [formData, setFormData] = useState({
     jobTitle: '',
@@ -272,17 +274,63 @@ export default function JobDescriptionGenerator() {
       {!customMode && (
         <div className="bg-white p-6 rounded-xl shadow-sm border">
           <label className="block text-sm font-medium mb-2">Select Employee</label>
-          <select
-            onChange={(e) => handleEmployeeSelect(e.target.value)}
-            className="w-full px-3 py-2 border rounded-lg"
-          >
-            <option value="">Choose an employee...</option>
-            {employees.map(emp => (
-              <option key={emp.id} value={emp.id}>
-                {emp.name} - {emp.position} ({emp.department})
-              </option>
-            ))}
-          </select>
+          
+          {/* Custom Searchable Dropdown */}
+          <div className="relative">
+            <input
+              type="text"
+              placeholder="Search employee name..."
+              value={searchTerm}
+              onChange={(e) => {
+                setSearchTerm(e.target.value);
+                setDropdownOpen(true);
+              }}
+              onFocus={() => setDropdownOpen(true)}
+              className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            />
+            
+            {/* Dropdown List */}
+            {dropdownOpen && (
+              <div className="absolute z-50 w-full mt-1 bg-white border rounded-lg shadow-lg max-h-60 overflow-auto">
+                {employees
+                  .filter(emp => 
+                    emp.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                    emp.position?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                    emp.department?.toLowerCase().includes(searchTerm.toLowerCase())
+                  )
+                  .map(emp => (
+                    <button
+                      key={emp.id}
+                      onClick={() => {
+                        handleEmployeeSelect(emp.id);
+                        setSearchTerm(`${emp.name} - ${emp.position}`);
+                        setDropdownOpen(false);
+                      }}
+                      className="w-full px-4 py-2 text-left hover:bg-blue-50 focus:bg-blue-50 focus:outline-none border-b last:border-b-0"
+                    >
+                      <div className="font-medium text-gray-900">{emp.name}</div>
+                      <div className="text-sm text-gray-500">{emp.position} • {emp.department}</div>
+                    </button>
+                  ))}
+                {employees.filter(emp => 
+                  emp.name?.toLowerCase().includes(searchTerm.toLowerCase())
+                ).length === 0 && (
+                  <div className="px-4 py-3 text-gray-500 text-center">
+                    No employees found
+                  </div>
+                )}
+              </div>
+            )}
+            
+            {/* Click outside to close */}
+            {dropdownOpen && (
+              <div 
+                className="fixed inset-0 z-40" 
+                onClick={() => setDropdownOpen(false)}
+              />
+            )}
+          </div>
+          
           <p className="text-sm text-gray-500 mt-2">
             JD will be auto-populated based on the employee's position template
           </p>
