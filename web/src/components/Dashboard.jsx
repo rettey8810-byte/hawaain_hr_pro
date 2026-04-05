@@ -122,7 +122,13 @@ export default function Dashboard() {
     } else if (isExternalCompany()) {
       return externalStaff.filter(s => s.companyId === companyId);
     } else {
-      return employees.filter(e => e.companyId === companyId || !e.companyId); // Fallback for old data
+      // For Sun Island/default company, show all employees (existing data may not have companyId)
+      return employees.filter(e => 
+        e.companyId === companyId || 
+        e.companyId === 'sun-island' || 
+        !e.companyId || 
+        e.companyId === ''
+      );
     }
   };
 
