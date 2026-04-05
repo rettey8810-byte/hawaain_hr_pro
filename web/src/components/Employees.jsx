@@ -179,15 +179,20 @@ export default function Employees() {
 
   // Filter employees client-side
   const filteredEmployees = employees.filter(emp => {
+    const name = emp.FullName || emp.name || '';
+    const empId = emp.EmpID || emp.employeeId || '';
+    const nationality = emp.Nationality || emp.country || '';
+    const dept = emp['Department '] || emp.Department || emp.department || '';
+    
     const matchesSearch = !searchTerm || 
-      emp.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      emp.employeeId?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      emp.country?.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesDept = !filterDepartment || emp.department === filterDepartment;
+      name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      empId.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      nationality.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesDept = !filterDepartment || dept === filterDepartment;
     return matchesSearch && matchesDept;
   });
 
-  const departments = [...new Set(employees.map(e => e.department).filter(Boolean))];
+  const departments = [...new Set(employees.map(e => e['Department '] || e.Department || e.department).filter(Boolean))];
 
   if (loading && employees.length === 0) {
     return (
@@ -274,11 +279,11 @@ export default function Employees() {
         </div>
         <div className="bg-gradient-to-br from-amber-500 to-orange-500 rounded-2xl shadow-lg p-5 text-white transform hover:scale-105 transition-all">
           <p className="text-sm text-amber-100 font-medium">🏢 Departments</p>
-          <p className="text-3xl font-bold mt-1">{new Set(allEmployees.map(e => e.department).filter(Boolean)).size}</p>
+          <p className="text-3xl font-bold mt-1">{new Set(allEmployees.map(e => e['Department '] || e.Department || e.department).filter(Boolean)).size}</p>
         </div>
         <div className="bg-gradient-to-br from-violet-500 to-purple-600 rounded-2xl shadow-lg p-5 text-white transform hover:scale-105 transition-all">
           <p className="text-sm text-violet-100 font-medium">🌍 Countries</p>
-          <p className="text-3xl font-bold mt-1">{new Set(allEmployees.map(e => e.country).filter(Boolean)).size}</p>
+          <p className="text-3xl font-bold mt-1">{new Set(allEmployees.map(e => e.Nationality || e.country).filter(Boolean)).size}</p>
         </div>
       </div>
 
@@ -303,7 +308,7 @@ export default function Employees() {
                     ) : (
                       <div className="h-16 w-16 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center border-4 border-white shadow-lg">
                         <span className="text-2xl font-bold text-white">
-                          {employee.name?.charAt(0)}
+                          {(employee.FullName || employee.name || 'N/A').charAt(0)}
                         </span>
                       </div>
                     )}
@@ -320,22 +325,22 @@ export default function Employees() {
                 
                 <div className="pt-10 pb-6 px-6">
                   <div className="mb-4">
-                    <h3 className="text-lg font-bold text-gray-900 truncate">{employee.name}</h3>
-                    <p className="text-sm text-gray-500 font-medium">{employee.employeeId}</p>
+                    <h3 className="text-lg font-bold text-gray-900 truncate">{employee.FullName || employee.name || 'N/A'}</h3>
+                    <p className="text-sm text-gray-500 font-medium">{employee.EmpID || employee.employeeId || 'N/A'}</p>
                   </div>
 
                   <div className="space-y-3 text-sm mb-5">
                     <div className="flex items-center text-gray-700 bg-gray-50 rounded-lg p-2">
                       <Building2 className="h-4 w-4 mr-3 text-indigo-500" />
-                      <span className="truncate font-medium">{employee.division || 'N/A'}</span>
+                      <span className="truncate font-medium">{employee.Division || employee.division || 'N/A'}</span>
                     </div>
                     <div className="flex items-center text-gray-700 bg-gray-50 rounded-lg p-2">
                       <Briefcase className="h-4 w-4 mr-3 text-purple-500" />
-                      <span className="truncate font-medium">{employee.department || 'N/A'}</span>
+                      <span className="truncate font-medium">{employee['Department '] || employee.Department || employee.department || 'N/A'}</span>
                     </div>
                     <div className="flex items-center text-gray-700 bg-gray-50 rounded-lg p-2">
                       <span className="text-lg mr-2">🌍</span>
-                      <span className="font-medium">{employee.country || 'N/A'}</span>
+                      <span className="font-medium">{employee.Nationality || employee.country || 'N/A'}</span>
                     </div>
                   </div>
 
@@ -446,23 +451,23 @@ export default function Employees() {
                           {employee.photoURL ? (
                             <img
                               src={employee.photoURL}
-                              alt={employee.name}
+                              alt={employee.FullName || employee.name}
                               className="h-12 w-12 rounded-xl object-cover shadow-md"
                             />
                           ) : (
                             <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-md">
-                              <span className="text-white font-bold text-lg">{employee.name?.charAt(0)}</span>
+                              <span className="text-white font-bold text-lg">{(employee.FullName || employee.name || 'N/A').charAt(0)}</span>
                             </div>
                           )}
                           <div className="ml-4">
-                            <div className="text-sm font-bold text-gray-900">{employee.name}</div>
-                            <div className="text-sm text-gray-500 font-medium">{employee.employeeId}</div>
+                            <div className="text-sm font-bold text-gray-900">{employee.FullName || employee.name || 'N/A'}</div>
+                            <div className="text-sm text-gray-500 font-medium">{employee.EmpID || employee.employeeId || 'N/A'}</div>
                           </div>
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm font-semibold text-gray-900">{employee.department}</div>
-                        <div className="text-sm text-gray-500">{employee.division}</div>
+                        <div className="text-sm font-semibold text-gray-900">{employee['Department '] || employee.Department || employee.department || 'N/A'}</div>
+                        <div className="text-sm text-gray-500">{employee.Division || employee.division || 'N/A'}</div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span className={`px-4 py-1.5 inline-flex text-xs leading-5 font-bold rounded-full ${
