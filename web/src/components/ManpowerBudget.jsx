@@ -17,7 +17,7 @@ import {
   Save,
   ArrowRight
 } from 'lucide-react';
-import { collection, addDoc, deleteDoc, doc } from 'firebase/firestore';
+import { collection, addDoc, deleteDoc, doc, query, where, getDocs } from 'firebase/firestore';
 import { db } from '../firebase/config';
 import { toast } from 'react-hot-toast';
 
@@ -30,6 +30,12 @@ export default function ManpowerBudget() {
   const [searchTerm, setSearchTerm] = useState('');
   const [expandedDepts, setExpandedDepts] = useState({});
   
+  // Employee data for dropdowns
+  const [departments, setDepartments] = useState([]);
+  const [sections, setSections] = useState([]);
+  const [designations, setDesignations] = useState([]);
+  const [employeesData, setEmployeesData] = useState([]);
+  
   // Form state - department based structure
   const [formData, setFormData] = useState({
     department: '',
@@ -41,6 +47,36 @@ export default function ManpowerBudget() {
     required65_50: '',
     requiredBelow50: ''
   });
+
+  // Fetch employee data for dropdowns
+  useEffect(() => {
+    const fetchEmployeeData = async () => {
+      if (!companyId) return;
+      
+      try {
+        const q = query(
+          collection(db, 'employees'),
+          where('companyId', '==', companyId)
+        );
+        const snapshot = await getDocs(q);
+        const employees = snapshot.docs.map(d => d.data());
+        setEmployeesData(employees);
+        
+        // Extract unique values
+        const uniqueDepts = [...new Set(employees.map(e => e['Department '] || e.Department || e.department).filter(Boolean))].sort();
+        const uniqueSections = [...new Set(employees.map(e => e.Section).filter(Boolean))].sort();
+        const uniqueDesignations = [...new Set(employees.map(e => e.Designation || e.designation).filter(Boolean))].sort();
+        
+        setDepartments(uniqueDepts);
+        setSections(uniqueSections);
+        setDesignations(uniqueDesignations);
+      } catch (err) {
+        console.error('Error fetching employee data:', err);
+      }
+    };
+    
+    fetchEmployeeData();
+  }, [companyId]);
 
   // Group budgets by department
   const groupedByDepartment = budgets?.reduce((acc, budget) => {
@@ -334,33 +370,42 @@ export default function ManpowerBudget() {
               <div className="grid grid-cols-3 gap-4">
                 <div>
                   <label className="block text-sm font-medium mb-1">Department *</label>
-                  <input
-                    type="text"
+                  <select
                     value={formData.department}
                     onChange={(e) => handleInputChange('department', e.target.value)}
-                    placeholder="e.g. Engineering"
                     className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
-                  />
+                  >
+                    <option value="">Select Department...</option>
+                    {departments.map(dept => (
+                      <option key={dept} value={dept}>{dept}</option>
+                    ))}
+                  </select>
                 </div>
                 <div>
                   <label className="block text-sm font-medium mb-1">Section *</label>
-                  <input
-                    type="text"
+                  <select
                     value={formData.section}
                     onChange={(e) => handleInputChange('section', e.target.value)}
-                    placeholder="e.g. Software"
                     className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
-                  />
+                  >
+                    <option value="">Select Section...</option>
+                    {sections.map(section => (
+                      <option key={section} value={section}>{section}</option>
+                    ))}
+                  </select>
                 </div>
                 <div>
                   <label className="block text-sm font-medium mb-1">Designation *</label>
-                  <input
-                    type="text"
+                  <select
                     value={formData.designation}
                     onChange={(e) => handleInputChange('designation', e.target.value)}
-                    placeholder="e.g. Senior Developer"
                     className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
-                  />
+                  >
+                    <option value="">Select Designation...</option>
+                    {designations.map(desig => (
+                      <option key={desig} value={desig}>{desig}</option>
+                    ))}
+                  </select>
                 </div>
               </div>
 
