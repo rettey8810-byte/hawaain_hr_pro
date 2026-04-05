@@ -96,7 +96,7 @@ export default function EmployeeDetail() {
   });
   const [loading, setLoading] = useState(true);
 
-  const { getDocumentsByEmployee } = useFirestore('employees');
+  const { getDocumentsByQuery } = useFirestore('employees');
   const { getDocumentsByEmployee: getPassports } = useFirestore('passports');
   const { getDocumentsByEmployee: getVisas } = useFirestore('visas');
   const { getDocumentsByEmployee: getWorkPermits } = useFirestore('workPermits');
@@ -157,10 +157,10 @@ export default function EmployeeDetail() {
             </Link>
             <div>
               <h2 className="text-2xl font-bold leading-7 text-gray-900 sm:truncate sm:text-3xl sm:tracking-tight">
-                {employee.name}
+                {employee.FullName || employee.name || 'N/A'}
               </h2>
               <p className="mt-1 text-sm text-gray-500">
-                {employee.position} • {employee.department}
+                {employee.Designation || employee.position || 'N/A'} • {employee['Department '] || employee.Department || employee.department || 'N/A'}
               </p>
             </div>
           </div>
@@ -185,7 +185,7 @@ export default function EmployeeDetail() {
             <Mail className="h-5 w-5 text-gray-400 mr-3" />
             <div>
               <p className="text-sm text-gray-500">Email</p>
-              <p className="text-sm font-medium text-gray-900">{employee.email}</p>
+              <p className="text-sm font-medium text-gray-900">{employee.PersonalEmailID || employee.EmailID || employee.email || '-'}</p>
             </div>
           </div>
         </div>
@@ -194,7 +194,7 @@ export default function EmployeeDetail() {
             <Phone className="h-5 w-5 text-gray-400 mr-3" />
             <div>
               <p className="text-sm text-gray-500">Phone</p>
-              <p className="text-sm font-medium text-gray-900">{employee.phone || '-'}</p>
+              <p className="text-sm font-medium text-gray-900">{employee.PhoneNo || employee.phone || '-'}</p>
             </div>
           </div>
         </div>
@@ -203,7 +203,7 @@ export default function EmployeeDetail() {
             <Building2 className="h-5 w-5 text-gray-400 mr-3" />
             <div>
               <p className="text-sm text-gray-500">Department</p>
-              <p className="text-sm font-medium text-gray-900">{employee.department || '-'}</p>
+              <p className="text-sm font-medium text-gray-900">{employee['Department '] || employee.Department || employee.department || '-'}</p>
             </div>
           </div>
         </div>
@@ -212,7 +212,7 @@ export default function EmployeeDetail() {
             <Calendar className="h-5 w-5 text-gray-400 mr-3" />
             <div>
               <p className="text-sm text-gray-500">Join Date</p>
-              <p className="text-sm font-medium text-gray-900">{formatDate(employee.joinDate)}</p>
+              <p className="text-sm font-medium text-gray-900">{formatDate(employee['Date of Join'] || employee.joinDate)}</p>
             </div>
           </div>
         </div>
