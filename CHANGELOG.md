@@ -5,6 +5,38 @@ All notable changes to Hawaain HR Pro will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.2.0] - 2026-04-05
+
+### 🚀 Added - Multi-Tenant Company Structure
+
+#### Multi-Tenant Architecture
+- **Company Isolation** - All data filtered by companyId for complete data separation
+- **Companies Collection** - New `companies` collection with slug-based IDs
+- **Company Scoping** - All collections now include `companyId` field:
+  - `employees`, `passports`, `visas`, `workPermits`, `medicals`
+  - `leaves`, `payrolls`, `notifications`, `manpowerBudgets`
+- **Company Context** - `CompanyContext.jsx` manages current company state
+- **Company Switching** - Superadmins can switch between companies
+- **Automatic Filtering** - `useFirestore` hook automatically filters by companyId
+
+#### Sunisland Resort and Spa Data Import
+- **887 Employees Imported** - Full employee database from Master List.xlsx
+- **Company Document** - Created `sunisland-resort-and-spa` company
+- **Employee Documents** - All employee data with companyId linkage
+- **Upload Script** - `upload_to_firestore.py` for bulk data import
+- **Document ID Format** - `{companySlug}_{empId}` for easy identification
+
+#### Updated Components
+- `useFirestore.js` - Automatic company-based query filtering
+- `CompanyContext.jsx` - Company switching and state management
+- `Employees.jsx` - Company-scoped employee listing
+- `Dashboard.jsx` - Company-specific dashboard stats
+- `ManpowerBudget.jsx` - Company-scoped budget data
+
+### 🔧 Changed
+- **Manpower Budget Redesign** - New workflow: Department → Section → Designation → Actual 2026 → Required Manpower Tiers
+- **Required Manpower Tiers** - 100-80%, 80-65%, 65-50%, Below 50% capacity levels
+
 ## [2.1.0] - 2026-04-05
 
 ### 🚀 Added - Manpower Budget Module

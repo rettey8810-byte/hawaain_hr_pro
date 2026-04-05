@@ -325,17 +325,61 @@ npx expo start
 
 ---
 
+## 🏢 Multi-Tenant Architecture
+
+The application supports multiple companies with complete data isolation:
+
+### Company Structure
+- **Superadmin**: Can create/manage companies and assign company admins
+- **Company Admin**: Full access to their assigned company's data
+- **Company Users**: Access limited to their company's data only
+
+### Data Isolation
+All collections are filtered by `companyId`:
+- `employees` → `companyId` field links to `companies` collection
+- `passports`, `visas`, `workPermits`, `medicals` → `companyId` field
+- `leaves`, `payrolls`, `notifications` → `companyId` field
+- `manpowerBudgets` → `companyId` field
+
+### Company Switching
+- Superadmins can switch between all companies
+- Company users see only their assigned company
+- Selected company stored in localStorage for persistence
+
+### Firestore Security
+- All queries filtered by `companyId` via `useFirestore` hook
+- Company context manages current company state
+- Automatic fallback to first company for superadmins
+
+---
+
 ## 📊 Database Collections
 
-### employees
-- name, email, phone, employeeId
-- department, position, location
-- joinDate, status, nationality
-- passportNumber, dateOfBirth
-- emergencyContact
-- **salary** (HR/GM only):
-  - basic, housingAllowance, transportAllowance, otherAllowances
-  - bankName, bankAccount, iban
+### companies (Multi-tenant structure)
+- id (slug format: e.g., "sunisland-resort-and-spa")
+- name (e.g., "Sunisland Resort and Spa")
+- code (e.g., "SUNISLAND")
+- status (active/inactive)
+- address, phone, email
+- employeeCount
+- createdAt, updatedAt
+- createdBy (user ID of superadmin)
+
+### users (Company-linked)
+- uid (Firebase Auth UID)
+- name, email, role (superadmin/company_admin/hr/gm/staff)
+- companyId (linked to companies collection)
+- companyIds[] (array for multi-company access)
+- customPermissions (granular feature permissions)
+- createdAt, updatedAt, lastLogin
+
+### employees (Company-scoped)
+- All employee fields from Master List (EmpID, FullName, Department, Section, Designation, etc.)
+- companyId (linked to companies collection)
+- companyName
+- status (active/inactive)
+- createdAt, updatedAt
+- sourceFile (e.g., "Master List.xlsx")
 
 ### jobPostings
 - title, department, location, type (full-time/part-time/contract)
@@ -361,21 +405,22 @@ npx expo start
 ### passports
 - employeeId, passportNumber, country
 - issueDate, expiryDate, placeOfIssue
-- documentUrl, notes
+- documentUrl, notes, companyId
 
 ### visas
 - employeeId, visaNumber, visaType
 - entryType, issueDate, expiryDate
-- documentUrl, notes
+- documentUrl, notes, companyId
 
 ### workPermits
 - employeeId, permitNumber, jobPosition
 - employer, issueDate, expiryDate
-- documentUrl, notes
+- documentUrl, notes, companyId
 
 ### medicals
 - employeeId, testDate, expiryDate
 - result, testCenter, documentUrl
+- companyId
 
 ### leaves
 - employeeId, leaveType, startDate, endDate
@@ -386,12 +431,13 @@ npx expo start
 - status (pending, approved, rejected, cancelled)
 - approverId, approverName, approvalComments
 - appliedBy, appliedAt, updatedAt
+- companyId
 
 ### leaveBalances
 - employeeId, year
 - quotas (annual, sick, emergency, halfDay, hourly, etc.)
 - used, remaining, accrued
-- updatedAt
+- updatedAt, companyId
 
 ### leavePolicies
 - companyId
@@ -403,16 +449,13 @@ npx expo start
 ### notifications
 - type, message, userId
 - documentType, read, createdAt
-
-### users
-- name, email, role
-- createdAt, updatedAt
+- companyId
 
 ### manpowerBudgets
-- name, designation, companyId
-- basicSalary, foodAllowance, transportAllowance, phoneAllowance, otherAllowance
-- totalAllowances, monthlySalary, projectedBudget, actualBudget
-- status, createdAt, createdBy
+- department, section, designation
+- actual2026
+- requiredManpower: {100_80, 80_65, 65_50, below50}
+- companyId, createdAt, createdBy
 
 ---
 
