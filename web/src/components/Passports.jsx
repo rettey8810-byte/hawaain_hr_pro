@@ -3,6 +3,7 @@ import { useSearchParams, Link } from 'react-router-dom';
 import { Plus, Search, Eye, Edit2, Trash2, AlertTriangle } from 'lucide-react';
 import { useFirestore } from '../hooks/useFirestore';
 import { useAuth } from '../contexts/AuthContext';
+import { useCompany } from '../contexts/CompanyContext';
 import { formatDate, getDocumentStatus, calculateDaysRemaining } from '../utils/helpers';
 import { collection, query, where, getDocs } from 'firebase/firestore';
 import { db } from '../firebase/config';
@@ -15,6 +16,7 @@ export default function Passports() {
   const [employees, setEmployees] = useState([]);
   const [employeesLoading, setEmployeesLoading] = useState(true);
   const { isHR, userData } = useAuth();
+  const { companyId } = useCompany();
   
   const [searchTerm, setSearchTerm] = useState('');
   const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -23,12 +25,12 @@ export default function Passports() {
 
   // Fetch ALL employees for name lookup
   const fetchAllEmployees = useCallback(async () => {
-    if (!userData?.companyId) return;
+    if (!companyId) return;
     setEmployeesLoading(true);
     try {
       const q = query(
         collection(db, 'employees'),
-        where('companyId', '==', userData.companyId)
+        where('companyId', '==', companyId)
       );
       const snap = await getDocs(q);
       setEmployees(snap.docs.map(d => ({ id: d.id, ...d.data() })));
@@ -37,7 +39,7 @@ export default function Passports() {
     } finally {
       setEmployeesLoading(false);
     }
-  }, [userData?.companyId]);
+  }, [companyId]);
 
   useEffect(() => {
     fetchAllEmployees();
