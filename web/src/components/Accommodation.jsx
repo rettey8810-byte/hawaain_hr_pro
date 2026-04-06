@@ -3,7 +3,7 @@ import {
   Home, BedDouble, Wrench, DoorOpen, Plus, Search, X, Edit2, Trash2, CheckCircle,
   Users, Bath, Maximize, Building2, MapPin, Filter, Download, Eye, ArrowRight,
   AlertTriangle, Calendar, Clock, User, Save, ChevronLeft, ChevronRight, MoreVertical,
-  Droplets, Zap, Wind, UtensilsCrossed, Wifi, Tv, Waves, Snowflake
+  Droplets, Zap, Wind, UtensilsCrossed, Wifi, Tv, Waves, Snowflake, DollarSign
 } from 'lucide-react';
 import { useFirestore } from '../hooks/useFirestore';
 import { useCompany } from '../contexts/CompanyContext';
