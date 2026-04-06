@@ -139,6 +139,7 @@ export default function Layout({ children }) {
       icon: DollarSign,
       items: [
         { name: 'Manpower Budget', href: '/manpower-budget', icon: FileSpreadsheet, feature: 'payroll', action: 'view' },
+        { name: 'Budget Dashboard', href: '/budget-dashboard', icon: BarChart3, feature: 'payroll', action: 'view' },
       ]
     },
     {

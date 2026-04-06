@@ -74,6 +74,7 @@ import JobDescription from './components/JobDescription';
 import ContractsAndLetters from './components/ContractsAndLetters';
 import FormTemplates from './components/FormTemplates';
 import ManpowerBudget from './components/ManpowerBudget';
+import BudgetDashboard from './components/BudgetDashboard';
 
 // Additional HR Feature Modules (v1.5.0)
 import PerformanceReviews from './components/PerformanceReviews';
@@ -613,6 +614,13 @@ function App() {
                 <PrivateRoute>
                   <PermissionRoute feature="payroll" action="view">
                     <Layout><ManpowerBudget /></Layout>
+                  </PermissionRoute>
+                </PrivateRoute>
+              } />
+              <Route path="/budget-dashboard" element={
+                <PrivateRoute>
+                  <PermissionRoute feature="payroll" action="view">
+                    <Layout><BudgetDashboard /></Layout>
                   </PermissionRoute>
                 </PrivateRoute>
               } />
