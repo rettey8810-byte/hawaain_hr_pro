@@ -85,6 +85,7 @@ import EmployeeDirectory from './components/EmployeeDirectory';
 import CompanyAnnouncements from './components/CompanyAnnouncements';
 import ShiftManagement from './components/ShiftManagement';
 import Accommodation from './components/Accommodation';
+import CompanyStructure from './components/CompanyStructure';
 
 // Advanced HR Feature Modules (v2.0.0)
 import TimeAttendance from './components/TimeAttendance';
@@ -684,6 +685,13 @@ function App() {
                 <PrivateRoute>
                   <PermissionRoute feature="employees" action="view">
                     <Layout><Accommodation /></Layout>
+                  </PermissionRoute>
+                </PrivateRoute>
+              } />
+              <Route path="/company-structure" element={
+                <PrivateRoute>
+                  <PermissionRoute feature="settings" action="view">
+                    <Layout><CompanyStructure /></Layout>
                   </PermissionRoute>
                 </PrivateRoute>
               } />

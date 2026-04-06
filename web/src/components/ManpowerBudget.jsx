@@ -25,16 +25,16 @@ export default function ManpowerBudget() {
   const { companyId } = useCompany();
   const { user, userData } = useAuth();
   const { documents: budgets, loading } = useFirestore('manpowerBudgets');
+  const { documents: divisions } = useFirestore('divisions');
+  const { documents: designations } = useFirestore('designations');
   
   const [showAddModal, setShowAddModal] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [expandedDepts, setExpandedDepts] = useState({});
   
-  // Employee data for dropdowns
-  const [departments, setDepartments] = useState([]);
-  const [sections, setSections] = useState([]);
-  const [designations, setDesignations] = useState([]);
-  const [employeesData, setEmployeesData] = useState([]);
+  // Filter divisions and designations by company
+  const companyDivisions = divisions.filter(d => d.companyId === companyId).sort((a, b) => a.name.localeCompare(b.name));
+  const companyDesignations = designations.filter(d => d.companyId === companyId).sort((a, b) => a.title.localeCompare(b.title));
   
   // Form state - department based structure
   const [formData, setFormData] = useState({
@@ -401,8 +401,8 @@ export default function ManpowerBudget() {
                     className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
                   >
                     <option value="">Select Department...</option>
-                    {departments.map(dept => (
-                      <option key={dept} value={dept}>{dept}</option>
+                    {companyDivisions.filter(d => d.type === 'department').map(d => (
+                      <option key={d.id} value={d.name}>{d.name}</option>
                     ))}
                   </select>
                 </div>
@@ -414,8 +414,8 @@ export default function ManpowerBudget() {
                     className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
                   >
                     <option value="">Select Section...</option>
-                    {sections.map(section => (
-                      <option key={section} value={section}>{section}</option>
+                    {companyDivisions.filter(d => d.type === 'section').map(d => (
+                      <option key={d.id} value={d.name}>{d.name}</option>
                     ))}
                   </select>
                 </div>
@@ -427,8 +427,8 @@ export default function ManpowerBudget() {
                     className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
                   >
                     <option value="">Select Designation...</option>
-                    {designations.map(desig => (
-                      <option key={desig} value={desig}>{desig}</option>
+                    {companyDesignations.map(d => (
+                      <option key={d.id} value={d.title}>{d.title}</option>
                     ))}
                   </select>
                 </div>

@@ -1,10 +1,11 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Save, DollarSign, User, Phone, Mail, MapPin, Briefcase, Building2, Calendar, Heart, Shield, CreditCard, Users } from 'lucide-react';
 import { useFirestore } from '../hooks/useFirestore';
 import { doc, getDoc } from 'firebase/firestore';
 import { db } from '../firebase/config';
 import { useAuth } from '../contexts/AuthContext';
+import { useCompany } from '../contexts/CompanyContext';
 import AvatarUpload from './AvatarUpload';
 
 export default function EmployeeForm() {
@@ -12,8 +13,24 @@ export default function EmployeeForm() {
   const navigate = useNavigate();
   const { addDocument, updateDocument } = useFirestore('employees');
   const { isHRorGM } = useAuth();
+  const { companyId } = useCompany();
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState('personal');
+
+  // Fetch dynamic divisions and designations
+  const { documents: divisions } = useFirestore('divisions');
+  const { documents: designations } = useFirestore('designations');
+
+  // Filter by company
+  const companyDivisions = useMemo(() => 
+    divisions.filter(d => d.companyId === companyId).sort((a, b) => a.name.localeCompare(b.name)),
+    [divisions, companyId]
+  );
+
+  const companyDesignations = useMemo(() => 
+    designations.filter(d => d.companyId === companyId).sort((a, b) => a.title.localeCompare(b.title)),
+    [designations, companyId]
+  );
 
   // Comprehensive form state matching Excel structure
   const [formData, setFormData] = useState({
@@ -286,10 +303,26 @@ export default function EmployeeForm() {
                 Employment Information
               </h3>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <InputField label="Division" name="Division" />
-                <InputField label="Department" name="Department " />
-                <InputField label="Section" name="Section" />
-                <InputField label="Designation" name="Designation" />
+                <SelectField 
+                  label="Division" 
+                  name="Division" 
+                  options={companyDivisions.filter(d => d.type === 'division').map(d => d.name)} 
+                />
+                <SelectField 
+                  label="Department" 
+                  name="Department " 
+                  options={companyDivisions.filter(d => d.type === 'department').map(d => d.name)} 
+                />
+                <SelectField 
+                  label="Section" 
+                  name="Section" 
+                  options={companyDivisions.filter(d => d.type === 'section').map(d => d.name)} 
+                />
+                <SelectField 
+                  label="Designation" 
+                  name="Designation" 
+                  options={companyDesignations.map(d => d.title)} 
+                />
                 <InputField label="Superior/Manager" name="Superior" />
                 <InputField label="Date of Join" name="Date of Join" type="date" />
               </div>

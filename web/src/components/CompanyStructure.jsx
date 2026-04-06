@@ -1,0 +1,775 @@
+import { useState, useMemo } from 'react';
+import {
+  Building2, Plus, Search, X, Edit2, Trash2, CheckCircle, Users,
+  Briefcase, Building, Layers, FolderTree, ChevronRight, ChevronDown,
+  MoreVertical, ArrowUpDown, AlertCircle, Save, RefreshCw
+} from 'lucide-react';
+import { useFirestore } from '../hooks/useFirestore';
+import { useCompany } from '../contexts/CompanyContext';
+import { useAuth } from '../contexts/AuthContext';
+import { collection, addDoc, updateDoc, deleteDoc, doc } from 'firebase/firestore';
+import { db } from '../firebase/config';
+import { toast } from 'react-hot-toast';
+
+// Division/Department Modal
+const DivisionModal = ({ isOpen, onClose, division, onSave, onDelete }) => {
+  const [formData, setFormData] = useState({
+    name: '',
+    code: '',
+    type: 'department',
+    parentId: '',
+    description: '',
+    headOfDepartment: '',
+    budgetCode: '',
+    ...division
+  });
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    onSave(formData);
+  };
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-xl w-full max-w-lg">
+        <div className="border-b px-6 py-4 flex items-center justify-between">
+          <h2 className="text-xl font-bold flex items-center gap-2">
+            <Building className="w-6 h-6 text-blue-600" />
+            {division?.id ? 'Edit Division' : 'Add Division/Department'}
+          </h2>
+          <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-lg">
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+
+        <form onSubmit={handleSubmit} className="p-6 space-y-4">
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium mb-1">Name *</label>
+              <input
+                type="text"
+                value={formData.name}
+                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                placeholder="e.g., Human Resources"
+                required
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1">Code *</label>
+              <input
+                type="text"
+                value={formData.code}
+                onChange={(e) => setFormData({ ...formData, code: e.target.value.toUpperCase() })}
+                className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                placeholder="e.g., HR"
+                required
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium mb-1">Type</label>
+              <select
+                value={formData.type}
+                onChange={(e) => setFormData({ ...formData, type: e.target.value })}
+                className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="department">Department</option>
+                <option value="division">Division</option>
+                <option value="section">Section</option>
+                <option value="unit">Unit</option>
+                <option value="branch">Branch</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1">Budget Code</label>
+              <input
+                type="text"
+                value={formData.budgetCode}
+                onChange={(e) => setFormData({ ...formData, budgetCode: e.target.value })}
+                className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                placeholder="e.g., BUD-HR-001"
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium mb-1">Head of Department</label>
+            <input
+              type="text"
+              value={formData.headOfDepartment}
+              onChange={(e) => setFormData({ ...formData, headOfDepartment: e.target.value })}
+              className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+              placeholder="Name of HOD"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium mb-1">Description</label>
+            <textarea
+              value={formData.description}
+              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+              rows={3}
+              className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+              placeholder="Description of this division..."
+            />
+          </div>
+
+          <div className="flex gap-3 pt-4 border-t">
+            <button type="submit" className="flex-1 bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700">
+              {division?.id ? 'Update Division' : 'Create Division'}
+            </button>
+            {division?.id && (
+              <button
+                type="button"
+                onClick={() => onDelete(division.id)}
+                className="px-4 py-2 border border-red-300 text-red-600 rounded-lg hover:bg-red-50"
+              >
+                Delete
+              </button>
+            )}
+            <button type="button" onClick={onClose} className="px-4 py-2 border rounded-lg hover:bg-gray-50">
+              Cancel
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+};
+
+// Designation Modal
+const DesignationModal = ({ isOpen, onClose, designation, divisions, onSave, onDelete }) => {
+  const [formData, setFormData] = useState({
+    title: '',
+    code: '',
+    department: '',
+    level: 'staff',
+    grade: '',
+    salaryMin: '',
+    salaryMax: '',
+    description: '',
+    responsibilities: '',
+    ...designation
+  });
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    onSave(formData);
+  };
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
+        <div className="sticky top-0 bg-white border-b px-6 py-4 flex items-center justify-between">
+          <h2 className="text-xl font-bold flex items-center gap-2">
+            <Briefcase className="w-6 h-6 text-purple-600" />
+            {designation?.id ? 'Edit Designation' : 'Add Designation'}
+          </h2>
+          <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-lg">
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+
+        <form onSubmit={handleSubmit} className="p-6 space-y-4">
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium mb-1">Title *</label>
+              <input
+                type="text"
+                value={formData.title}
+                onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500"
+                placeholder="e.g., Software Engineer"
+                required
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1">Code *</label>
+              <input
+                type="text"
+                value={formData.code}
+                onChange={(e) => setFormData({ ...formData, code: e.target.value.toUpperCase() })}
+                className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500"
+                placeholder="e.g., SE"
+                required
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium mb-1">Department/Division</label>
+            <select
+              value={formData.department}
+              onChange={(e) => setFormData({ ...formData, department: e.target.value })}
+              className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500"
+            >
+              <option value="">Select Department</option>
+              {divisions.map(div => (
+                <option key={div.id} value={div.name}>{div.name} ({div.code})</option>
+              ))}
+            </select>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium mb-1">Level</label>
+              <select
+                value={formData.level}
+                onChange={(e) => setFormData({ ...formData, level: e.target.value })}
+                className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500"
+              >
+                <option value="entry">Entry Level</option>
+                <option value="staff">Staff</option>
+                <option value="senior">Senior</option>
+                <option value="lead">Lead/Principal</option>
+                <option value="manager">Manager</option>
+                <option value="director">Director</option>
+                <option value="vp">VP</option>
+                <option value="executive">Executive</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1">Grade</label>
+              <input
+                type="text"
+                value={formData.grade}
+                onChange={(e) => setFormData({ ...formData, grade: e.target.value })}
+                className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500"
+                placeholder="e.g., G5"
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium mb-1">Min Salary (USD)</label>
+              <input
+                type="number"
+                value={formData.salaryMin}
+                onChange={(e) => setFormData({ ...formData, salaryMin: e.target.value })}
+                className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500"
+                placeholder="0"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1">Max Salary (USD)</label>
+              <input
+                type="number"
+                value={formData.salaryMax}
+                onChange={(e) => setFormData({ ...formData, salaryMax: e.target.value })}
+                className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500"
+                placeholder="0"
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium mb-1">Description</label>
+            <textarea
+              value={formData.description}
+              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+              rows={2}
+              className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500"
+              placeholder="Brief description of the role..."
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium mb-1">Key Responsibilities</label>
+            <textarea
+              value={formData.responsibilities}
+              onChange={(e) => setFormData({ ...formData, responsibilities: e.target.value })}
+              rows={3}
+              className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-purple-500"
+              placeholder="List main responsibilities..."
+            />
+          </div>
+
+          <div className="flex gap-3 pt-4 border-t">
+            <button type="submit" className="flex-1 bg-purple-600 text-white py-2 rounded-lg hover:bg-purple-700">
+              {designation?.id ? 'Update Designation' : 'Create Designation'}
+            </button>
+            {designation?.id && (
+              <button
+                type="button"
+                onClick={() => onDelete(designation.id)}
+                className="px-4 py-2 border border-red-300 text-red-600 rounded-lg hover:bg-red-50"
+              >
+                Delete
+              </button>
+            )}
+            <button type="button" onClick={onClose} className="px-4 py-2 border rounded-lg hover:bg-gray-50">
+              Cancel
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+};
+
+// Main Component
+export default function CompanyStructure() {
+  const [activeTab, setActiveTab] = useState('divisions');
+  const [showDivisionModal, setShowDivisionModal] = useState(false);
+  const [showDesignationModal, setShowDesignationModal] = useState(false);
+  const [selectedDivision, setSelectedDivision] = useState(null);
+  const [selectedDesignation, setSelectedDesignation] = useState(null);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [expandedDivisions, setExpandedDivisions] = useState([]);
+
+  const { companyId } = useCompany();
+  const { user } = useAuth();
+
+  const { documents: divisions, loading: divisionsLoading } = useFirestore('divisions');
+  const { documents: designations, loading: designationsLoading } = useFirestore('designations');
+  const { documents: employees } = useFirestore('employees');
+
+  const companyDivisions = useMemo(() => {
+    return divisions
+      .filter(d => d.companyId === companyId)
+      .sort((a, b) => a.name.localeCompare(b.name));
+  }, [divisions, companyId]);
+
+  const companyDesignations = useMemo(() => {
+    return designations
+      .filter(d => d.companyId === companyId)
+      .sort((a, b) => a.title.localeCompare(b.title));
+  }, [designations, companyId]);
+
+  const filteredDivisions = useMemo(() => {
+    return companyDivisions.filter(d =>
+      d.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      d.code?.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+  }, [companyDivisions, searchTerm]);
+
+  const filteredDesignations = useMemo(() => {
+    return companyDesignations.filter(d =>
+      d.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      d.code?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      d.department?.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+  }, [companyDesignations, searchTerm]);
+
+  const stats = {
+    totalDivisions: companyDivisions.length,
+    totalDesignations: companyDesignations.length,
+    departments: companyDivisions.filter(d => d.type === 'department').length,
+    designationsByLevel: companyDesignations.reduce((acc, d) => {
+      acc[d.level || 'staff'] = (acc[d.level || 'staff'] || 0) + 1;
+      return acc;
+    }, {})
+  };
+
+  const getEmployeeCount = (divisionName) => {
+    return employees.filter(e =>
+      e.companyId === companyId &&
+      (e.Department === divisionName || e.department === divisionName)
+    ).length;
+  };
+
+  const getDesignationCount = (divisionName) => {
+    return companyDesignations.filter(d => d.department === divisionName).length;
+  };
+
+  const handleSaveDivision = async (divisionData) => {
+    try {
+      const data = {
+        ...divisionData,
+        companyId,
+        createdBy: user?.uid,
+        createdAt: divisionData.id ? undefined : new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      };
+
+      if (selectedDivision?.id) {
+        await updateDoc(doc(db, 'divisions', selectedDivision.id), data);
+        toast.success('Division updated successfully');
+      } else {
+        await addDoc(collection(db, 'divisions'), data);
+        toast.success('Division created successfully');
+      }
+
+      setShowDivisionModal(false);
+      setSelectedDivision(null);
+    } catch (error) {
+      toast.error('Failed to save division: ' + error.message);
+    }
+  };
+
+  const handleDeleteDivision = async (id) => {
+    // Check if any employees are using this division
+    const division = companyDivisions.find(d => d.id === id);
+    const employeeCount = getEmployeeCount(division?.name);
+
+    if (employeeCount > 0) {
+      toast.error(`Cannot delete: ${employeeCount} employees are assigned to this division`);
+      return;
+    }
+
+    // Check if any designations are linked
+    const designationCount = getDesignationCount(division?.name);
+    if (designationCount > 0) {
+      toast.error(`Cannot delete: ${designationCount} designations are linked to this division`);
+      return;
+    }
+
+    if (!confirm('Are you sure you want to delete this division?')) return;
+
+    try {
+      await deleteDoc(doc(db, 'divisions', id));
+      toast.success('Division deleted');
+      setShowDivisionModal(false);
+      setSelectedDivision(null);
+    } catch (error) {
+      toast.error('Failed to delete division');
+    }
+  };
+
+  const handleSaveDesignation = async (designationData) => {
+    try {
+      const data = {
+        ...designationData,
+        companyId,
+        createdBy: user?.uid,
+        createdAt: designationData.id ? undefined : new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      };
+
+      if (selectedDesignation?.id) {
+        await updateDoc(doc(db, 'designations', selectedDesignation.id), data);
+        toast.success('Designation updated successfully');
+      } else {
+        await addDoc(collection(db, 'designations'), data);
+        toast.success('Designation created successfully');
+      }
+
+      setShowDesignationModal(false);
+      setSelectedDesignation(null);
+    } catch (error) {
+      toast.error('Failed to save designation: ' + error.message);
+    }
+  };
+
+  const handleDeleteDesignation = async (id) => {
+    // Check if any employees are using this designation
+    const designation = companyDesignations.find(d => d.id === id);
+    const employeeCount = employees.filter(e =>
+      e.companyId === companyId &&
+      (e.Designation === designation?.title || e.position === designation?.title)
+    ).length;
+
+    if (employeeCount > 0) {
+      toast.error(`Cannot delete: ${employeeCount} employees have this designation`);
+      return;
+    }
+
+    if (!confirm('Are you sure you want to delete this designation?')) return;
+
+    try {
+      await deleteDoc(doc(db, 'designations', id));
+      toast.success('Designation deleted');
+      setShowDesignationModal(false);
+      setSelectedDesignation(null);
+    } catch (error) {
+      toast.error('Failed to delete designation');
+    }
+  };
+
+  const toggleExpand = (id) => {
+    setExpandedDivisions(prev =>
+      prev.includes(id)
+        ? prev.filter(d => d !== id)
+        : [...prev, id]
+    );
+  };
+
+  if (divisionsLoading || designationsLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 p-6 flex items-center justify-center">
+        <div className="flex items-center gap-3 text-gray-500">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+          <span>Loading company structure...</span>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-gray-50 p-6">
+      {/* Header */}
+      <div className="bg-gradient-to-r from-indigo-600 to-purple-600 rounded-2xl p-6 mb-6 relative overflow-hidden">
+        <div className="absolute right-0 top-0 h-full w-1/3 opacity-20">
+          <Building2 className="h-full w-full text-white" />
+        </div>
+        <div className="relative z-10">
+          <h1 className="text-2xl font-bold text-white flex items-center gap-3">
+            <FolderTree className="h-8 w-8" />
+            Company Structure
+          </h1>
+          <p className="text-indigo-100 mt-1">Manage divisions, departments, and designations</p>
+        </div>
+      </div>
+
+      {/* Stats */}
+      <div className="grid grid-cols-4 gap-4 mb-6">
+        {[
+          { label: 'Total Divisions', value: stats.totalDivisions, icon: Building, color: 'bg-blue-500' },
+          { label: 'Departments', value: stats.departments, icon: Layers, color: 'bg-purple-500' },
+          { label: 'Designations', value: stats.totalDesignations, icon: Briefcase, color: 'bg-emerald-500' },
+          { label: 'Entry Level', value: stats.designationsByLevel.entry || 0, icon: Users, color: 'bg-orange-500' },
+        ].map((stat, idx) => (
+          <div key={idx} className="bg-white rounded-xl p-4 shadow-sm">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-500">{stat.label}</p>
+                <p className="text-2xl font-bold">{stat.value}</p>
+              </div>
+              <div className={`${stat.color} p-3 rounded-xl`}>
+                <stat.icon className="h-5 w-5 text-white" />
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Tabs */}
+      <div className="bg-white rounded-t-xl shadow-sm">
+        <div className="flex border-b">
+          {[
+            { id: 'divisions', label: 'Divisions & Departments', icon: Building },
+            { id: 'designations', label: 'Designations', icon: Briefcase },
+          ].map(tab => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={`flex items-center gap-2 px-6 py-4 font-medium ${
+                activeTab === tab.id
+                  ? 'text-blue-600 border-b-2 border-blue-600'
+                  : 'text-gray-600 hover:text-gray-900'
+              }`}
+            >
+              <tab.icon className="h-4 w-4" />
+              {tab.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Content */}
+      <div className="bg-white rounded-b-xl shadow-sm p-6">
+        {/* Search and Add */}
+        <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
+          <div className="relative flex-1 max-w-md">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <input
+              type="text"
+              placeholder={`Search ${activeTab}...`}
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-10 pr-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 w-full"
+            />
+          </div>
+          <button
+            onClick={() => {
+              if (activeTab === 'divisions') {
+                setSelectedDivision(null);
+                setShowDivisionModal(true);
+              } else {
+                setSelectedDesignation(null);
+                setShowDesignationModal(true);
+              }
+            }}
+            className={`text-white px-4 py-2 rounded-lg flex items-center gap-2 ${
+              activeTab === 'divisions'
+                ? 'bg-blue-600 hover:bg-blue-700'
+                : 'bg-purple-600 hover:bg-purple-700'
+            }`}
+          >
+            <Plus className="h-4 w-4" />
+            Add {activeTab === 'divisions' ? 'Division' : 'Designation'}
+          </button>
+        </div>
+
+        {/* Divisions Tab */}
+        {activeTab === 'divisions' && (
+          <div className="space-y-3">
+            {filteredDivisions.map(division => {
+              const employeeCount = getEmployeeCount(division.name);
+              const designationCount = getDesignationCount(division.name);
+              const isExpanded = expandedDivisions.includes(division.id);
+
+              return (
+                <div key={division.id} className="bg-gray-50 rounded-xl p-4 border border-gray-200">
+                  <div className="flex items-start justify-between">
+                    <div className="flex items-start gap-4">
+                      <div className="w-12 h-12 rounded-xl bg-blue-100 flex items-center justify-center">
+                        <Building className="w-6 h-6 text-blue-600" />
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <h3 className="font-semibold text-lg">{division.name}</h3>
+                          <span className="px-2 py-0.5 bg-gray-200 text-gray-700 rounded text-xs font-medium">
+                            {division.code}
+                          </span>
+                          <span className="px-2 py-0.5 bg-blue-100 text-blue-700 rounded text-xs capitalize">
+                            {division.type}
+                          </span>
+                        </div>
+                        <p className="text-sm text-gray-600 mt-1">{division.description}</p>
+                        <div className="flex items-center gap-4 mt-2 text-sm">
+                          <span className="flex items-center gap-1 text-gray-500">
+                            <Users className="w-4 h-4" />
+                            {employeeCount} employees
+                          </span>
+                          <span className="flex items-center gap-1 text-gray-500">
+                            <Briefcase className="w-4 h-4" />
+                            {designationCount} designations
+                          </span>
+                          {division.budgetCode && (
+                            <span className="text-gray-400">
+                              Budget: {division.budgetCode}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => { setSelectedDivision(division); setShowDivisionModal(true); }}
+                        className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg"
+                      >
+                        <Edit2 className="w-4 h-4" />
+                      </button>
+                      <button
+                        onClick={() => handleDeleteDivision(division.id)}
+                        className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+
+            {filteredDivisions.length === 0 && (
+              <div className="text-center py-12 text-gray-500">
+                <Building className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+                <p>No divisions found</p>
+                <p className="text-sm mt-2">Create divisions and departments for your company structure</p>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Designations Tab */}
+        {activeTab === 'designations' && (
+          <div>
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="text-left py-3 px-4">Designation</th>
+                    <th className="text-left py-3 px-4">Code</th>
+                    <th className="text-left py-3 px-4">Department</th>
+                    <th className="text-left py-3 px-4">Level</th>
+                    <th className="text-left py-3 px-4">Grade</th>
+                    <th className="text-right py-3 px-4">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y">
+                  {filteredDesignations.map(designation => (
+                    <tr key={designation.id} className="hover:bg-gray-50">
+                      <td className="py-3 px-4">
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 rounded-full bg-purple-100 flex items-center justify-center">
+                            <Briefcase className="w-4 h-4 text-purple-600" />
+                          </div>
+                          <div>
+                            <p className="font-medium">{designation.title}</p>
+                            <p className="text-sm text-gray-500 truncate max-w-xs">
+                              {designation.description}
+                            </p>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="py-3 px-4">
+                        <span className="px-2 py-1 bg-gray-100 rounded text-sm font-medium">
+                          {designation.code}
+                        </span>
+                      </td>
+                      <td className="py-3 px-4">{designation.department || '-'}</td>
+                      <td className="py-3 px-4">
+                        <span className={`px-2 py-1 rounded-full text-xs capitalize ${
+                          designation.level === 'executive' ? 'bg-red-100 text-red-700' :
+                          designation.level === 'director' ? 'bg-orange-100 text-orange-700' :
+                          designation.level === 'manager' ? 'bg-blue-100 text-blue-700' :
+                          designation.level === 'senior' ? 'bg-green-100 text-green-700' :
+                          'bg-gray-100 text-gray-700'
+                        }`}>
+                          {designation.level}
+                        </span>
+                      </td>
+                      <td className="py-3 px-4">{designation.grade || '-'}</td>
+                      <td className="py-3 px-4 text-right">
+                        <div className="flex items-center justify-end gap-2">
+                          <button
+                            onClick={() => { setSelectedDesignation(designation); setShowDesignationModal(true); }}
+                            className="p-2 text-gray-400 hover:text-purple-600 hover:bg-purple-50 rounded-lg"
+                          >
+                            <Edit2 className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => handleDeleteDesignation(designation.id)}
+                            className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {filteredDesignations.length === 0 && (
+              <div className="text-center py-12 text-gray-500">
+                <Briefcase className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+                <p>No designations found</p>
+                <p className="text-sm mt-2">Create designations for job positions in your company</p>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* Modals */}
+      <DivisionModal
+        isOpen={showDivisionModal}
+        onClose={() => { setShowDivisionModal(false); setSelectedDivision(null); }}
+        division={selectedDivision}
+        onSave={handleSaveDivision}
+        onDelete={handleDeleteDivision}
+      />
+
+      <DesignationModal
+        isOpen={showDesignationModal}
+        onClose={() => { setShowDesignationModal(false); setSelectedDesignation(null); }}
+        designation={selectedDesignation}
+        divisions={companyDivisions}
+        onSave={handleSaveDesignation}
+        onDelete={handleDeleteDesignation}
+      />
+    </div>
+  );
+}
