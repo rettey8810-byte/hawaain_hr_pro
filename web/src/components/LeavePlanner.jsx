@@ -230,6 +230,36 @@ export default function LeavePlanner() {
     setShowPrintView(true);
   };
 
+  // Approve leave
+  const handleApprove = async (leaveId) => {
+    try {
+      await updateDoc(doc(db, 'leaves', leaveId), {
+        status: 'approved',
+        approvedBy: user?.uid,
+        approvedAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      });
+      toast.success('Leave approved successfully');
+    } catch (error) {
+      toast.error('Failed to approve leave: ' + error.message);
+    }
+  };
+
+  // Reject leave
+  const handleReject = async (leaveId) => {
+    try {
+      await updateDoc(doc(db, 'leaves', leaveId), {
+        status: 'rejected',
+        rejectedBy: user?.uid,
+        rejectedAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      });
+      toast.success('Leave rejected');
+    } catch (error) {
+      toast.error('Failed to reject leave: ' + error.message);
+    }
+  };
+
   // Import from Leave_Status.json
   const handleImportFromJSON = async (jsonData) => {
     try {
@@ -588,19 +618,17 @@ export default function LeavePlanner() {
                   <thead className="bg-gradient-to-r from-emerald-50 to-teal-50 sticky top-0 z-10">
                     <tr>
                       <th className="px-6 py-4 text-left text-xs font-bold text-emerald-700 uppercase tracking-wider sticky top-0">👤 Employee</th>
-                      <th className="px-6 py-4 text-left text-xs font-bold text-emerald-700 uppercase tracking-wider sticky top-0">📅 Leave Period</th>
+                      <th className="px-6 py-4 text-left text-xs font-bold text-emerald-700 uppercase tracking-wider sticky top-0">🏢 Department</th>
+                      <th className="px-6 py-4 text-left text-xs font-bold text-emerald-700 uppercase tracking-wider sticky top-0">� Leave Period</th>
                       <th className="px-6 py-4 text-left text-xs font-bold text-emerald-700 uppercase tracking-wider sticky top-0">🌴 Type</th>
-                      <th className="px-6 py-4 text-left text-xs font-bold text-emerald-700 uppercase tracking-wider sticky top-0">📍 Destination</th>
                       <th className="px-6 py-4 text-left text-xs font-bold text-emerald-700 uppercase tracking-wider sticky top-0">📊 Status</th>
-                      <th className="px-6 py-4 text-left text-xs font-bold text-emerald-700 uppercase tracking-wider sticky top-0">✈️ Transport</th>
                       <th className="px-6 py-4 text-right text-xs font-bold text-emerald-700 uppercase tracking-wider sticky top-0">⚙️ Actions</th>
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-100">
                     {filteredLeaves.map((leave) => {
                       const statusConfig = STATUS_CONFIG[leave.status] || STATUS_CONFIG.pending;
-                      const transportStatus = leave.transportation?.status ? TRANSPORT_STATUS[leave.transportation.status] : null;
-                      const TransportIcon = leave.transportation?.mode ? TRANSPORT_MODE_ICONS[leave.transportation.mode] : Plane;
+                      const emp = employees.find(e => e.id === leave.employeeId);
                       
                       return (
                         <tr key={leave.id} className="hover:bg-emerald-50/50 transition-colors">
@@ -619,8 +647,15 @@ export default function LeavePlanner() {
                               )}
                               <div className="ml-3">
                                 <p className="text-sm font-bold text-gray-900">{getEmployeeName(leave.employeeId)}</p>
-                                <p className="text-xs text-gray-500">{leave.days} days</p>
+                                <p className="text-xs text-gray-500">{emp?.Designation || 'No designation'}</p>
+                                <p className="text-xs text-gray-400">{leave.days} days</p>
                               </div>
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="text-sm text-gray-700">
+                              <p className="font-medium">{emp?.Department || 'N/A'}</p>
+                              <p className="text-xs text-gray-500">{emp?.Section || ''}</p>
                             </div>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
@@ -642,70 +677,53 @@ export default function LeavePlanner() {
                             </span>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="flex items-center text-sm text-gray-700">
-                              <MapPin className="h-4 w-4 mr-2 text-rose-500" />
-                              {leave.destination || 'Not specified'}
-                            </div>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
                             <span className={`px-3 py-1.5 inline-flex text-xs leading-5 font-bold rounded-full border ${statusConfig.bg} ${statusConfig.text} ${statusConfig.border}`}>
                               {statusConfig.label}
                             </span>
                           </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            {leave.transportation?.required ? (
-                              <div className="flex flex-col gap-1">
-                                <div className="flex items-center text-sm text-gray-700">
-                                  <TransportIcon className="h-4 w-4 mr-2 text-blue-500" />
-                                  <span className="capitalize">{leave.transportation.mode}</span>
-                                </div>
-                                {transportStatus && (
-                                  <span className={`px-2 py-0.5 text-xs font-medium rounded ${transportStatus.bg} ${transportStatus.text} w-fit`}>
-                                    {transportStatus.label}
-                                  </span>
-                                )}
-                              </div>
-                            ) : (
-                              <span className="text-sm text-gray-400">—</span>
-                            )}
-                          </td>
                           <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                            <div className="flex justify-end space-x-2">
-                              <Link
-                                to={`/leave-planner/${leave.id}`}
+                            <div className="flex justify-end space-x-1">
+                              <button
+                                onClick={() => navigate(`/leave-planner/${leave.id}`)}
                                 className="p-2 text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors"
                                 title="View Details"
                               >
                                 <Eye className="h-4 w-4" />
-                              </Link>
-                              {canEdit(leave) && (
-                                <Link
-                                  to={`/leave-planner/${leave.id}/edit`}
+                              </button>
+                              
+                              {/* Always show edit for HR, or for owner if pending */}
+                              {(isHR() || (leave.employeeId === userData?.employeeId && leave.status === 'pending')) && (
+                                <button
+                                  onClick={() => navigate(`/leave-planner/${leave.id}/edit`)}
                                   className="p-2 text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
                                   title="Edit"
                                 >
                                   <Edit2 className="h-4 w-4" />
-                                </Link>
+                                </button>
                               )}
+                              
+                              {/* Approve/Reject for pending leaves - HR only */}
                               {leave.status === 'pending' && isHR() && (
-                                <Link
-                                  to={`/leave-planner/${leave.id}/approve`}
-                                  className="p-2 text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors"
-                                  title="Approve/Reject"
-                                >
-                                  <CheckCircle className="h-4 w-4" />
-                                </Link>
+                                <>
+                                  <button
+                                    onClick={() => handleApprove(leave.id)}
+                                    className="p-2 text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors"
+                                    title="Approve"
+                                  >
+                                    <CheckCircle className="h-4 w-4" />
+                                  </button>
+                                  <button
+                                    onClick={() => handleReject(leave.id)}
+                                    className="p-2 text-rose-600 hover:bg-rose-50 rounded-lg transition-colors"
+                                    title="Reject"
+                                  >
+                                    <XCircle className="h-4 w-4" />
+                                  </button>
+                                </>
                               )}
-                              {leave.transportation?.required && leave.status === 'approved' && isHR() && (
-                                <Link
-                                  to={`/leave-planner/${leave.id}/transport`}
-                                  className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                                  title="Manage Transport"
-                                >
-                                  <Plane className="h-4 w-4" />
-                                </Link>
-                              )}
-                              {canDelete(leave) && (
+                              
+                              {/* Delete - HR can delete any, owner can delete own pending */}
+                              {(isHR() || (leave.employeeId === userData?.employeeId && leave.status === 'pending')) && (
                                 <button
                                   onClick={() => { setSelectedLeave(leave); setShowDeleteModal(true); }}
                                   className="p-2 text-rose-600 hover:bg-rose-50 rounded-lg transition-colors"
@@ -714,13 +732,6 @@ export default function LeavePlanner() {
                                   <Trash2 className="h-4 w-4" />
                                 </button>
                               )}
-                              <button
-                                onClick={() => handlePrint(leave)}
-                                className="p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
-                                title="Print"
-                              >
-                                <Printer className="h-4 w-4" />
-                              </button>
                             </div>
                           </td>
                         </tr>
