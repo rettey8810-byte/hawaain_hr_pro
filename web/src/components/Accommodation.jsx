@@ -1228,6 +1228,13 @@ export default function Accommodation() {
                 <Plus className="h-4 w-4" />
                 New Assignment
               </button>
+              <button
+                onClick={() => { setSelectedAssignment(null); setShowAssignmentModal(true); }}
+                className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 flex items-center gap-2"
+              >
+                <Plus className="h-4 w-4" />
+                New Assignment
+              </button>
             </div>
 
             <div className="overflow-x-auto">
