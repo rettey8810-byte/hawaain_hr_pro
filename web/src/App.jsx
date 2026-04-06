@@ -75,6 +75,7 @@ import ContractsAndLetters from './components/ContractsAndLetters';
 import FormTemplates from './components/FormTemplates';
 import ManpowerBudget from './components/ManpowerBudget';
 import BudgetDashboard from './components/BudgetDashboard';
+import LeaveAnalytics from './components/LeaveAnalytics';
 
 // Additional HR Feature Modules (v1.5.0)
 import PerformanceReviews from './components/PerformanceReviews';
@@ -362,6 +363,20 @@ function App() {
                 <PrivateRoute>
                   <PermissionRoute feature="reports" action="view">
                     <Layout><Reports /></Layout>
+                  </PermissionRoute>
+                </PrivateRoute>
+              } />
+              <Route path="/leave-reports" element={
+                <PrivateRoute>
+                  <PermissionRoute feature="reports" action="view">
+                    <Layout><LeaveReports /></Layout>
+                  </PermissionRoute>
+                </PrivateRoute>
+              } />
+              <Route path="/leave-analytics" element={
+                <PrivateRoute>
+                  <PermissionRoute feature="reports" action="view">
+                    <Layout><LeaveAnalytics /></Layout>
                   </PermissionRoute>
                 </PrivateRoute>
               } />
