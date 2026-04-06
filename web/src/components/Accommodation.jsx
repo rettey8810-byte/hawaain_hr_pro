@@ -784,15 +784,23 @@ export default function Accommodation() {
   // Import from Accomodation_Report.json format
   const handleImportFromJSON = async (jsonData) => {
     try {
+      console.log('Starting import with', jsonData.length, 'records');
       toast.loading('Importing accommodation data...', { id: 'import' });
       
       let roomsCreated = 0;
       let assignmentsCreated = 0;
+      let skipped = 0;
       const roomMap = new Map(); // Track created rooms to avoid duplicates
       
       for (const record of jsonData) {
+        console.log('Processing record:', record['Emp ID'], record['Name']);
+        
         // Skip records not in house
-        if (!record['In House']) continue;
+        if (!record['In House']) {
+          console.log('Skipping - not in house');
+          skipped++;
+          continue;
+        }
         
         // Create unique room key
         const buildingName = record['Building Name'];
@@ -800,11 +808,14 @@ export default function Accommodation() {
         const flatName = record['Flat Name'];
         const roomKey = `${buildingName}-${roomNumber}`;
         
+        console.log('Room key:', roomKey);
+        
         let roomId;
         
         // Check if room already exists in our map
         if (roomMap.has(roomKey)) {
           roomId = roomMap.get(roomKey);
+          console.log('Using cached room:', roomId);
         } else {
           // Check if room exists in Firestore
           const existingRoom = companyRooms.find(r => 
@@ -813,8 +824,10 @@ export default function Accommodation() {
           
           if (existingRoom) {
             roomId = existingRoom.id;
+            console.log('Using existing room:', roomId);
           } else {
             // Create new room
+            console.log('Creating new room...');
             const roomData = {
               roomNumber,
               building: buildingName,
@@ -838,6 +851,7 @@ export default function Accommodation() {
             const roomRef = await addDoc(collection(db, 'rooms'), roomData);
             roomId = roomRef.id;
             roomsCreated++;
+            console.log('Room created:', roomId);
           }
           
           roomMap.set(roomKey, roomId);
@@ -851,8 +865,11 @@ export default function Accommodation() {
         
         if (!employee) {
           console.warn(`Employee not found: ${empId} - ${record['Name']}`);
+          skipped++;
           continue;
         }
+        
+        console.log('Found employee:', employee.id, employee.FullName || employee.name);
         
         // Check if assignment already exists
         const existingAssignment = companyAssignments.find(a => 
@@ -884,10 +901,14 @@ export default function Accommodation() {
           
           await addDoc(collection(db, 'roomAssignments'), assignmentData);
           assignmentsCreated++;
+          console.log('Assignment created for employee:', employee.id);
+        } else {
+          console.log('Assignment already exists, skipping');
         }
       }
       
-      toast.success(`Imported ${roomsCreated} rooms and ${assignmentsCreated} assignments`, { id: 'import' });
+      console.log(`Import complete: ${roomsCreated} rooms, ${assignmentsCreated} assignments, ${skipped} skipped`);
+      toast.success(`Imported ${roomsCreated} rooms and ${assignmentsCreated} assignments (${skipped} skipped)`, { id: 'import' });
     } catch (error) {
       console.error('Import error:', error);
       toast.error('Import failed: ' + error.message, { id: 'import' });
@@ -1025,16 +1046,29 @@ export default function Accommodation() {
                   accept=".json"
                   className="hidden"
                   onChange={(e) => {
+                    console.log('File selected:', e.target.files);
                     const file = e.target.files[0];
                     if (file) {
+                      console.log('Reading file:', file.name);
+                      toast.loading('Reading file...', { id: 'file-read' });
                       const reader = new FileReader();
                       reader.onload = (event) => {
                         try {
+                          console.log('File content length:', event.target.result.length);
                           const jsonData = JSON.parse(event.target.result);
+                          console.log('Parsed JSON records:', jsonData.length);
+                          toast.dismiss('file-read');
                           handleImportFromJSON(jsonData);
                         } catch (err) {
-                          toast.error('Invalid JSON file');
+                          console.error('JSON parse error:', err);
+                          toast.dismiss('file-read');
+                          toast.error('Invalid JSON file: ' + err.message);
                         }
+                      };
+                      reader.onerror = (err) => {
+                        console.error('File read error:', err);
+                        toast.dismiss('file-read');
+                        toast.error('Failed to read file');
                       };
                       reader.readAsText(file);
                     }
