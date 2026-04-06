@@ -781,6 +781,119 @@ export default function Accommodation() {
     }
   };
 
+  // Import from Accomodation_Report.json format
+  const handleImportFromJSON = async (jsonData) => {
+    try {
+      toast.loading('Importing accommodation data...', { id: 'import' });
+      
+      let roomsCreated = 0;
+      let assignmentsCreated = 0;
+      const roomMap = new Map(); // Track created rooms to avoid duplicates
+      
+      for (const record of jsonData) {
+        // Skip records not in house
+        if (!record['In House']) continue;
+        
+        // Create unique room key
+        const buildingName = record['Building Name'];
+        const roomNumber = String(record['Room No']);
+        const flatName = record['Flat Name'];
+        const roomKey = `${buildingName}-${roomNumber}`;
+        
+        let roomId;
+        
+        // Check if room already exists in our map
+        if (roomMap.has(roomKey)) {
+          roomId = roomMap.get(roomKey);
+        } else {
+          // Check if room exists in Firestore
+          const existingRoom = companyRooms.find(r => 
+            r.roomNumber === roomNumber && r.building === buildingName
+          );
+          
+          if (existingRoom) {
+            roomId = existingRoom.id;
+          } else {
+            // Create new room
+            const roomData = {
+              roomNumber,
+              building: buildingName,
+              floor: flatName,
+              wing: '',
+              roomType: 'standard',
+              capacity: 4,
+              beds: record['Bed No'] || 4,
+              bathrooms: 1,
+              squareMeters: '',
+              amenities: [],
+              status: 'occupied',
+              monthlyRent: '',
+              description: `Imported from accommodation report`,
+              companyId,
+              createdBy: user?.uid,
+              createdAt: new Date().toISOString(),
+              updatedAt: new Date().toISOString()
+            };
+            
+            const roomRef = await addDoc(collection(db, 'rooms'), roomData);
+            roomId = roomRef.id;
+            roomsCreated++;
+          }
+          
+          roomMap.set(roomKey, roomId);
+        }
+        
+        // Find employee by Emp ID
+        const empId = String(record['Emp ID']);
+        const employee = employees.find(e => 
+          String(e.EmpID) === empId || String(e.id) === empId
+        );
+        
+        if (!employee) {
+          console.warn(`Employee not found: ${empId} - ${record['Name']}`);
+          continue;
+        }
+        
+        // Check if assignment already exists
+        const existingAssignment = companyAssignments.find(a => 
+          a.roomId === roomId && a.employeeId === employee.id && !a.checkOutDate
+        );
+        
+        if (!existingAssignment) {
+          // Parse check-in date
+          let checkInDate = record['Check In'];
+          if (checkInDate && checkInDate !== 'NaN') {
+            checkInDate = new Date(checkInDate).toISOString();
+          } else {
+            checkInDate = new Date().toISOString();
+          }
+          
+          // Create assignment
+          const assignmentData = {
+            roomId,
+            employeeId: employee.id,
+            checkInDate,
+            expectedCheckOut: '',
+            status: 'active',
+            notes: `Imported: ${record['Entry By']}`,
+            companyId,
+            createdBy: user?.uid,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString()
+          };
+          
+          await addDoc(collection(db, 'roomAssignments'), assignmentData);
+          assignmentsCreated++;
+        }
+      }
+      
+      toast.success(`Imported ${roomsCreated} rooms and ${assignmentsCreated} assignments`, { id: 'import' });
+    } catch (error) {
+      console.error('Import error:', error);
+      toast.error('Import failed: ' + error.message, { id: 'import' });
+    }
+  };
+
   if (roomsLoading || assignmentsLoading || maintenanceLoading || employeesLoading) {
     return (
       <div className="min-h-screen bg-gray-50 p-6 flex items-center justify-center">
@@ -904,6 +1017,31 @@ export default function Accommodation() {
                 <Plus className="h-4 w-4" />
                 Add Room
               </button>
+              <label className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 flex items-center gap-2 cursor-pointer">
+                <Download className="h-4 w-4" />
+                Import JSON
+                <input
+                  type="file"
+                  accept=".json"
+                  className="hidden"
+                  onChange={(e) => {
+                    const file = e.target.files[0];
+                    if (file) {
+                      const reader = new FileReader();
+                      reader.onload = (event) => {
+                        try {
+                          const jsonData = JSON.parse(event.target.result);
+                          handleImportFromJSON(jsonData);
+                        } catch (err) {
+                          toast.error('Invalid JSON file');
+                        }
+                      };
+                      reader.readAsText(file);
+                    }
+                    e.target.value = '';
+                  }}
+                />
+              </label>
             </div>
 
             <div className="grid grid-cols-3 gap-4">
