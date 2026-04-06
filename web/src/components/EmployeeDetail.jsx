@@ -11,14 +11,28 @@ import {
   Mail,
   Phone,
   MapPin,
-  Building2
+  Building2,
+  User,
+  CreditCard,
+  Home,
+  Users,
+  BadgeCheck,
+  AlertCircle,
+  ChevronDown,
+  ChevronRight,
+  Save,
+  X,
+  DollarSign,
+  Banknote,
+  Contact,
+  Flag,
+  Droplet
 } from 'lucide-react';
-import { collection, query, where, getDocs } from 'firebase/firestore';
+import { collection, query, where, getDocs, doc, updateDoc } from 'firebase/firestore';
 import { db } from '../firebase/config';
 import { useFirestore } from '../hooks/useFirestore';
 import { useAuth } from '../contexts/AuthContext';
-import { formatDate, getDocumentStatus, calculateDaysRemaining } from '../utils/helpers';
-import { differenceInDays, parseISO } from 'date-fns';
+import { formatDate, getDocumentStatus, calculateDaysRemaining, formatCurrency } from '../utils/helpers';
 
 function DocumentCard({ title, icon: Icon, documents, type, employeeId }) {
   const typePaths = {
@@ -81,6 +95,41 @@ function DocumentCard({ title, icon: Icon, documents, type, employeeId }) {
       ) : (
         <p className="text-sm text-gray-500 italic">No documents found</p>
       )}
+    </div>
+  );
+}
+
+function InfoCard({ icon: Icon, label, value, subValue }) {
+  return (
+    <div className="bg-white rounded-lg shadow p-4">
+      <div className="flex items-start">
+        <Icon className="h-5 w-5 text-gray-400 mr-3 mt-0.5" />
+        <div>
+          <p className="text-sm text-gray-500">{label}</p>
+          <p className="text-sm font-medium text-gray-900">{value || '-'}</p>
+          {subValue && <p className="text-xs text-gray-400 mt-1">{subValue}</p>}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function Section({ title, icon: Icon, children, defaultOpen = true }) {
+  const [isOpen, setIsOpen] = useState(defaultOpen);
+  
+  return (
+    <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+      <button
+        onClick={() => setIsOpen(!isOpen)}
+        className="w-full flex items-center justify-between p-4 bg-gray-50 hover:bg-gray-100 transition-colors"
+      >
+        <div className="flex items-center">
+          <Icon className="h-5 w-5 text-blue-600 mr-3" />
+          <h3 className="text-lg font-semibold text-gray-900">{title}</h3>
+        </div>
+        {isOpen ? <ChevronDown className="h-5 w-5 text-gray-400" /> : <ChevronRight className="h-5 w-5 text-gray-400" />}
+      </button>
+      {isOpen && <div className="p-4">{children}</div>}
     </div>
   );
 }
