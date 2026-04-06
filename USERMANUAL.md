@@ -5,22 +5,27 @@
 2. [Getting Started](#getting-started)
 3. [User Roles & Permissions](#user-roles--permissions)
 4. [Company Management](#company-management)
-5. [Dashboard](#dashboard)
-6. [Employee Management](#employee-management)
-7. [Recruitment & ATS](#recruitment--ats)
-8. [Payroll & Payslips](#payroll--payslips)
-9. [Manpower Budget](#manpower-budget)
-10. [Leave Planner](#leave-planner)
-11. [Leave Reports & Analytics](#leave-reports--analytics)
-12. [Leave Policy Settings](#leave-policy-settings)
-13. [Document Management](#document-management)
-14. [Notifications & Alerts](#notifications--alerts)
-15. [Settings](#settings)
-16. [Troubleshooting](#troubleshooting)
-17. [Tips & Best Practices](#tips--best-practices)
-18. [Keyboard Shortcuts](#keyboard-shortcuts)
-19. [Contact & Support](#contact--support)
-20. [FAQ](#faq)
+5. [Company Structure](#company-structure)
+6. [Dashboard](#dashboard)
+7. [Employee Management](#employee-management)
+8. [Recruitment & ATS](#recruitment--ats)
+9. [Payroll & Payslips](#payroll--payslips)
+10. [Manpower Budget](#manpower-budget)
+11. [Leave Planner](#leave-planner)
+12. [Leave Reports & Analytics](#leave-reports--analytics)
+13. [Leave Policy Settings](#leave-policy-settings)
+14. [Document Management](#document-management)
+15. [Accommodation](#accommodation)
+16. [Promotions](#promotions)
+17. [Employee Engagement](#employee-engagement)
+18. [HR Operations](#hr-operations)
+19. [Notifications & Alerts](#notifications--alerts)
+20. [Settings](#settings)
+21. [Troubleshooting](#troubleshooting)
+22. [Tips & Best Practices](#tips--best-practices)
+23. [Keyboard Shortcuts](#keyboard-shortcuts)
+24. [Contact & Support](#contact--support)
+25. [FAQ](#faq)
 
 ---
 
@@ -192,6 +197,61 @@ The Company Management module allows superadmins to create and manage multiple c
 - 887 employees imported for "Sunisland Resort and Spa"
 - Document ID format: `sunisland-resort-and-spa_571`
 - All employees linked to company ID: `sunisland-resort-and-spa`
+
+---
+
+## Company Structure
+
+### Overview
+Company Structure allows you to define your organization's hierarchy with divisions, departments, sections, and job designations. Once defined, these appear dynamically in dropdowns throughout the system.
+
+### Access
+Go to **Company → Company Structure**
+
+### Divisions & Departments Tab
+
+#### Creating Divisions
+1. Click "Add Division"
+2. Enter details:
+   - **Name**: e.g., "Human Resources", "Finance"
+   - **Code**: Short code e.g., "HR", "FIN"
+   - **Type**: Division, Department, Section, Unit, or Branch
+   - **Budget Code**: For budget tracking (optional)
+   - **Head of Department**: Name of HOD (optional)
+   - **Description**: Details about the division
+3. Save
+
+#### Managing Divisions
+- View employee count per division
+- View linked designations count
+- Edit or delete divisions (cannot delete if employees are assigned)
+- Search and filter by type
+
+### Designations Tab
+
+#### Creating Designations
+1. Click "Add Designation"
+2. Enter details:
+   - **Title**: Job title e.g., "Software Engineer"
+   - **Code**: Short code e.g., "SE"
+   - **Department**: Link to a division/department
+   - **Level**: Entry, Staff, Senior, Lead, Manager, Director, VP, Executive
+   - **Grade**: Pay grade e.g., "G5"
+   - **Salary Range**: Min and Max salary (USD)
+   - **Description**: Role overview
+   - **Responsibilities**: Key duties
+3. Save
+
+#### Managing Designations
+- View all job positions in table format
+- Filter by department, level, or search by name
+- Edit or delete designations (cannot delete if assigned to employees)
+
+### Using Dynamic Dropdowns
+Once divisions and designations are created, they automatically appear in:
+- **Add Employee** form (Division, Department, Section, Designation fields)
+- **Manpower Budget** (Department, Section, Designation fields)
+- **Recruitment** job postings
 
 ---
 
@@ -1074,6 +1134,277 @@ Ensure labor law compliance and manage contracts.
    - Result (Approved, Failed, Pending)
    - Upload document (optional)
 4. Save
+
+---
+
+## Accommodation
+
+### Overview
+Manage staff accommodation with room assignments, occupancy tracking, and maintenance requests.
+
+### Access
+Go to **Accommodation** in the main navigation
+
+### Room List
+
+#### Creating Rooms
+1. Go to "Accommodation" → "Room List"
+2. Click "Add Room"
+3. Enter room details:
+   - **Room Number**: e.g., "101", "A-203"
+   - **Building**: Building name or block
+   - **Floor**: Floor number (Ground, 1, 2, etc.)
+   - **Wing**: Optional wing/block identifier
+   - **Room Type**: Standard, Deluxe, Suite, Shared, Studio, Family
+   - **Capacity**: Number of people room can accommodate
+   - **Beds**: Number of beds
+   - **Bathrooms**: Number of bathrooms
+   - **Area**: Square meters (optional)
+   - **Amenities**: AC, WiFi, TV, Kitchen, Laundry, Hot Water, Backup Power, Fan
+4. Set room status: Available, Occupied, Maintenance, Cleaning, Reserved
+5. Save room
+
+#### Managing Rooms
+- View all rooms with occupancy status
+- Filter by building, status, or search by room number
+- Edit room details or delete rooms
+- View occupancy percentage per room
+
+### Room Assignment
+
+#### Assigning Staff to Rooms
+1. Go to "Accommodation" → "Room Assignment"
+2. Click "New Assignment"
+3. Select:
+   - **Room**: Choose from available rooms
+   - **Employee**: Select staff member
+   - **Check-in Date**: Start date
+   - **Expected Check-out**: End date (optional)
+4. Add notes if needed
+5. Save assignment
+
+#### Managing Assignments
+- View all current occupants
+- See check-in dates and expected duration
+- Vacate rooms when staff move out
+- Room status automatically updates to "Cleaning" when vacated
+
+### Maintenance
+
+#### Creating Maintenance Requests
+1. Go to "Accommodation" → "Maintenance"
+2. Click "New Request"
+3. Enter details:
+   - **Room**: Select room
+   - **Type**: Repair, Cleaning, Inspection, Renovation, Pest Control, Electrical, Plumbing, HVAC
+   - **Priority**: Low, Medium, High, Urgent
+   - **Description**: Issue details
+   - **Scheduled Date**: When maintenance should occur
+   - **Assigned To**: Staff or vendor name
+4. Save request
+
+#### Tracking Maintenance
+- View all pending and completed requests
+- Filter by priority, status, or room
+- Room status automatically set to "Maintenance" when request created
+- Mark requests as completed when done
+
+---
+
+## Promotions
+
+### Overview
+Track career progression, manage promotion workflows, and monitor salary increases.
+
+### Access
+Go to **HR Management** → **Promotions**
+
+### Career Progression
+
+#### 8 Career Levels
+- **Entry Level**: New hires, trainees
+- **Staff**: Junior employees
+- **Senior**: Experienced individual contributors
+- **Lead/Principal**: Technical experts, team leads
+- **Manager**: Department managers
+- **Director**: Senior leadership
+- **VP**: Vice President level
+- **Executive**: C-suite, top executives
+
+### Managing Promotions
+
+#### Creating a Promotion
+1. Click "New Promotion"
+2. Select employee
+3. Enter promotion details:
+   - **Current Level**: Auto-populated
+   - **New Level**: Select new career level
+   - **Current Position**: Auto-populated
+   - **New Position**: New job title
+   - **Effective Date**: When promotion takes effect
+   - **Previous Salary**: Current salary (for HR/GM)
+   - **New Salary**: Updated salary (for HR/GM)
+4. Add reason for promotion
+5. Submit for approval
+
+#### Promotion Workflow
+- **Pending**: Awaiting approval
+- **Approved**: Promotion confirmed
+- **Rejected**: With reason provided
+- **Effective**: Active from specified date
+
+### Eligible Candidates
+- View staff eligible for promotion based on:
+  - Years of service (2+ years typically)
+  - No recent promotion
+  - Performance ratings
+
+### Analytics
+- Total promotions count
+- Average salary increase
+- Promotions by department
+- Level distribution across company
+
+---
+
+## Employee Engagement
+
+### Overview
+Run surveys, manage recognition programs, and track employee satisfaction.
+
+### Access
+Go to **HR Management** → **Engagement**
+
+### Surveys
+
+#### Creating Surveys
+1. Go to "Engagement" → "Surveys" tab
+2. Click "Create Survey"
+3. Choose template:
+   - **eNPS**: Employee Net Promoter Score
+   - **Pulse Check**: Quick monthly check-in
+   - **Full Engagement**: Comprehensive survey
+4. Configure:
+   - **Title**: Survey name
+   - **Anonymous**: Enable for honest feedback
+   - **Questions**: Add/edit questions
+   - **Expiry Date**: Response deadline
+5. Publish survey
+
+#### Survey Templates
+- **eNPS**: "How likely are you to recommend this company?" (1-10 scale)
+- **Pulse**: Work satisfaction, stress levels, manager support
+- **Full Engagement**: Career development, compensation, culture, work-life balance
+
+#### Question Types
+- Rating scales (1-5, 1-10)
+- Multiple choice
+- Open text responses
+- Yes/No questions
+
+### Recognition Wall
+
+#### Giving Kudos
+1. Go to "Engagement" → "Recognition"
+2. Click "Give Kudos"
+3. Select:
+   - **Employee**: Colleague to recognize
+   - **Badge Type**: Excellence, Teamwork, Innovation, Dedication, Leadership
+   - **Message**: Why you're recognizing them
+4. Submit
+
+#### Badge Types
+- 🏆 **Excellence**: Outstanding performance
+- 🤝 **Teamwork**: Great collaboration
+- 💡 **Innovation**: Creative solutions
+- ⭐ **Dedication**: Going above and beyond
+- 👑 **Leadership**: Leading by example
+
+### Suggestions Box
+- Employees can submit anonymous suggestions
+- HR can review and respond
+- Track implementation status
+
+### Analytics
+- **Engagement Score**: Overall company engagement
+- **eNPS**: Promoter vs Detractor ratio
+- **Participation Rates**: Survey completion
+- **Recognition Activity**: Kudos given/received
+
+---
+
+## HR Operations
+
+### Overview
+Manage disciplinary actions, grievances, and exit processes.
+
+### Access
+Go to **HR Management** → **Operations**
+
+### Disciplinary
+
+#### Recording Actions
+1. Go to "Operations" → "Disciplinary" tab
+2. Click "Record Action"
+3. Enter details:
+   - **Employee**: Staff member
+   - **Type**: Verbal Warning, Written Warning, Final Warning, Suspension, Termination
+   - **Incident Date**: When incident occurred
+   - **Description**: What happened
+   - **Action Taken**: Consequences applied
+4. Save record
+
+#### Workflow
+- Actions recorded by HR/GM
+- Employee notified
+- Can be appealed through grievance process
+- History maintained for future reference
+
+### Grievances
+
+#### Submitting Grievances
+1. Employees: Go to "Self-Service" → "Submit Grievance"
+2. HR: Go to "Operations" → "Grievances"
+3. Enter:
+   - **Type**: Harassment, Discrimination, Pay Issues, Management, Other
+   - **Description**: Detailed explanation
+   - **Anonymous**: Optional for employee submissions
+4. Submit
+
+#### Managing Grievances
+- Track status: Pending, Under Review, Resolved, Escalated
+- Assign to HR investigator
+- Document findings and resolution
+- Maintain confidentiality
+
+### Exit Management
+
+#### Recording Exits
+1. Go to "Operations" → "Exit Management"
+2. Click "Record Exit"
+3. Enter:
+   - **Employee**: Departing staff
+   - **Exit Type**: Resignation, Termination, Retirement, End of Contract, Transfer
+   - **Last Working Day**: Final date
+   - **Reason**: Why they're leaving
+   - **Clearance Status**: Pending, In Progress, Completed
+4. Save
+
+#### Voice Exit Interview
+- Optional voice recording for exit interviews
+- Browser records and transcribes answers
+- Questions include:
+  - Why are you leaving?
+  - What did you like most/least?
+  - How was your manager relationship?
+  - What could we improve?
+- Save transcript with exit record
+
+#### Clearance Workflow
+1. **HR Clearance**: Documents, equipment return
+2. **IT Clearance**: Accounts, devices
+3. **Finance Clearance**: Loans, advances
+4. **Admin Clearance**: Access cards, keys
 
 ---
 

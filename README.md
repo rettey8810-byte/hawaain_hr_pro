@@ -307,40 +307,64 @@ npx expo start
    - Create new project
    - Enable Authentication, Firestore, and Storage
 
-2. **Authentication**
-   - Enable Email/Password sign-in method
+| Role | Can Create | Access Level |
+|------|------------|--------------|
+| **Superadmin** | GM, HRM, Dept Head, Supervisor, Staff | All companies, full access |
+| **GM** | HRM, Dept Head, Supervisor, Staff | Company-wide, financial data |
+| **HRM** | Dept Head, Supervisor, Staff | Company-wide, no company creation |
+| **Department Head** | Supervisor, Staff | Department only |
+| **Supervisor** | Staff | Team only |
+| **Staff** | - | Self only |
 
-3. **Firestore Database**
-   - Create database in test mode
-   - Collections will be auto-created
+## Architecture
 
-4. **Storage**
-   - Enable Firebase Storage
-   - Set rules for authenticated access
+### Tech Stack
+- **Frontend**: React 18 + Vite
+- **Backend**: Firebase (Firestore, Auth, Storage)
+- **Styling**: Tailwind CSS
+- **Icons**: Lucide React
+- **Charts**: Recharts
 
-5. **Get Config**
-   - Project Settings → General → Your apps
-   - Copy Firebase config object
-   - Paste in `web/src/firebase/config.js` and `mobile/firebase.js`
+### Database Collections
+- `companies` - Company profiles
+- `employees` - Employee records
+- `users` - System users with roles
+- `divisions` - Company divisions/departments
+- `designations` - Job positions
+- `leaves` - Leave applications
+- `payrolls` - Payroll records
+- `rooms` - Accommodation rooms
+- `roomAssignments` - Staff room assignments
+- `maintenance` - Maintenance requests
+- `promotions` - Promotion records
+- `surveys` - Engagement surveys
+- `recognitions` - Employee recognition
+- `disciplinary` - Disciplinary actions
+- `grievances` - Employee grievances
+- `exits` - Exit management
 
----
+## Mobile App
 
-## 🏢 Multi-Tenant Architecture
+A companion mobile app is available for:
+- Employee self-service
+- Check-in/out
+- Leave applications
+- Document viewing
 
-The application supports multiple companies with complete data isolation:
+## Updates
 
-### Company Structure
-- **Superadmin**: Can create/manage companies and assign company admins
-- **Company Admin**: Full access to their assigned company's data
-- **Company Users**: Access limited to their company's data only
+### Latest (v2.0.0)
+- Company Structure with dynamic divisions/designations
+- Accommodation module (rooms, assignments, maintenance)
+- Promotions with career progression
+- Employee Engagement (surveys, recognition, suggestions)
+- HR Operations (disciplinary, grievances, exit with voice interview)
+- Enhanced Training module
+- Company Structure replaces static department lists
 
-### Data Isolation
-All collections are filtered by `companyId`:
-- `employees` → `companyId` field links to `companies` collection
-- `passports`, `visas`, `workPermits`, `medicals` → `companyId` field
-- `leaves`, `payrolls`, `notifications` → `companyId` field
-- `manpowerBudgets` → `companyId` field
+## Troubleshooting
 
+### Common Issues
 ### Company Switching
 - Superadmins can switch between all companies
 - Company users see only their assigned company

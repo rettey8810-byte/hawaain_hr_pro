@@ -125,6 +125,10 @@ export default function Operations() {
   const { documents: exits, loading: eLoading, deleteDocument: deleteE } = useFirestore('exits');
   const { documents: employees } = useFirestore('employees');
 
+  const disciplinaryLoading = dLoading;
+  const grievancesLoading = gLoading;
+  const exitsLoading = eLoading;
+
   const filteredD = disciplinaryActions.filter(a => a.companyId === companyId);
   const filteredG = grievances.filter(g => g.companyId === companyId);
   const filteredE = exits.filter(e => e.companyId === companyId);
