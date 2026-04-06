@@ -43,7 +43,11 @@ import {
   Megaphone,
   Award,
   Receipt,
-  CalendarDays
+  CalendarDays,
+  Home,
+  BedDouble,
+  Wrench,
+  DoorOpen
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useNotifications } from '../contexts/NotificationContext';
@@ -161,6 +165,15 @@ export default function Layout({ children }) {
         { name: 'Companies', href: '/companies', icon: Building2, feature: 'companies', action: 'view' },
         { name: 'User Management', href: '/users', icon: UserCog, feature: 'users', action: 'view' },
         { name: 'Audit Log', href: '/audit-log', icon: ClipboardList, feature: 'reports', action: 'view' },
+      ]
+    },
+    {
+      name: 'Accommodation',
+      icon: Home,
+      items: [
+        { name: 'Room List', href: '/accommodation/rooms', icon: BedDouble, feature: 'employees', action: 'view' },
+        { name: 'Room Assignment', href: '/accommodation/assignments', icon: DoorOpen, feature: 'employees', action: 'view' },
+        { name: 'Maintenance', href: '/accommodation/maintenance', icon: Wrench, feature: 'employees', action: 'view' },
       ]
     },
     {
