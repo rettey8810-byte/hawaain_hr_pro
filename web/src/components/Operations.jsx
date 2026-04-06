@@ -176,7 +176,7 @@ export default function Operations() {
     }
   };
 
-  if (disciplinaryLoading || grievancesLoading || exitsLoading) {
+  if (dLoading || gLoading || eLoading) {
     return (
       <div className="min-h-screen bg-gray-50 p-6 flex items-center justify-center">
         <Loader2 className="h-6 w-6 animate-spin" />
