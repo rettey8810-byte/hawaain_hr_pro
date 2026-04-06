@@ -12,7 +12,9 @@ import {
   Wallet,
   CreditCard,
   Calculator,
-  Target
+  Target,
+  TrendingDown,
+  AlertCircle
 } from 'lucide-react';
 import { useFirestore } from '../hooks/useFirestore';
 import { useCompany } from '../contexts/CompanyContext';
@@ -23,39 +25,53 @@ import { formatCurrency } from '../utils/helpers';
 export default function BudgetDashboard() {
   const { companyId } = useCompany();
   const [budgets, setBudgets] = useState([]);
+  const [employees, setEmployees] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('overview');
 
-  // Fetch manpower budgets
+  // Fetch manpower budgets and employees
   useEffect(() => {
-    const fetchBudgets = async () => {
+    const fetchData = async () => {
       if (!companyId) return;
       
       try {
+        // Fetch budgets
         let q = query(
           collection(db, 'manpowerBudgets'),
           where('companyId', '==', companyId)
         );
         let snapshot = await getDocs(q);
         
-        // Fallback: if no documents with companyId, fetch all
         if (snapshot.empty) {
-          console.log('No budgets with companyId, fetching all...');
           q = query(collection(db, 'manpowerBudgets'));
           snapshot = await getDocs(q);
         }
         
         const budgetData = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
-        console.log('Fetched budgets:', budgetData.length, budgetData);
         setBudgets(budgetData);
+        
+        // Fetch employees for variance analysis
+        const empQuery = query(
+          collection(db, 'employees'),
+          where('companyId', '==', companyId),
+          where('status', '==', 'active')
+        );
+        const empSnapshot = await getDocs(empQuery);
+        const empData = empSnapshot.docs.map(d => ({ 
+          id: d.id, 
+          ...d.data(),
+          salary: parseFloat(d.data()['Basic(USD)'] || d.data()['Fixed(USD)'] || d.data()['TotalSalary(USD)'] || 0)
+        }));
+        setEmployees(empData);
+        
       } catch (err) {
-        console.error('Error fetching budgets:', err);
+        console.error('Error fetching data:', err);
       } finally {
         setLoading(false);
       }
     };
     
-    fetchBudgets();
+    fetchData();
   }, [companyId]);
 
   // Calculate budget statistics
@@ -165,7 +181,92 @@ export default function BudgetDashboard() {
       .sort((a, b) => b.monthlyTotal - a.monthlyTotal);
   }, [budgets]);
 
-  // Export to CSV
+  // Variance analysis - Budget vs Actuals by designation
+  const varianceData = useMemo(() => {
+    if (!budgets.length || !employees.length) return [];
+
+    // Group employees by designation, department, and division
+    const empByDesignation = {};
+    employees.forEach(emp => {
+      const key = `${emp['Department '] || emp.Department || emp.department || 'N/A'}-${emp.Division || emp.division || 'N/A'}-${emp.Designation || emp.designation || 'N/A'}`;
+      if (!empByDesignation[key]) {
+        empByDesignation[key] = {
+          department: emp['Department '] || emp.Department || emp.department || 'N/A',
+          division: emp.Division || emp.division || 'N/A',
+          designation: emp.Designation || emp.designation || 'N/A',
+          employees: [],
+          actualSalaryTotal: 0
+        };
+      }
+      empByDesignation[key].employees.push(emp);
+      empByDesignation[key].actualSalaryTotal += emp.salary || 0;
+    });
+
+    // Match with budgets and calculate variance
+    const variance = Object.values(empByDesignation).map(group => {
+      // Find matching budget entry
+      const matchingBudget = budgets.find(b => 
+        b.department?.toLowerCase() === group.department.toLowerCase() &&
+        b.designation?.toLowerCase() === group.designation.toLowerCase()
+      );
+
+      const budgetSalary = matchingBudget ? (parseFloat(matchingBudget.salary) || 0) : 0;
+      const budgetPositions = matchingBudget ? (
+        (parseInt(matchingBudget.requiredManpower?.['100_80']) || 0) +
+        (parseInt(matchingBudget.requiredManpower?.['80_65']) || 0) +
+        (parseInt(matchingBudget.requiredManpower?.['65_50']) || 0) +
+        (parseInt(matchingBudget.requiredManpower?.below50) || 0)
+      ) : 0;
+      const budgetTotal = budgetSalary * budgetPositions;
+      const actualCount = group.employees.length;
+      const actualTotal = group.actualSalaryTotal;
+      const variance = actualTotal - budgetTotal;
+      const variancePercent = budgetTotal > 0 ? ((variance / budgetTotal) * 100).toFixed(1) : 0;
+
+      return {
+        ...group,
+        employeeCount: actualCount,
+        budgetSalary,
+        budgetPositions,
+        budgetTotal,
+        actualTotal,
+        variance,
+        variancePercent,
+        status: variance > 0 ? 'over' : variance < 0 ? 'under' : 'match',
+        hasBudget: !!matchingBudget
+      };
+    }).sort((a, b) => Math.abs(b.variance) - Math.abs(a.variance));
+
+    return variance;
+  }, [budgets, employees]);
+
+  // Export variance to CSV
+  const exportVarianceToCSV = () => {
+    const headers = ['Department', 'Division', 'Designation', 'Budget Salary', 'Budget Positions', 'Budget Total', 'Actual Count', 'Actual Total', 'Variance', 'Variance %', 'Status'];
+    
+    const rows = varianceData.map(v => [
+      v.department,
+      v.division,
+      v.designation,
+      v.budgetSalary,
+      v.budgetPositions,
+      v.budgetTotal,
+      v.employeeCount,
+      v.actualTotal,
+      v.variance,
+      v.variancePercent + '%',
+      v.status
+    ]);
+
+    const csvContent = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `budget_variance_report_${new Date().toISOString().split('T')[0]}.csv`;
+    a.click();
+  };
+
   const exportToCSV = () => {
     const headers = ['Department', 'Section', 'Designation', 'Salary (USD)', 'Actual 2026', '100-80%', '80-65%', '65-50%', 'Below 50%', 'Total Positions', 'Monthly Budget', 'Annual Budget'];
     
@@ -314,6 +415,20 @@ export default function BudgetDashboard() {
                 {budgetEntries.length}
               </span>
             </button>
+            <button
+              onClick={() => setActiveTab('variance')}
+              className={`py-4 px-6 border-b-2 font-medium text-sm flex items-center ${
+                activeTab === 'variance'
+                  ? 'border-blue-500 text-blue-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              <TrendingDown className="h-5 w-5 mr-2" />
+              Variance Budget vs Actuals
+              <span className="ml-2 bg-gray-100 text-gray-700 px-2 py-0.5 rounded-full text-xs">
+                {varianceData.length}
+              </span>
+            </button>
           </nav>
         </div>
 
@@ -455,6 +570,117 @@ export default function BudgetDashboard() {
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-emerald-600">
                           {formatCurrency(entry.monthlyTotal)}
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
+        {/* Variance Tab */}
+        {activeTab === 'variance' && (
+          <div className="p-6">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-semibold text-gray-900 flex items-center">
+                <TrendingDown className="h-5 w-5 mr-2 text-blue-500" />
+                Variance Budget vs Actuals
+              </h3>
+              <button
+                onClick={exportVarianceToCSV}
+                className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+              >
+                <Download className="h-4 w-4 mr-2" />
+                Export Variance CSV
+              </button>
+            </div>
+            
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Department / Division</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Designation</th>
+                    <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Budget Salary</th>
+                    <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">Budget Pos</th>
+                    <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Budget Total</th>
+                    <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">Actual Emp</th>
+                    <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Actual Total</th>
+                    <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Variance</th>
+                    <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">Status</th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {varianceData.length === 0 ? (
+                    <tr>
+                      <td colSpan="9" className="px-6 py-12 text-center text-gray-500">
+                        <AlertCircle className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+                        <p>No variance data available</p>
+                        <p className="text-sm text-gray-400">Add budget entries and employee data to see variance</p>
+                      </td>
+                    </tr>
+                  ) : (
+                    varianceData.map((item, index) => (
+                      <tr key={index} className="hover:bg-gray-50 transition-colors">
+                        <td className="px-4 py-3 whitespace-nowrap">
+                          <div>
+                            <p className="font-medium text-gray-900 text-sm">{item.department}</p>
+                            <p className="text-xs text-gray-500">{item.division}</p>
+                          </div>
+                        </td>
+                        <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900">
+                          {item.designation}
+                        </td>
+                        <td className="px-4 py-3 whitespace-nowrap text-sm text-right text-gray-700">
+                          {formatCurrency(item.budgetSalary)}
+                        </td>
+                        <td className="px-4 py-3 whitespace-nowrap text-center">
+                          <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800">
+                            {item.budgetPositions}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 whitespace-nowrap text-sm text-right font-medium text-gray-900">
+                          {formatCurrency(item.budgetTotal)}
+                        </td>
+                        <td className="px-4 py-3 whitespace-nowrap text-center">
+                          <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${
+                            item.employeeCount > item.budgetPositions ? 'bg-red-100 text-red-800' : 
+                            item.employeeCount < item.budgetPositions ? 'bg-yellow-100 text-yellow-800' :
+                            'bg-green-100 text-green-800'
+                          }`}>
+                            {item.employeeCount}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 whitespace-nowrap text-sm text-right font-medium text-gray-900">
+                          {formatCurrency(item.actualTotal)}
+                        </td>
+                        <td className="px-4 py-3 whitespace-nowrap text-right">
+                          <div className={`text-sm font-bold ${
+                            item.variance > 0 ? 'text-red-600' : item.variance < 0 ? 'text-green-600' : 'text-gray-600'
+                          }`}>
+                            {item.variance > 0 ? '+' : ''}{formatCurrency(item.variance)}
+                          </div>
+                          <div className="text-xs text-gray-500">
+                            {item.variancePercent}%
+                          </div>
+                        </td>
+                        <td className="px-4 py-3 whitespace-nowrap text-center">
+                          <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                            item.status === 'over' ? 'bg-red-100 text-red-700' :
+                            item.status === 'under' ? 'bg-yellow-100 text-yellow-700' :
+                            item.status === 'match' ? 'bg-green-100 text-green-700' :
+                            'bg-gray-100 text-gray-700'
+                          }`}>
+                            {item.status === 'over' && <TrendingUp className="h-3 w-3 mr-1" />}
+                            {item.status === 'under' && <TrendingDown className="h-3 w-3 mr-1" />}
+                            {item.status === 'match' && <CheckCircle className="h-3 w-3 mr-1" />}
+                            {!item.hasBudget && <AlertCircle className="h-3 w-3 mr-1" />}
+                            {item.status === 'over' ? 'Over Budget' :
+                             item.status === 'under' ? 'Under Budget' :
+                             item.status === 'match' ? 'On Budget' : 'No Budget'}
+                          </span>
                         </td>
                       </tr>
                     ))

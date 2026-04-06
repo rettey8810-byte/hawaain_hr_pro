@@ -619,7 +619,7 @@ export default function LeavePlanner() {
                     <tr>
                       <th className="px-6 py-4 text-left text-xs font-bold text-emerald-700 uppercase tracking-wider sticky top-0">👤 Employee</th>
                       <th className="px-6 py-4 text-left text-xs font-bold text-emerald-700 uppercase tracking-wider sticky top-0">🏢 Department</th>
-                      <th className="px-6 py-4 text-left text-xs font-bold text-emerald-700 uppercase tracking-wider sticky top-0">� Leave Period</th>
+                      <th className="px-6 py-4 text-left text-xs font-bold text-emerald-700 uppercase tracking-wider sticky top-0">📅 Leave Period</th>
                       <th className="px-6 py-4 text-left text-xs font-bold text-emerald-700 uppercase tracking-wider sticky top-0">🌴 Type</th>
                       <th className="px-6 py-4 text-left text-xs font-bold text-emerald-700 uppercase tracking-wider sticky top-0">📊 Status</th>
                       <th className="px-6 py-4 text-right text-xs font-bold text-emerald-700 uppercase tracking-wider sticky top-0">⚙️ Actions</th>
@@ -743,13 +743,13 @@ export default function LeavePlanner() {
                           <div className="text-5xl mb-3">🌴</div>
                           <p className="text-gray-500 font-medium mb-2">No leave records found</p>
                           <p className="text-sm text-gray-400">Apply for leave to get started</p>
-                          <Link
-                            to="/leave-planner/apply"
+                          <button
+                            onClick={() => navigate('/leave-planner/apply')}
                             className="inline-flex items-center mt-4 px-4 py-2 bg-emerald-600 text-white rounded-xl font-semibold hover:bg-emerald-700 transition-colors"
                           >
                             <Plus className="h-4 w-4 mr-2" />
                             Apply Now
-                          </Link>
+                          </button>
                         </td>
                       </tr>
                     )}
@@ -792,13 +792,13 @@ export default function LeavePlanner() {
             <FileText className="h-5 w-5 mr-2" />
             My Leaves
           </Link>
-          <Link
-            to="/leave-planner/apply"
+          <button
+            onClick={() => navigate('/leave-planner/apply')}
             className="inline-flex items-center rounded-xl bg-white px-5 py-2.5 text-sm font-bold text-emerald-600 shadow-lg hover:bg-gray-50 transition-all hover:scale-105"
           >
             <Plus className="h-5 w-5 mr-2" />
             Apply for Leave
-          </Link>
+          </button>
         </div>
       </div>
 

@@ -1219,6 +1219,23 @@ export default function Accommodation() {
                       </div>
                     </div>
 
+                    {/* Current Occupants */}
+                    {roomAssignments.length > 0 && (
+                      <div className="mb-3">
+                        <p className="text-xs text-gray-500 mb-1">Current Occupants:</p>
+                        <div className="flex flex-wrap gap-1">
+                          {roomAssignments.map((assignment, idx) => {
+                            const occupant = employees.find(e => e.id === assignment.employeeId);
+                            return (
+                              <span key={idx} className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded truncate max-w-[120px]">
+                                {occupant?.FullName || occupant?.name || 'Unknown'}
+                              </span>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+
                     <div className="flex gap-2">
                       <button
                         onClick={() => { setSelectedRoom(room); setShowRoomModal(true); }}

@@ -441,7 +441,7 @@ export default function Employees() {
                     {(canEditEmployee || canDeleteEmployee) && (
                       <div className="flex space-x-2">
                         {canEditEmployee && (
-                          <Link to={`/employees/${employee.id}/edit`} className="p-2 text-indigo-500 hover:bg-indigo-50 rounded-lg transition-colors">
+                          <Link to={`/employees/${employee.id}`} className="p-2 text-indigo-500 hover:bg-indigo-50 rounded-lg transition-colors">
                             <Edit2 className="h-4 w-4" />
                           </Link>
                         )}
@@ -551,7 +551,7 @@ export default function Employees() {
                         {(canEditEmployee || canDeleteEmployee) && (
                           <>
                             {canEditEmployee && (
-                              <Link to={`/employees/${employee.id}/edit`} className="text-indigo-500 hover:text-indigo-700 font-bold mr-4 transition-colors">Edit</Link>
+                              <Link to={`/employees/${employee.id}`} className="text-indigo-500 hover:text-indigo-700 font-bold mr-4 transition-colors">Edit</Link>
                             )}
                             {canDeleteEmployee && (
                               <button onClick={() => { setSelectedEmployee(employee); setShowDeleteModal(true); }} className="text-rose-500 hover:text-rose-700 font-bold transition-colors">Delete</button>
