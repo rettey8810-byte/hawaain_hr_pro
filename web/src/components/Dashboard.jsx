@@ -48,8 +48,8 @@ function StatCard({ title, value, icon: Icon, gradient, subtitle, href }) {
   };
 
   return (
-    <Link to={href} className="group bg-white overflow-hidden rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 hover:scale-105 border border-gray-100">
-      <div className="p-6">
+    <Link to={href} className="group block bg-white overflow-hidden rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 hover:scale-105 border border-gray-100 cursor-pointer">
+      <div className="p-6 pointer-events-none">
         <div className="flex items-center">
           <div className={`flex-shrink-0 rounded-xl p-4 bg-gradient-to-br ${gradientClasses[gradient]} text-white shadow-lg`}>
             <Icon className="h-7 w-7" />

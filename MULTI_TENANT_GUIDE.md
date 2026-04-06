@@ -38,6 +38,8 @@ Hawaain HR Pro uses a **multi-tenant architecture** where each company has compl
    - View sensitive financial data
    - Approve high-value leaves (Level 4 approver)
    - Same access as HR for salary-related functions
+   - **Switch between all companies** (like superadmin)
+   - View data from any company without logging out
 
 5. **dept_head** (per company) - Department Head who can:
    - Manage department employees

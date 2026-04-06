@@ -1,12 +1,166 @@
-import { useState } from 'react';
-import { Heart, Award, Calendar, MessageCircle, Gift, ThumbsUp, Lightbulb, TrendingUp, Loader2 } from 'lucide-react';
+import { useState, useEffect, useMemo } from 'react';
+import { 
+  Heart, Award, Calendar, MessageCircle, Gift, ThumbsUp, Lightbulb, 
+  TrendingUp, Loader2, Plus, Search, X, CheckCircle, Star, Users,
+  Send, BarChart3, Clock, Target, Zap, Smile, FileText, MoreVertical,
+  Edit2, Trash2, Eye, Download, Megaphone, Bell
+} from 'lucide-react';
 import { useFirestore } from '../hooks/useFirestore';
 import { useCompany } from '../contexts/CompanyContext';
-import engagementService from '../services/engagementService';
+import { useAuth } from '../contexts/AuthContext';
+import { collection, addDoc, updateDoc, deleteDoc, doc, query, where, orderBy, getDocs, Timestamp } from 'firebase/firestore';
+import { db } from '../firebase/config';
+import { toast } from 'react-hot-toast';
+
+// Survey Templates
+const SURVEY_TEMPLATES = [
+  {
+    id: 'enps',
+    name: 'Employee Net Promoter Score (eNPS)',
+    description: 'Measure employee loyalty and satisfaction',
+    questions: [
+      { text: 'On a scale of 0-10, how likely are you to recommend this company as a place to work?', type: 'nps' },
+      { text: 'What is the primary reason for your score?', type: 'text' }
+    ]
+  },
+  {
+    id: 'pulse',
+    name: 'Pulse Survey',
+    description: 'Quick check on employee sentiment',
+    questions: [
+      { text: 'How are you feeling at work this week?', type: 'emoji' },
+      { text: 'Do you have the resources you need to do your job?', type: 'yes_no' },
+      { text: 'How would you rate your workload?', type: 'scale' }
+    ]
+  },
+  {
+    id: 'engagement',
+    name: 'Full Engagement Survey',
+    description: 'Comprehensive engagement assessment',
+    questions: [
+      { text: 'I am proud to work for this company', type: 'agreement' },
+      { text: 'My manager supports my development', type: 'agreement' },
+      { text: 'I understand how my role contributes to company goals', type: 'agreement' },
+      { text: 'I have opportunities to grow professionally', type: 'agreement' }
+    ]
+  }
+];
+
+// Recognition Badges
+const RECOGNITION_BADGES = [
+  { id: 'excellence', name: 'Excellence Award', icon: Star, color: 'bg-yellow-500' },
+  { id: 'teamwork', name: 'Team Player', icon: Users, color: 'bg-blue-500' },
+  { id: 'innovation', name: 'Innovation', icon: Lightbulb, color: 'bg-purple-500' },
+  { id: 'dedication', name: 'Dedication', icon: Target, color: 'bg-red-500' },
+  { id: 'leadership', name: 'Leadership', icon: TrendingUp, color: 'bg-green-500' }
+];
+
+// Recognition Modal
+const RecognitionModal = ({ isOpen, onClose, onSave, employees }) => {
+  const [formData, setFormData] = useState({
+    toEmployeeId: '',
+    badge: 'excellence',
+    message: '',
+    isPublic: true
+  });
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    onSave(formData);
+  };
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-xl w-full max-w-lg">
+        <div className="border-b px-6 py-4 flex items-center justify-between">
+          <h2 className="text-xl font-bold flex items-center gap-2">
+            <Award className="w-6 h-6 text-yellow-600" />
+            Give Recognition
+          </h2>
+          <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-lg"><X className="w-5 h-5" /></button>
+        </div>
+
+        <form onSubmit={handleSubmit} className="p-6 space-y-4">
+          <div>
+            <label className="block text-sm font-medium mb-1">Recognize Employee *</label>
+            <select
+              value={formData.toEmployeeId}
+              onChange={(e) => setFormData({ ...formData, toEmployeeId: e.target.value })}
+              className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-yellow-500"
+              required
+            >
+              <option value="">Select Employee</option>
+              {employees.map(emp => (
+                <option key={emp.id} value={emp.id}>{emp.FullName || emp.name}</option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium mb-2">Badge Type</label>
+            <div className="grid grid-cols-5 gap-2">
+              {RECOGNITION_BADGES.map(badge => {
+                const Icon = badge.icon;
+                return (
+                  <button
+                    key={badge.id}
+                    type="button"
+                    onClick={() => setFormData({ ...formData, badge: badge.id })}
+                    className={`p-3 rounded-lg flex flex-col items-center gap-1 transition-colors ${
+                      formData.badge === badge.id ? `${badge.color} text-white` : 'bg-gray-100 hover:bg-gray-200'
+                    }`}
+                  >
+                    <Icon className="w-5 h-5" />
+                    <span className="text-xs">{badge.name}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium mb-1">Message</label>
+            <textarea
+              value={formData.message}
+              onChange={(e) => setFormData({ ...formData, message: e.target.value })}
+              rows={3}
+              placeholder="Describe why you're recognizing this person..."
+              className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-yellow-500"
+              required
+            />
+          </div>
+
+          <div className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              checked={formData.isPublic}
+              onChange={(e) => setFormData({ ...formData, isPublic: e.target.checked })}
+              className="rounded text-yellow-600"
+            />
+            <span className="text-sm">Post to public recognition wall</span>
+          </div>
+
+          <div className="flex gap-3 pt-4 border-t">
+            <button type="submit" className="flex-1 bg-yellow-500 text-white py-2 rounded-lg hover:bg-yellow-600">
+              Send Recognition
+            </button>
+            <button type="button" onClick={onClose} className="px-4 py-2 border rounded-lg hover:bg-gray-50">
+              Cancel
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+};
 
 export default function Engagement() {
   const [activeTab, setActiveTab] = useState('surveys');
+  const [showRecognitionModal, setShowRecognitionModal] = useState(false);
   const { companyId } = useCompany();
+  const { userData } = useAuth();
 
   // Fetch data from Firestore
   const { documents: surveys, loading: surveysLoading } = useFirestore('surveys');
@@ -16,6 +170,22 @@ export default function Engagement() {
   // Filter by company
   const filteredSurveys = surveys.filter(s => s.companyId === companyId);
   const filteredRecognitions = recognitions.filter(r => r.companyId === companyId);
+
+  const handleGiveRecognition = async (formData) => {
+    try {
+      await addDoc(collection(db, 'recognitions'), {
+        ...formData,
+        fromEmployeeId: userData?.uid,
+        fromEmployeeName: userData?.name,
+        companyId,
+        createdAt: new Date().toISOString()
+      });
+      toast.success('Recognition sent!');
+      setShowRecognitionModal(false);
+    } catch (error) {
+      toast.error('Failed to send recognition');
+    }
+  };
 
   // Calculate stats from real data
   const now = new Date();
@@ -137,6 +307,16 @@ export default function Engagement() {
         {/* Recognition - Real Data */}
         {activeTab === 'recognition' && (
           <div className="space-y-4">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="font-semibold">Recognition Wall</h3>
+              <button
+                onClick={() => setShowRecognitionModal(true)}
+                className="bg-yellow-500 text-white px-4 py-2 rounded-lg hover:bg-yellow-600 flex items-center gap-2"
+              >
+                <Award className="h-4 w-4" />
+                Give Kudos
+              </button>
+            </div>
             {filteredRecognitions.length === 0 ? (
               <div className="text-center py-12 text-gray-500">
                 <Award className="h-12 w-12 mx-auto mb-4 text-gray-300" />
@@ -164,6 +344,14 @@ export default function Engagement() {
           </div>
         )}
       </div>
+
+      {/* Recognition Modal */}
+      <RecognitionModal
+        isOpen={showRecognitionModal}
+        onClose={() => setShowRecognitionModal(false)}
+        onSave={handleGiveRecognition}
+        employees={employees.filter(e => e.companyId === companyId)}
+      />
     </div>
   );
 }

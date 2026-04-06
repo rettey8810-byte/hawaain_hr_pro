@@ -1,8 +1,16 @@
-import { useState } from 'react';
-import { AlertTriangle, FileWarning, UserMinus, LogOut, ClipboardList, Loader2 } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { 
+  AlertTriangle, FileWarning, UserMinus, LogOut, ClipboardList, Loader2,
+  Plus, Search, X, CheckCircle, Mic, MicOff, Play, Pause, Square,
+  Calendar, User, MessageSquare, Save, Download, MoreVertical,
+  Shield, AlertCircle, Eye, Edit2, Trash2, Send
+} from 'lucide-react';
 import { useFirestore } from '../hooks/useFirestore';
 import { useCompany } from '../contexts/CompanyContext';
-import operationsService from '../services/operationsService';
+import { useAuth } from '../contexts/AuthContext';
+import { collection, addDoc, updateDoc, deleteDoc, doc, Timestamp } from 'firebase/firestore';
+import { db } from '../firebase/config';
+import { toast } from 'react-hot-toast';
 
 export default function Operations() {
   const [activeTab, setActiveTab] = useState('disciplinary');

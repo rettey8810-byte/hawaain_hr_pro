@@ -13,6 +13,8 @@ import {
   MapPin,
   Building2
 } from 'lucide-react';
+import { collection, query, where, getDocs } from 'firebase/firestore';
+import { db } from '../firebase/config';
 import { useFirestore } from '../hooks/useFirestore';
 import { useAuth } from '../contexts/AuthContext';
 import { formatDate, getDocumentStatus, calculateDaysRemaining } from '../utils/helpers';
@@ -106,9 +108,19 @@ export default function EmployeeDetail() {
     const loadData = async () => {
       setLoading(true);
       
-      const unsubEmployee = getDocumentsByQuery([
-        where('__name__', '==', id)
-      ]);
+      // Fetch single employee by ID using Firebase query
+      try {
+        const employeeQuery = query(
+          collection(db, 'employees'),
+          where('__name__', '==', id)
+        );
+        const employeeSnap = await getDocs(employeeQuery);
+        if (!employeeSnap.empty) {
+          setEmployee({ id: employeeSnap.docs[0].id, ...employeeSnap.docs[0].data() });
+        }
+      } catch (err) {
+        console.error('Error fetching employee:', err);
+      }
       
       const unsubPassports = getPassports(id);
       const unsubVisas = getVisas(id);
@@ -116,7 +128,6 @@ export default function EmployeeDetail() {
       const unsubMedicals = getMedicals(id);
 
       return () => {
-        unsubEmployee?.();
         unsubPassports?.();
         unsubVisas?.();
         unsubPermits?.();

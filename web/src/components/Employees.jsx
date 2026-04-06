@@ -78,12 +78,11 @@ export default function Employees() {
     }
   }, [companyId, lastDoc]);
 
-  // Fetch ALL employees for stats (just basic fields)
+  // Fetch ALL employees for stats ONLY when requested (to save reads)
   const fetchAllEmployeesForStats = useCallback(async () => {
     if (!companyId) return;
     
     try {
-      // Fetch all employees without limit for accurate stats
       const q = query(
         collection(db, 'employees'),
         where('companyId', '==', companyId)
@@ -100,9 +99,27 @@ export default function Employees() {
       });
       setAllEmployees(allDocs);
     } catch (err) {
-      console.error('Error fetching all employees for stats:', err);
+      console.error('Error fetching stats:', err);
     }
   }, [companyId]);
+
+  // Calculate approximate stats from loaded employees only
+  const getApproxStats = () => {
+    const loadedCount = employees.length;
+    const activeCount = employees.filter(e => e.status === 'active').length;
+    const inactiveCount = loadedCount - activeCount;
+    const deptCount = new Set(employees.map(e => e['Department '] || e.Department || e.department).filter(Boolean)).size;
+    const countryCount = new Set(employees.map(e => e.Nationality || e.country).filter(Boolean)).size;
+    
+    return {
+      total: loadedCount,
+      active: activeCount,
+      inactive: inactiveCount,
+      departments: deptCount,
+      countries: countryCount,
+      isApproximate: loadedCount < (allEmployees.length || loadedCount)
+    };
+  };
 
   // Fetch related documents for visible employees
   const fetchRelatedDocs = useCallback(async (employeeIds) => {
@@ -125,7 +142,7 @@ export default function Employees() {
     }
   }, [companyId]);
 
-  // Initial load
+  // Initial load - DON'T fetch all stats automatically to save reads
   useEffect(() => {
     setEmployees([]);
     setAllEmployees([]);
@@ -136,7 +153,7 @@ export default function Employees() {
     setVisas([]);
     setMedicals([]);
     fetchEmployees(true);
-    fetchAllEmployeesForStats(); // Fetch total count for stats
+    // Removed automatic fetchAllEmployeesForStats to save quota
   }, [companyId]);
 
   // Load related docs when employees change
@@ -268,27 +285,46 @@ export default function Employees() {
 
       {/* Stats - Colorful Gradient Cards - Responsive: 2 cols on mobile, 5 on desktop */}
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3 sm:gap-4">
-        <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl shadow-lg p-5 text-white transform hover:scale-105 transition-all">
-          <p className="text-sm text-blue-100 font-medium">📊 Total Employees</p>
-          <p className="text-3xl font-bold mt-1">{allEmployees.length}</p>
-        </div>
-        <div className="bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-2xl shadow-lg p-5 text-white transform hover:scale-105 transition-all">
-          <p className="text-sm text-emerald-100 font-medium">✅ Active</p>
-          <p className="text-3xl font-bold mt-1">{allEmployees.filter(e => e.status === 'active').length}</p>
-        </div>
-        <div className="bg-gradient-to-br from-rose-500 to-rose-600 rounded-2xl shadow-lg p-5 text-white transform hover:scale-105 transition-all">
-          <p className="text-sm text-rose-100 font-medium">⏸️ Inactive</p>
-          <p className="text-3xl font-bold mt-1">{allEmployees.filter(e => e.status !== 'active').length}</p>
-        </div>
-        <div className="bg-gradient-to-br from-amber-500 to-orange-500 rounded-2xl shadow-lg p-5 text-white transform hover:scale-105 transition-all">
-          <p className="text-sm text-amber-100 font-medium">🏢 Departments</p>
-          <p className="text-3xl font-bold mt-1">{new Set(allEmployees.map(e => e['Department '] || e.Department || e.department).filter(Boolean)).size}</p>
-        </div>
-        <div className="bg-gradient-to-br from-violet-500 to-purple-600 rounded-2xl shadow-lg p-5 text-white transform hover:scale-105 transition-all">
-          <p className="text-sm text-violet-100 font-medium">🌍 Countries</p>
-          <p className="text-3xl font-bold mt-1">{new Set(allEmployees.map(e => e.Nationality || e.country).filter(Boolean)).size}</p>
-        </div>
+        {(() => {
+          const stats = getApproxStats();
+          return (
+            <>
+              <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl shadow-lg p-5 text-white transform hover:scale-105 transition-all">
+                <p className="text-sm text-blue-100 font-medium">📊 Total</p>
+                <p className="text-3xl font-bold mt-1">{stats.total}{stats.isApproximate && <span className="text-sm">+</span>}</p>
+              </div>
+              <div className="bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-2xl shadow-lg p-5 text-white transform hover:scale-105 transition-all">
+                <p className="text-sm text-emerald-100 font-medium">✅ Active</p>
+                <p className="text-3xl font-bold mt-1">{stats.active}{stats.isApproximate && <span className="text-sm">+</span>}</p>
+              </div>
+              <div className="bg-gradient-to-br from-rose-500 to-rose-600 rounded-2xl shadow-lg p-5 text-white transform hover:scale-105 transition-all">
+                <p className="text-sm text-rose-100 font-medium">⏸️ Inactive</p>
+                <p className="text-3xl font-bold mt-1">{stats.inactive}{stats.isApproximate && <span className="text-sm">+</span>}</p>
+              </div>
+              <div className="bg-gradient-to-br from-amber-500 to-orange-500 rounded-2xl shadow-lg p-5 text-white transform hover:scale-105 transition-all">
+                <p className="text-sm text-amber-100 font-medium">🏢 Departments</p>
+                <p className="text-3xl font-bold mt-1">{stats.departments}</p>
+              </div>
+              <div className="bg-gradient-to-br from-violet-500 to-purple-600 rounded-2xl shadow-lg p-5 text-white transform hover:scale-105 transition-all">
+                <p className="text-sm text-violet-100 font-medium">🌍 Countries</p>
+                <p className="text-3xl font-bold mt-1">{stats.countries}</p>
+              </div>
+            </>
+          );
+        })()}
       </div>
+      
+      {/* Load Accurate Stats Button - saves quota by not auto-fetching */}
+      {allEmployees.length === 0 && (
+        <div className="flex justify-center">
+          <button
+            onClick={fetchAllEmployeesForStats}
+            className="text-xs text-gray-500 hover:text-indigo-600 underline"
+          >
+            Load accurate stats (uses {employees.length}+ reads)
+          </button>
+        </div>
+      )}
 
       {/* Grid View - Modern Cards - Responsive */}
       {viewMode === 'grid' && (
