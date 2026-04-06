@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import {
   Home, BedDouble, Wrench, DoorOpen, Plus, Search, X, Edit2, Trash2, CheckCircle,
   Users, Bath, Maximize, Building2, MapPin, Filter, Download, Eye, ArrowRight,
@@ -27,9 +27,47 @@ const RoomModal = ({ isOpen, onClose, room, onSave, onDelete }) => {
     amenities: [],
     status: 'available',
     monthlyRent: '',
-    description: '',
-    ...room
+    description: ''
   });
+
+  // Reset form data when room prop changes
+  useEffect(() => {
+    if (room) {
+      setFormData({
+        roomNumber: '',
+        floor: '',
+        building: '',
+        wing: '',
+        roomType: 'standard',
+        capacity: 2,
+        beds: 2,
+        bathrooms: 1,
+        squareMeters: '',
+        amenities: [],
+        status: 'available',
+        monthlyRent: '',
+        description: '',
+        ...room
+      });
+    } else {
+      // Reset to defaults for new room
+      setFormData({
+        roomNumber: '',
+        floor: '',
+        building: '',
+        wing: '',
+        roomType: 'standard',
+        capacity: 2,
+        beds: 2,
+        bathrooms: 1,
+        squareMeters: '',
+        amenities: [],
+        status: 'available',
+        monthlyRent: '',
+        description: ''
+      });
+    }
+  }, [room]);
 
   const amenitiesList = [
     { id: 'ac', label: 'Air Conditioning', icon: Snowflake },
@@ -310,13 +348,11 @@ const AssignmentModal = ({ isOpen, onClose, assignment, rooms, employees, onSave
               required
             >
               <option value="">Choose a room</option>
-              {rooms
-                .filter(r => r.status === 'available' || r.id === formData.roomId)
-                .map(room => (
-                  <option key={room.id} value={room.id}>
-                    Room {room.roomNumber} - {room.building} (Capacity: {room.capacity})
-                  </option>
-                ))}
+              {rooms.map(room => (
+                <option key={room.id} value={room.id}>
+                  Room {room.roomNumber} - {room.building} ({room.status}, Capacity: {room.capacity})
+                </option>
+              ))}
             </select>
           </div>
 
