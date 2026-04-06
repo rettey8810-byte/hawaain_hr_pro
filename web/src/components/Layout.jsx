@@ -113,6 +113,7 @@ export default function Layout({ children }) {
         { name: 'Visas', href: '/visas', icon: Plane, feature: 'documents', action: 'view' },
         { name: 'Medical', href: '/medical', icon: HeartPulse, feature: 'documents', action: 'view' },
         { name: 'Renewals', href: '/renewals', icon: RefreshCw, feature: 'documents', action: 'view' },
+        { name: 'Document Reports', href: '/document-reports', icon: FileText, feature: 'documents', action: 'view' },
       ]
     },
     {

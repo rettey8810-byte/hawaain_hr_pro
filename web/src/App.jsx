@@ -86,6 +86,7 @@ import CompanyAnnouncements from './components/CompanyAnnouncements';
 import ShiftManagement from './components/ShiftManagement';
 import Accommodation from './components/Accommodation';
 import CompanyStructure from './components/CompanyStructure';
+import DocumentReports from './components/DocumentReports';
 
 // Advanced HR Feature Modules (v2.0.0)
 import TimeAttendance from './components/TimeAttendance';
@@ -326,6 +327,15 @@ function App() {
                 <PrivateRoute>
                   <PermissionRoute feature="documents" action="edit">
                     <Layout><DocumentForm type="medical" /></Layout>
+                  </PermissionRoute>
+                </PrivateRoute>
+              } />
+              
+              {/* Document Reports */}
+              <Route path="/document-reports" element={
+                <PrivateRoute>
+                  <PermissionRoute feature="documents" action="view">
+                    <Layout><DocumentReports /></Layout>
                   </PermissionRoute>
                 </PrivateRoute>
               } />
