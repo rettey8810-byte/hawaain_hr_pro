@@ -32,9 +32,8 @@ const RoomModal = ({ isOpen, onClose, room, onSave, onDelete }) => {
 
   // Reset form data when room prop changes
   useEffect(() => {
-    console.log('RoomModal useEffect triggered, room:', room);
     if (room) {
-      const newFormData = {
+      setFormData({
         roomNumber: '',
         floor: '',
         building: '',
@@ -49,12 +48,8 @@ const RoomModal = ({ isOpen, onClose, room, onSave, onDelete }) => {
         monthlyRent: '',
         description: '',
         ...room
-      };
-      console.log('Setting form data to:', newFormData);
-      setFormData(newFormData);
+      });
     } else {
-      console.log('Resetting form data for new room');
-      // Reset to defaults for new room
       setFormData({
         roomNumber: '',
         floor: '',
@@ -72,11 +67,6 @@ const RoomModal = ({ isOpen, onClose, room, onSave, onDelete }) => {
       });
     }
   }, [room]);
-
-  // Debug: log formData changes
-  useEffect(() => {
-    console.log('formData updated:', formData);
-  }, [formData]);
 
   const amenitiesList = [
     { id: 'ac', label: 'Air Conditioning', icon: Snowflake },
@@ -295,10 +285,7 @@ const RoomModal = ({ isOpen, onClose, room, onSave, onDelete }) => {
             {room?.id && (
               <button
                 type="button"
-                onClick={() => {
-                  console.log('Delete button clicked, room ID:', room.id);
-                  onDelete(room.id);
-                }}
+                onClick={() => onDelete(room.id)}
                 className="px-4 py-2 border border-red-300 text-red-600 rounded-lg hover:bg-red-50"
               >
                 Delete
@@ -707,23 +694,17 @@ export default function Accommodation() {
   };
 
   const handleDeleteRoom = async (id) => {
-    console.log('Delete room called with ID:', id);
     if (!id) {
       toast.error('No room ID provided');
       return;
     }
-    if (!confirm('Are you sure you want to delete this room? This will also remove all assignments.')) {
-      console.log('Delete cancelled by user');
-      return;
-    }
+    if (!confirm('Are you sure you want to delete this room? This will also remove all assignments.')) return;
     try {
-      console.log('Deleting room from Firestore:', id);
       await deleteDoc(doc(db, 'rooms', id));
       toast.success('Room deleted successfully');
       setShowRoomModal(false);
       setSelectedRoom(null);
     } catch (error) {
-      console.error('Delete room error:', error);
       toast.error('Failed to delete room: ' + error.message);
     }
   };
@@ -757,21 +738,15 @@ export default function Accommodation() {
   };
 
   const handleDeleteAssignment = async (id) => {
-    console.log('Delete assignment called with ID:', id);
     if (!id) {
       toast.error('No assignment ID provided');
       return;
     }
-    if (!confirm('Remove this room assignment?')) {
-      console.log('Delete assignment cancelled');
-      return;
-    }
+    if (!confirm('Remove this room assignment?')) return;
     try {
       const assignment = companyAssignments.find(a => a.id === id);
-      console.log('Found assignment:', assignment);
       await deleteDoc(doc(db, 'roomAssignments', id));
       
-      // Update room status back to available
       if (assignment?.roomId) {
         const roomRef = doc(db, 'rooms', assignment.roomId);
         await updateDoc(roomRef, { status: 'available' });
@@ -781,7 +756,6 @@ export default function Accommodation() {
       setShowAssignmentModal(false);
       setSelectedAssignment(null);
     } catch (error) {
-      console.error('Delete assignment error:', error);
       toast.error('Failed to remove assignment: ' + error.message);
     }
   };
