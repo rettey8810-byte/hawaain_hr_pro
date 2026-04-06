@@ -541,6 +541,9 @@ export default function ManpowerBudget() {
                     className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
                   >
                     <option value="">Select Department...</option>
+                    {formData.department && !companyDivisions.find(d => d.name === formData.department && d.type === 'department') && (
+                      <option value={formData.department}>{formData.department} (stored)</option>
+                    )}
                     {companyDivisions.filter(d => d.type === 'department').map(d => (
                       <option key={d.id} value={d.name}>{d.name}</option>
                     ))}
@@ -554,6 +557,9 @@ export default function ManpowerBudget() {
                     className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
                   >
                     <option value="">Select Section...</option>
+                    {formData.section && !companyDivisions.find(d => d.name === formData.section && d.type === 'section') && (
+                      <option value={formData.section}>{formData.section} (stored)</option>
+                    )}
                     {companyDivisions.filter(d => d.type === 'section').map(d => (
                       <option key={d.id} value={d.name}>{d.name}</option>
                     ))}
@@ -567,6 +573,9 @@ export default function ManpowerBudget() {
                     className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
                   >
                     <option value="">Select Designation...</option>
+                    {formData.designation && !companyDesignations.find(d => d.title === formData.designation) && (
+                      <option value={formData.designation}>{formData.designation} (stored)</option>
+                    )}
                     {companyDesignations.map(d => (
                       <option key={d.id} value={d.title}>{d.title}</option>
                     ))}
