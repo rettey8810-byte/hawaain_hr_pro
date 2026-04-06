@@ -527,6 +527,26 @@ export default function ExpenseClaims() {
               </button>
             </div>
             <form onSubmit={handleSubmitClaim} className="p-6 space-y-4">
+              {/* Employee Selection - for managers/HR submitting on behalf of employees */}
+              {(userData?.role === 'superadmin' || userData?.role === 'gm' || userData?.role === 'hrm' || userData?.role === 'dept_head') && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Employee *</label>
+                  <select
+                    required
+                    value={formData.employeeId}
+                    onChange={(e) => setFormData({...formData, employeeId: e.target.value})}
+                    className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="">Select Employee</option>
+                    {employees.map(emp => (
+                      <option key={emp.id} value={emp.id}>
+                        {emp.FullName || emp.name} ({emp['Department '] || emp.Department || emp.department || 'N/A'})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Category *</label>
                 <select
