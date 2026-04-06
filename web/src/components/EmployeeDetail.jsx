@@ -117,9 +117,15 @@ export default function EmployeeDetail() {
         const employeeSnap = await getDocs(employeeQuery);
         if (!employeeSnap.empty) {
           setEmployee({ id: employeeSnap.docs[0].id, ...employeeSnap.docs[0].data() });
+        } else {
+          console.log('Employee not found with ID:', id);
+          setEmployee(null);
         }
       } catch (err) {
         console.error('Error fetching employee:', err);
+        setEmployee(null);
+      } finally {
+        setLoading(false);
       }
       
       const unsubPassports = getPassports(id);
