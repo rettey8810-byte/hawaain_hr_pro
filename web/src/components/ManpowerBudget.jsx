@@ -23,7 +23,7 @@ import { toast } from 'react-hot-toast';
 
 export default function ManpowerBudget() {
   const { companyId } = useCompany();
-  const { userData } = useAuth();
+  const { user, userData } = useAuth();
   const { documents: budgets, loading } = useFirestore('manpowerBudgets');
   
   const [showAddModal, setShowAddModal] = useState(false);
@@ -121,7 +121,7 @@ export default function ManpowerBudget() {
           'below50': formData.requiredBelow50
         },
         companyId: companyId || '',
-        createdBy: userData?.uid,
+        createdBy: user?.uid || '',
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString()
       });
