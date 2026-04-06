@@ -32,8 +32,9 @@ const RoomModal = ({ isOpen, onClose, room, onSave, onDelete }) => {
 
   // Reset form data when room prop changes
   useEffect(() => {
+    console.log('RoomModal useEffect triggered, room:', room);
     if (room) {
-      setFormData({
+      const newFormData = {
         roomNumber: '',
         floor: '',
         building: '',
@@ -48,8 +49,11 @@ const RoomModal = ({ isOpen, onClose, room, onSave, onDelete }) => {
         monthlyRent: '',
         description: '',
         ...room
-      });
+      };
+      console.log('Setting form data to:', newFormData);
+      setFormData(newFormData);
     } else {
+      console.log('Resetting form data for new room');
       // Reset to defaults for new room
       setFormData({
         roomNumber: '',
@@ -68,6 +72,11 @@ const RoomModal = ({ isOpen, onClose, room, onSave, onDelete }) => {
       });
     }
   }, [room]);
+
+  // Debug: log formData changes
+  useEffect(() => {
+    console.log('formData updated:', formData);
+  }, [formData]);
 
   const amenitiesList = [
     { id: 'ac', label: 'Air Conditioning', icon: Snowflake },
@@ -1427,6 +1436,7 @@ export default function Accommodation() {
 
       {/* Modals */}
       <RoomModal
+        key={selectedRoom?.id || 'new'}
         isOpen={showRoomModal}
         onClose={() => { setShowRoomModal(false); setSelectedRoom(null); }}
         room={selectedRoom}
