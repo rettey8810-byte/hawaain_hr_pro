@@ -286,7 +286,10 @@ const RoomModal = ({ isOpen, onClose, room, onSave, onDelete }) => {
             {room?.id && (
               <button
                 type="button"
-                onClick={() => onDelete(room.id)}
+                onClick={() => {
+                  console.log('Delete button clicked, room ID:', room.id);
+                  onDelete(room.id);
+                }}
                 className="px-4 py-2 border border-red-300 text-red-600 rounded-lg hover:bg-red-50"
               >
                 Delete
@@ -695,14 +698,24 @@ export default function Accommodation() {
   };
 
   const handleDeleteRoom = async (id) => {
-    if (!confirm('Are you sure you want to delete this room? This will also remove all assignments.')) return;
+    console.log('Delete room called with ID:', id);
+    if (!id) {
+      toast.error('No room ID provided');
+      return;
+    }
+    if (!confirm('Are you sure you want to delete this room? This will also remove all assignments.')) {
+      console.log('Delete cancelled by user');
+      return;
+    }
     try {
+      console.log('Deleting room from Firestore:', id);
       await deleteDoc(doc(db, 'rooms', id));
-      toast.success('Room deleted');
+      toast.success('Room deleted successfully');
       setShowRoomModal(false);
       setSelectedRoom(null);
     } catch (error) {
-      toast.error('Failed to delete room');
+      console.error('Delete room error:', error);
+      toast.error('Failed to delete room: ' + error.message);
     }
   };
 
@@ -735,9 +748,18 @@ export default function Accommodation() {
   };
 
   const handleDeleteAssignment = async (id) => {
-    if (!confirm('Remove this room assignment?')) return;
+    console.log('Delete assignment called with ID:', id);
+    if (!id) {
+      toast.error('No assignment ID provided');
+      return;
+    }
+    if (!confirm('Remove this room assignment?')) {
+      console.log('Delete assignment cancelled');
+      return;
+    }
     try {
       const assignment = companyAssignments.find(a => a.id === id);
+      console.log('Found assignment:', assignment);
       await deleteDoc(doc(db, 'roomAssignments', id));
       
       // Update room status back to available
@@ -750,7 +772,8 @@ export default function Accommodation() {
       setShowAssignmentModal(false);
       setSelectedAssignment(null);
     } catch (error) {
-      toast.error('Failed to remove assignment');
+      console.error('Delete assignment error:', error);
+      toast.error('Failed to remove assignment: ' + error.message);
     }
   };
 
