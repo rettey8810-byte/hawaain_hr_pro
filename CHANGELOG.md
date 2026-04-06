@@ -5,6 +5,66 @@ All notable changes to Hawaain HR Pro will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.3.0] - 2026-04-06
+
+### 🚀 Added - Manpower Budget with Salary
+
+#### Salary Management
+- **Salary Input Field** - Enter salary (USD) for each designation when adding budget entries
+- **Budget Calculations** - Automatic calculation of total budget based on positions × salary
+- **Dashboard Stats** - New "Total Positions" and "Total Budget" stat cards
+- **Salary Column** - Display salary in the budget table view
+- **CSV Export** - Salary included in exported CSV files
+- **Formula:** Total Budget = (100-80% positions + 80-65% positions + 65-50% positions + Below 50% positions) × Salary
+
+### 🚀 Added - Document Reports & Analytics
+
+#### Document Reports (`/document-reports`)
+- **Visa & Passport Tracking** - Comprehensive visa and passport expiry monitoring
+- **Status Dashboard** - Visual status cards: Valid, Warning (90d), Critical (30d), Expired
+- **Tabbed Interface** - Switch between Visa Reports and Passport Reports
+- **Advanced Filtering** - Filter by status and search by name/ID
+- **Employee Details** - Shows name, department, document number, expiry date, days remaining
+- **CSV Export** - Export reports to CSV
+- **Color-Coded Status** - Green/Amber/Red indicators
+
+#### Budget Dashboard (`/budget-dashboard`)
+- **Department-wise Salary Breakdown** - Total salary by department
+- **Summary Cards** - Total Monthly Budget, Total Employees, Average Salary, Total Allowances
+- **Individual Salaries Tab** - List view of all employee salaries
+- **CSV Export** - Export salary data
+
+#### Leave Analytics (`/leave-analytics`)
+- **Monthly Trend Charts** - Bar chart showing leave requests per month
+- **Leave Type Distribution** - Breakdown by Annual, Sick, Emergency, Unpaid
+- **Department-wise Stats** - Which departments have highest leave usage
+- **Top Leave Takers** - Employees with most leave days
+- **Date Range Filter** - View last 3, 6, 12 months or current year
+- **Statistics Cards** - Total leaves, Approved, Pending, Rejected, Total Days
+
+### 🚀 Added - Employee Profile Enhancement
+
+#### Comprehensive Employee Data (`/employees/:id`)
+- **Collapsible Sections** - Organized into Personal, Employment, Contact, Address, Salary, Bank, Emergency Contacts
+- **Personal Information** - Full Name, Short Name, DOB, Gender, Marital Status, Nationality, Religion, Blood Group
+- **Employment Information** - Division, Department, Section, Designation, Superior, Date of Join
+- **Contact Information** - Phone, Alternate Phone, Email, Personal Email
+- **Present Address** - Country, State, City, Full Address
+- **Permanent Address** - Country, State, City, Full Address
+- **Salary Information** - Fixed (USD), Basic (USD), Total Salary (USD), Pay Through
+- **Bank Information** - Bank Name, Account Name, Account Number, Pay Through
+- **Emergency Contacts** - 2 contacts with Name, Phone, Relation, Address each
+
+### 🚀 Added - Accommodation Room Occupants
+
+#### Assignment Modal Enhancement
+- **Current Occupants View** - See who is already in a room when assigning
+- **Employee Details** - Shows name, designation, department, check-in date
+- **Room Availability** - Shows "Room is empty and available" or occupant list
+- **All Rooms Dropdown** - Can select any room to view its occupants
+
+---
+
 ## [2.1.0] - 2026-04-06
 
 ### 🚀 Added - Leave Planner Import & Enhanced UI

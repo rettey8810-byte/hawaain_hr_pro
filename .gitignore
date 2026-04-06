@@ -10,6 +10,33 @@ serviceAccountKey.json
 *.xlsx
 *.xls
 ~$*.xlsx
+*.json
+!web/**/*.json
+!package.json
+!package-lock.json
+!tsconfig.json
+!jsconfig.json
+!firestore*.json
+!firebase.json
+
+# Scripts (to avoid Vercel serverless function limit)
+*.py
+*.js
+!web/**/*.js
+!web/**/*.jsx
+!web/**/*.ts
+!web/**/*.tsx
+add_companyId.js
+check_json.js
+check_employees.js
+convert_both.py
+convert_excel.py
+convert_leave.js
+import_villa_construction.py
+import_villa_construction_idempotent.py
+split_batches.js
+upload_to_firestore.py
+test.js
 
 # Vercel
 .vercel/

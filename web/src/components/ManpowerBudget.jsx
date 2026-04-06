@@ -15,9 +15,10 @@ import {
   ChevronRight,
   X,
   Save,
-  ArrowRight
+  ArrowRight,
+  Edit2
 } from 'lucide-react';
-import { collection, addDoc, deleteDoc, doc, query, where, getDocs } from 'firebase/firestore';
+import { collection, addDoc, deleteDoc, doc, query, where, getDocs, updateDoc } from 'firebase/firestore';
 import { db } from '../firebase/config';
 import { toast } from 'react-hot-toast';
 
@@ -31,6 +32,11 @@ export default function ManpowerBudget() {
   const [showAddModal, setShowAddModal] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [expandedDepts, setExpandedDepts] = useState({});
+  const [editingBudget, setEditingBudget] = useState(null);
+  const [employeesData, setEmployeesData] = useState([]);
+  const [departments, setDepartments] = useState([]);
+  const [sections, setSections] = useState([]);
+  const [designationsList, setDesignationsList] = useState([]);
   
   // Filter divisions and designations by company
   const companyDivisions = divisions.filter(d => d.companyId === companyId).sort((a, b) => a.name.localeCompare(b.name));
@@ -41,6 +47,7 @@ export default function ManpowerBudget() {
     department: '',
     section: '',
     designation: '',
+    salary: '',
     actual2026: '',
     required100_80: '',
     required80_65: '',
@@ -69,7 +76,7 @@ export default function ManpowerBudget() {
         
         setDepartments(uniqueDepts);
         setSections(uniqueSections);
-        setDesignations(uniqueDesignations);
+        setDesignationsList(uniqueDesignations);
       } catch (err) {
         console.error('Error fetching employee data:', err);
       }
@@ -85,6 +92,33 @@ export default function ManpowerBudget() {
     acc[dept].push(budget);
     return acc;
   }, {}) || {};
+
+  // Calculate budget totals
+  const calculateBudgetTotal = () => {
+    if (!budgets) return { totalPositions: 0, totalBudget: 0 };
+    
+    let totalPositions = 0;
+    let totalBudget = 0;
+    
+    budgets.forEach(budget => {
+      const salary = parseFloat(budget.salary) || 0;
+      const required = budget.requiredManpower || {};
+      
+      // Sum all position tiers
+      const positions = 
+        (parseInt(required['100_80']) || 0) +
+        (parseInt(required['80_65']) || 0) +
+        (parseInt(required['65_50']) || 0) +
+        (parseInt(required['below50']) || 0);
+      
+      totalPositions += positions;
+      totalBudget += positions * salary;
+    });
+    
+    return { totalPositions, totalBudget };
+  };
+
+  const { totalPositions, totalBudget } = calculateBudgetTotal();
 
   const handleInputChange = (field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -113,6 +147,7 @@ export default function ManpowerBudget() {
         department: formData.department,
         section: formData.section,
         designation: formData.designation,
+        salary: parseFloat(formData.salary) || 0,
         actual2026: formData.actual2026,
         requiredManpower: {
           '100_80': formData.required100_80,
@@ -134,6 +169,7 @@ export default function ManpowerBudget() {
         department: '',
         section: '',
         designation: '',
+        salary: '',
         actual2026: '',
         required100_80: '',
         required80_65: '',
@@ -175,16 +211,103 @@ export default function ManpowerBudget() {
     }
   };
 
+  const handleEdit = (budget) => {
+    setEditingBudget(budget);
+    setFormData({
+      department: budget.department || '',
+      section: budget.section || '',
+      designation: budget.designation || '',
+      salary: budget.salary || '',
+      actual2026: budget.actual2026 || '',
+      required100_80: budget.requiredManpower?.['100_80'] || '',
+      required80_65: budget.requiredManpower?.['80_65'] || '',
+      required65_50: budget.requiredManpower?.['65_50'] || '',
+      requiredBelow50: budget.requiredManpower?.below50 || ''
+    });
+    setShowAddModal(true);
+  };
+
+  const handleUpdate = async () => {
+    if (!formData.department || !formData.section || !formData.designation) {
+      toast.error('Please fill Department, Section, and Designation');
+      return false;
+    }
+    
+    if (!editingBudget?.id) {
+      toast.error('No budget entry selected for update');
+      return false;
+    }
+
+    setSaving(true);
+    try {
+      await updateDoc(doc(db, 'manpowerBudgets', editingBudget.id), {
+        department: formData.department,
+        section: formData.section,
+        designation: formData.designation,
+        salary: parseFloat(formData.salary) || 0,
+        actual2026: formData.actual2026,
+        requiredManpower: {
+          '100_80': formData.required100_80,
+          '80_65': formData.required80_65,
+          '65_50': formData.required65_50,
+          'below50': formData.requiredBelow50
+        },
+        updatedAt: new Date().toISOString()
+      });
+      
+      toast.success('Budget entry updated successfully!');
+      
+      setFormData({
+        department: '',
+        section: '',
+        designation: '',
+        salary: '',
+        actual2026: '',
+        required100_80: '',
+        required80_65: '',
+        required65_50: '',
+        requiredBelow50: ''
+      });
+      setEditingBudget(null);
+      setShowAddModal(false);
+      
+      return true;
+    } catch (error) {
+      console.error('Error updating budget:', error);
+      toast.error('Failed to update: ' + (error.message || 'Unknown error'));
+      return false;
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleCloseModal = () => {
+    setShowAddModal(false);
+    setEditingBudget(null);
+    setFormData({
+      department: '',
+      section: '',
+      designation: '',
+      salary: '',
+      actual2026: '',
+      required100_80: '',
+      required80_65: '',
+      required65_50: '',
+      requiredBelow50: ''
+    });
+  };
+
   const toggleDept = (dept) => {
     setExpandedDepts(prev => ({ ...prev, [dept]: !prev[dept] }));
   };
 
   const exportToCSV = () => {
-    const headers = ['Department', 'Section', 'Designation', 'Actual 2026', 'Required 100-80%', 'Required 80-65%', 'Required 65-50%', 'Required Below 50%'];
+    const headers = ['Department', 'Section', 'Designation', 'Salary (USD)', 'Actual 2026', 'Required 100-80%', 'Required 80-65%', 'Required 65-50%', 'Required Below 50%'];
     const rows = budgets?.map(b => [
       b.department,
       b.section,
       b.designation,
+      b.salary || 0,
       b.actual2026,
       b.requiredManpower?.['100_80'] || '',
       b.requiredManpower?.['80_65'] || '',
@@ -239,7 +362,7 @@ export default function ManpowerBudget() {
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+      <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6">
         <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
           <div className="flex items-center justify-between">
             <div>
@@ -261,10 +384,8 @@ export default function ManpowerBudget() {
         <div className="bg-purple-50 p-4 rounded-lg border border-purple-200">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-purple-600 font-medium">Sections</p>
-              <p className="text-2xl font-bold text-purple-800">
-                {new Set(budgets?.map(b => b.section)).size || 0}
-              </p>
+              <p className="text-sm text-purple-600 font-medium">Total Positions</p>
+              <p className="text-2xl font-bold text-purple-800">{totalPositions}</p>
             </div>
             <Users className="w-8 h-8 text-purple-600" />
           </div>
@@ -278,6 +399,17 @@ export default function ManpowerBudget() {
               </p>
             </div>
             <DollarSign className="w-8 h-8 text-orange-600" />
+          </div>
+        </div>
+        <div className="bg-emerald-50 p-4 rounded-lg border border-emerald-200">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-emerald-600 font-medium">Total Budget</p>
+              <p className="text-xl font-bold text-emerald-800">
+                ${totalBudget.toLocaleString()}
+              </p>
+            </div>
+            <DollarSign className="w-8 h-8 text-emerald-600" />
           </div>
         </div>
       </div>
@@ -326,6 +458,7 @@ export default function ManpowerBudget() {
                       <tr>
                         <th className="px-3 py-2 text-left text-sm font-medium">Section</th>
                         <th className="px-3 py-2 text-left text-sm font-medium">Designation</th>
+                        <th className="px-3 py-2 text-right text-sm font-medium">Salary (USD)</th>
                         <th className="px-3 py-2 text-center text-sm font-medium">Actual 2026</th>
                         <th className="px-3 py-2 text-center text-sm font-medium bg-blue-100">100-80%</th>
                         <th className="px-3 py-2 text-center text-sm font-medium bg-green-100">80-65%</th>
@@ -339,12 +472,19 @@ export default function ManpowerBudget() {
                         <tr key={budget.id} className="border-b hover:bg-gray-50">
                           <td className="px-3 py-2">{budget.section}</td>
                           <td className="px-3 py-2 font-medium">{budget.designation}</td>
+                          <td className="px-3 py-2 text-right font-medium text-emerald-700">${budget.salary?.toLocaleString() || '-'}</td>
                           <td className="px-3 py-2 text-center">{budget.actual2026 || '-'}</td>
                           <td className="px-3 py-2 text-center bg-blue-50/50">{budget.requiredManpower?.['100_80'] || '-'}</td>
                           <td className="px-3 py-2 text-center bg-green-50/50">{budget.requiredManpower?.['80_65'] || '-'}</td>
                           <td className="px-3 py-2 text-center bg-yellow-50/50">{budget.requiredManpower?.['65_50'] || '-'}</td>
                           <td className="px-3 py-2 text-center bg-red-50/50">{budget.requiredManpower?.below50 || '-'}</td>
                           <td className="px-3 py-2 text-center">
+                            <button
+                              onClick={() => handleEdit(budget)}
+                              className="p-1 text-blue-600 hover:bg-blue-100 rounded mr-2"
+                            >
+                              <Edit2 className="w-4 h-4" />
+                            </button>
                             <button
                               onClick={() => handleDelete(budget.id)}
                               className="p-1 text-red-600 hover:bg-red-100 rounded"
@@ -370,9 +510,9 @@ export default function ManpowerBudget() {
             <div className="flex justify-between items-center p-4 border-b">
               <h2 className="text-xl font-bold flex items-center gap-2">
                 <ArrowRight className="w-5 h-5 text-blue-600" />
-                Add Budget Entry
+                {editingBudget ? 'Edit Budget Entry' : 'Add Budget Entry'}
               </h2>
-              <button onClick={() => setShowAddModal(false)} className="p-1 hover:bg-gray-100 rounded">
+              <button onClick={handleCloseModal} className="p-1 hover:bg-gray-100 rounded">
                 <X className="w-5 h-5" />
               </button>
             </div>
@@ -434,16 +574,28 @@ export default function ManpowerBudget() {
                 </div>
               </div>
 
-              {/* Step 4: Actual 2026 */}
-              <div>
-                <label className="block text-sm font-medium mb-1">Actual 2026</label>
-                <input
-                  type="text"
-                  value={formData.actual2026}
-                  onChange={(e) => handleInputChange('actual2026', e.target.value)}
-                  placeholder="Current actual count or value for 2026"
-                  className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
-                />
+              {/* Step 4: Salary and Actual 2026 */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium mb-1">Salary (USD) *</label>
+                  <input
+                    type="number"
+                    value={formData.salary}
+                    onChange={(e) => handleInputChange('salary', e.target.value)}
+                    placeholder="Enter salary for this designation"
+                    className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1">Actual 2026</label>
+                  <input
+                    type="text"
+                    value={formData.actual2026}
+                    onChange={(e) => handleInputChange('actual2026', e.target.value)}
+                    placeholder="Current actual count or value for 2026"
+                    className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                  />
+                </div>
               </div>
 
               {/* Step 5: Required Manpower Tiers */}
@@ -495,27 +647,41 @@ export default function ManpowerBudget() {
 
               {/* Action Buttons */}
               <div className="flex gap-3 pt-4 border-t">
+                {editingBudget ? (
+                  <button
+                    type="button"
+                    onClick={handleUpdate}
+                    disabled={saving}
+                    className="flex items-center gap-2 px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <Save className="w-4 h-4" />
+                    {saving ? 'Updating...' : 'Update Entry'}
+                  </button>
+                ) : (
+                  <>
+                    <button
+                      type="button"
+                      onClick={handleSave}
+                      disabled={saving}
+                      className="flex items-center gap-2 px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      <Save className="w-4 h-4" />
+                      {saving ? 'Saving...' : 'Save Entry'}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleSaveAndNewDept}
+                      disabled={saving}
+                      className="flex items-center gap-2 px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      <Plus className="w-4 h-4" />
+                      {saving ? 'Saving...' : 'Save & New Entry'}
+                    </button>
+                  </>
+                )}
                 <button
                   type="button"
-                  onClick={handleSave}
-                  disabled={saving}
-                  className="flex items-center gap-2 px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  <Save className="w-4 h-4" />
-                  {saving ? 'Saving...' : 'Save Entry'}
-                </button>
-                <button
-                  type="button"
-                  onClick={handleSaveAndNewDept}
-                  disabled={saving}
-                  className="flex items-center gap-2 px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  <Plus className="w-4 h-4" />
-                  {saving ? 'Saving...' : 'Save & New Entry'}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setShowAddModal(false)}
+                  onClick={handleCloseModal}
                   disabled={saving}
                   className="px-6 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50"
                 >

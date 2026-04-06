@@ -137,7 +137,7 @@ function Section({ title, icon: Icon, children, defaultOpen = true }) {
 export default function EmployeeDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { isHR } = useAuth();
+  const { isHR, user } = useAuth();
   const [employee, setEmployee] = useState(null);
   const [documents, setDocuments] = useState({
     passports: [],
@@ -146,6 +146,8 @@ export default function EmployeeDetail() {
     medicals: []
   });
   const [loading, setLoading] = useState(true);
+  const [editing, setEditing] = useState(false);
+  const [formData, setFormData] = useState({});
 
   const { getDocumentsByEmployee } = useFirestore('employees');
   const { getDocumentsByEmployee: getPassports } = useFirestore('passports');
@@ -165,7 +167,9 @@ export default function EmployeeDetail() {
         );
         const employeeSnap = await getDocs(employeeQuery);
         if (!employeeSnap.empty) {
-          setEmployee({ id: employeeSnap.docs[0].id, ...employeeSnap.docs[0].data() });
+          const empData = { id: employeeSnap.docs[0].id, ...employeeSnap.docs[0].data() };
+          setEmployee(empData);
+          setFormData(empData);
         } else {
           console.log('Employee not found with ID:', id);
           setEmployee(null);
@@ -193,6 +197,35 @@ export default function EmployeeDetail() {
     loadData();
   }, [id]);
 
+  const handleInputChange = (field, value) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+  };
+
+  const handleSave = async () => {
+    if (!user?.uid) {
+      alert('You must be logged in to save changes');
+      return;
+    }
+    setLoading(true);
+    try {
+      await updateDoc(doc(db, 'employees', id), {
+        ...formData,
+        updatedAt: new Date().toISOString(),
+        updatedBy: user.uid
+      });
+      setEmployee(formData);
+      setEditing(false);
+      alert('Employee details updated successfully!');
+    } catch (err) {
+      console.error('Error updating employee:', err);
+      alert('Error updating employee: ' + err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const displayData = editing ? formData : employee;
+
   if (loading) {
     return (
       <div className="flex justify-center items-center h-64">
@@ -213,7 +246,7 @@ export default function EmployeeDetail() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 max-w-7xl mx-auto">
       {/* Header */}
       <div className="md:flex md:items-center md:justify-between">
         <div className="min-w-0 flex-1">
@@ -223,70 +256,169 @@ export default function EmployeeDetail() {
             </Link>
             <div>
               <h2 className="text-2xl font-bold leading-7 text-gray-900 sm:truncate sm:text-3xl sm:tracking-tight">
-                {employee.name}
+                {displayData?.FullName || displayData?.name || 'Employee'}
               </h2>
               <p className="mt-1 text-sm text-gray-500">
-                {employee.position} • {employee.department}
+                {displayData?.Designation || displayData?.position} • {displayData?.['Department '] || displayData?.Department || displayData?.department}
               </p>
             </div>
           </div>
         </div>
-        <div className="mt-4 flex md:ml-4 md:mt-0">
-          {isHR() && (
-            <Link
-              to={`/employees/${id}/edit`}
-              className="inline-flex items-center rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50"
-            >
-              <Edit2 className="h-4 w-4 mr-2" />
-              Edit
-            </Link>
+        <div className="mt-4 flex md:ml-4 md:mt-0 gap-2">
+          {editing ? (
+            <>
+              <button
+                onClick={() => { setEditing(false); setFormData(employee); }}
+                className="inline-flex items-center rounded-md bg-gray-100 px-3 py-2 text-sm font-semibold text-gray-900 hover:bg-gray-200"
+              >
+                <X className="h-4 w-4 mr-2" />
+                Cancel
+              </button>
+              <button
+                onClick={handleSave}
+                disabled={loading}
+                className="inline-flex items-center rounded-md bg-blue-600 px-3 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-50"
+              >
+                <Save className="h-4 w-4 mr-2" />
+                {loading ? 'Saving...' : 'Save Changes'}
+              </button>
+            </>
+          ) : (
+            isHR() && (
+              <button
+                onClick={() => setEditing(true)}
+                className="inline-flex items-center rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50"
+              >
+                <Edit2 className="h-4 w-4 mr-2" />
+                Edit Profile
+              </button>
+            )
           )}
         </div>
       </div>
 
-      {/* Info Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-white rounded-lg shadow p-4">
-          <div className="flex items-center">
-            <Mail className="h-5 w-5 text-gray-400 mr-3" />
-            <div>
-              <p className="text-sm text-gray-500">Email</p>
-              <p className="text-sm font-medium text-gray-900">{employee.email}</p>
-            </div>
-          </div>
-        </div>
-        <div className="bg-white rounded-lg shadow p-4">
-          <div className="flex items-center">
-            <Phone className="h-5 w-5 text-gray-400 mr-3" />
-            <div>
-              <p className="text-sm text-gray-500">Phone</p>
-              <p className="text-sm font-medium text-gray-900">{employee.phone || '-'}</p>
-            </div>
-          </div>
-        </div>
-        <div className="bg-white rounded-lg shadow p-4">
-          <div className="flex items-center">
-            <Building2 className="h-5 w-5 text-gray-400 mr-3" />
-            <div>
-              <p className="text-sm text-gray-500">Department</p>
-              <p className="text-sm font-medium text-gray-900">{employee.department || '-'}</p>
-            </div>
-          </div>
-        </div>
-        <div className="bg-white rounded-lg shadow p-4">
-          <div className="flex items-center">
-            <Calendar className="h-5 w-5 text-gray-400 mr-3" />
-            <div>
-              <p className="text-sm text-gray-500">Join Date</p>
-              <p className="text-sm font-medium text-gray-900">{formatDate(employee.joinDate)}</p>
-            </div>
-          </div>
-        </div>
+      {/* Employee ID Badge */}
+      <div className="flex items-center gap-4">
+        <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800">
+          <BadgeCheck className="h-4 w-4 mr-1" />
+          Emp ID: {displayData?.EmpID || displayData?.employeeId || 'N/A'}
+        </span>
+        <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-emerald-100 text-emerald-800">
+          <AlertCircle className="h-4 w-4 mr-1" />
+          Status: {displayData?.status || 'Active'}
+        </span>
       </div>
 
+      {/* Quick Info Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <InfoCard icon={Mail} label="Email" value={displayData?.EmailID || displayData?.email} />
+        <InfoCard icon={Phone} label="Phone" value={displayData?.PhoneNo || displayData?.phone} />
+        <InfoCard icon={Building2} label="Department" value={displayData?.['Department '] || displayData?.Department || displayData?.department} />
+        <InfoCard icon={Calendar} label="Date of Join" value={formatDate(displayData?.['Date of Join'] || displayData?.joinDate)} />
+      </div>
+
+      {/* Personal Information Section */}
+      <Section title="Personal Information" icon={User}>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <InfoCard icon={User} label="Full Name" value={displayData?.FullName || displayData?.name} />
+          <InfoCard icon={User} label="Short Name" value={displayData?.ShortName} />
+          <InfoCard icon={Calendar} label="Date of Birth" value={formatDate(displayData?.DOB)} />
+          <InfoCard icon={User} label="Gender" value={displayData?.Gender} />
+          <InfoCard icon={Users} label="Marital Status" value={displayData?.MaritalStatus} />
+          <InfoCard icon={Flag} label="Nationality" value={displayData?.Nationality} />
+          <InfoCard icon={BadgeCheck} label="Religion" value={displayData?.Religion} />
+          <InfoCard icon={Droplet} label="Blood Group" value={displayData?.BloodGroup} />
+        </div>
+      </Section>
+
+      {/* Employment Information Section */}
+      <Section title="Employment Information" icon={Briefcase}>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <InfoCard icon={Building2} label="Division" value={displayData?.Division} />
+          <InfoCard icon={Building2} label="Department" value={displayData?.['Department '] || displayData?.Department} />
+          <InfoCard icon={Building2} label="Section" value={displayData?.Section} />
+          <InfoCard icon={BadgeCheck} label="Designation" value={displayData?.Designation} />
+          <InfoCard icon={Users} label="Superior" value={displayData?.Superior} />
+          <InfoCard icon={Calendar} label="Date of Join" value={formatDate(displayData?.['Date of Join'])} />
+        </div>
+      </Section>
+
+      {/* Contact Information Section */}
+      <Section title="Contact Information" icon={Phone}>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <InfoCard icon={Phone} label="Phone Number" value={displayData?.PhoneNo || displayData?.phone} />
+          <InfoCard icon={Phone} label="Alternate Phone" value={displayData?.AlternateContactNo} />
+          <InfoCard icon={Mail} label="Email" value={displayData?.EmailID || displayData?.email} />
+          <InfoCard icon={Mail} label="Personal Email" value={displayData?.PersonalEmailID} />
+        </div>
+      </Section>
+
+      {/* Present Address Section */}
+      <Section title="Present Address" icon={Home}>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <InfoCard icon={MapPin} label="Country" value={displayData?.PresentCountry} />
+          <InfoCard icon={MapPin} label="State" value={displayData?.PresentState} />
+          <InfoCard icon={MapPin} label="City" value={displayData?.PresentCity} />
+          <InfoCard icon={Home} label="Address" value={displayData?.PresentAddress} />
+        </div>
+      </Section>
+
+      {/* Permanent Address Section */}
+      <Section title="Permanent Address" icon={Home}>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <InfoCard icon={MapPin} label="Country" value={displayData?.PermanentCountry} />
+          <InfoCard icon={MapPin} label="State" value={displayData?.PermanentState} />
+          <InfoCard icon={MapPin} label="City" value={displayData?.PermanentCity} />
+          <InfoCard icon={Home} label="Address" value={displayData?.PermanentAddress} />
+        </div>
+      </Section>
+
+      {/* Salary Information Section */}
+      <Section title="Salary Information" icon={DollarSign}>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <InfoCard icon={DollarSign} label="Fixed (USD)" value={formatCurrency(displayData?.['Fixed(USD)'])} />
+          <InfoCard icon={DollarSign} label="Basic (USD)" value={formatCurrency(displayData?.['Basic(USD)'])} />
+          <InfoCard icon={DollarSign} label="Total Salary (USD)" value={formatCurrency(displayData?.['TotalSalary(USD)'])} />
+          <InfoCard icon={CreditCard} label="Pay Through" value={displayData?.PayThrough1} />
+        </div>
+      </Section>
+
+      {/* Bank Information Section */}
+      <Section title="Bank Information" icon={Banknote}>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <InfoCard icon={Building2} label="Bank Name" value={displayData?.BankName2} />
+          <InfoCard icon={User} label="Account Name" value={displayData?.AccountName2} />
+          <InfoCard icon={CreditCard} label="Account Number" value={displayData?.AccountNo2} />
+          <InfoCard icon={CreditCard} label="Pay Through" value={displayData?.PayThrough2} />
+        </div>
+      </Section>
+
+      {/* Emergency Contacts Section */}
+      <Section title="Emergency Contacts" icon={Contact}>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="bg-gray-50 rounded-lg p-4">
+            <h4 className="font-medium text-gray-900 mb-3">Emergency Contact 1</h4>
+            <div className="space-y-3">
+              <InfoCard icon={User} label="Name" value={displayData?.EmergencyContactName1} />
+              <InfoCard icon={Phone} label="Phone" value={displayData?.EmergencyPhoneNo1} />
+              <InfoCard icon={Users} label="Relation" value={displayData?.EmergencyRelation1} />
+              <InfoCard icon={Home} label="Address" value={displayData?.EmergencyAddress1} />
+            </div>
+          </div>
+          <div className="bg-gray-50 rounded-lg p-4">
+            <h4 className="font-medium text-gray-900 mb-3">Emergency Contact 2</h4>
+            <div className="space-y-3">
+              <InfoCard icon={User} label="Name" value={displayData?.EmergencyContactName2} />
+              <InfoCard icon={Phone} label="Phone" value={displayData?.EmergencyPhoneNo2} />
+              <InfoCard icon={Users} label="Relation" value={displayData?.EmergencyRelation2} />
+              <InfoCard icon={Home} label="Address" value={displayData?.EmergencyAddress2} />
+            </div>
+          </div>
+        </div>
+      </Section>
+
       {/* Documents Section */}
-      <div>
-        <h3 className="text-lg font-medium text-gray-900 mb-4">Documents</h3>
+      <Section title="Documents" icon={FileText}>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <DocumentCard
             title="Passport"
@@ -317,7 +449,7 @@ export default function EmployeeDetail() {
             employeeId={id}
           />
         </div>
-      </div>
+      </Section>
     </div>
   );
 }
