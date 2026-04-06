@@ -148,16 +148,18 @@ export default function Payroll() {
               ) : (
                 filteredPayrolls.map(payroll => {
                   const employee = employees.find(e => e.id === payroll.employeeId);
+                  const empName = employee?.FullName || employee?.name || 'Unknown';
+                  const empDept = employee?.['Department '] || employee?.Department || employee?.department || 'N/A';
                   return (
                     <tr key={payroll.id} className="border-b hover:bg-gray-50">
                       <td className="py-3 px-4">
                         <div className="flex items-center gap-3">
                           <div className="h-8 w-8 rounded-full bg-gradient-to-br from-emerald-400 to-emerald-600 flex items-center justify-center text-white text-sm font-medium">
-                            {employee?.name?.charAt(0).toUpperCase() || '?'}
+                            {empName.charAt(0).toUpperCase()}
                           </div>
                           <div>
-                            <p className="font-medium">{employee?.name || 'Unknown'}</p>
-                            <p className="text-xs text-gray-500">{employee?.department}</p>
+                            <p className="font-medium">{empName}</p>
+                            <p className="text-xs text-gray-500">{empDept}</p>
                           </div>
                         </div>
                       </td>
@@ -211,11 +213,11 @@ function RunPayrollModal({ employees, month, onClose, onSubmit }) {
   const [payrollEntries, setPayrollEntries] = useState(
     employees.map(emp => ({
       employeeId: emp.id,
-      employeeName: emp.name,
-      basicSalary: emp.salary?.basic || 0,
-      housingAllowance: emp.salary?.housingAllowance || 0,
-      transportAllowance: emp.salary?.transportAllowance || 0,
-      otherAllowances: emp.salary?.otherAllowances || 0,
+      employeeName: emp.FullName || emp.name || 'Unknown',
+      basicSalary: emp['Basic(USD)'] || emp['Basic(MVR)'] || emp.salary?.basic || 0,
+      housingAllowance: emp['Fixed(USD)'] || emp['Fixed(MVR)'] || emp.salary?.housingAllowance || 0,
+      transportAllowance: 0,
+      otherAllowances: (emp['TotalSalary(USD)'] || emp['TotalSalary(MVR)'] || 0) - (emp['Basic(USD)'] || emp['Basic(MVR)'] || 0) - (emp['Fixed(USD)'] || emp['Fixed(MVR)'] || 0),
       taxDeduction: 0,
       pensionDeduction: 0,
       loanDeduction: 0,
@@ -346,9 +348,9 @@ function PayslipModal({ payroll, employee, onClose }) {
         <div className="p-6">
           <div className="flex justify-between items-start mb-6">
             <div>
-              <h3 className="font-bold text-lg">{employee?.name}</h3>
-              <p className="text-gray-500">{employee?.department} • {employee?.position}</p>
-              <p className="text-gray-500">Employee ID: {employee?.employeeId}</p>
+              <h3 className="font-bold text-lg">{employee?.FullName || employee?.name || 'Unknown'}</h3>
+              <p className="text-gray-500">{employee?.['Department '] || employee?.Department || employee?.department || 'N/A'} • {employee?.Designation || employee?.position || 'N/A'}</p>
+              <p className="text-gray-500">Employee ID: {employee?.EmpID || employee?.employeeId || 'N/A'}</p>
             </div>
             <div className="text-right">
               <p className="text-sm text-gray-500">Pay Date</p>
