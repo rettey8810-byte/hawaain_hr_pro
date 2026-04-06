@@ -1,0 +1,11 @@
+functions/
+scripts/
+*.py
+*.js
+!web/**/*.js
+!web/**/*.jsx
+!web/**/*.ts
+!web/**/*.tsx
+.vercel
+node_modules/
+.git

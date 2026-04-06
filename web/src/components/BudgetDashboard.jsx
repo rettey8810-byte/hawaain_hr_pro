@@ -11,7 +11,8 @@ import {
   ArrowDownRight,
   Wallet,
   CreditCard,
-  Calculator
+  Calculator,
+  Target
 } from 'lucide-react';
 import { useFirestore } from '../hooks/useFirestore';
 import { useCompany } from '../contexts/CompanyContext';
@@ -21,162 +22,166 @@ import { formatCurrency } from '../utils/helpers';
 
 export default function BudgetDashboard() {
   const { companyId } = useCompany();
-  const [employees, setEmployees] = useState([]);
+  const [budgets, setBudgets] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('overview');
 
-  // Fetch employees with salary data
+  // Fetch manpower budgets
   useEffect(() => {
-    const fetchEmployees = async () => {
+    const fetchBudgets = async () => {
       if (!companyId) return;
       
       try {
-        const q = query(
-          collection(db, 'employees'),
-          where('companyId', '==', companyId),
-          where('status', '==', 'active')
+        let q = query(
+          collection(db, 'manpowerBudgets'),
+          where('companyId', '==', companyId)
         );
-        const snapshot = await getDocs(q);
-        const empData = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
-        setEmployees(empData);
+        let snapshot = await getDocs(q);
+        
+        // Fallback: if no documents with companyId, fetch all
+        if (snapshot.empty) {
+          console.log('No budgets with companyId, fetching all...');
+          q = query(collection(db, 'manpowerBudgets'));
+          snapshot = await getDocs(q);
+        }
+        
+        const budgetData = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+        console.log('Fetched budgets:', budgetData.length, budgetData);
+        setBudgets(budgetData);
       } catch (err) {
-        console.error('Error fetching employees:', err);
+        console.error('Error fetching budgets:', err);
       } finally {
         setLoading(false);
       }
     };
     
-    fetchEmployees();
+    fetchBudgets();
   }, [companyId]);
 
-  // Calculate salary statistics
-  const salaryStats = useMemo(() => {
-    if (!employees.length) return null;
+  // Calculate budget statistics
+  const budgetStats = useMemo(() => {
+    if (!budgets.length) return null;
 
-    const employeesWithSalary = employees.filter(e => {
-      const salary = parseFloat(e.Basic || e.basicSalary || e.salary || 0);
-      return salary > 0;
+    let totalPositions = 0;
+    let totalBudget = 0;
+
+    budgets.forEach(budget => {
+      const salary = parseFloat(budget.salary) || 0;
+      const required = budget.requiredManpower || {};
+      
+      const positions = 
+        (parseInt(required['100_80']) || 0) +
+        (parseInt(required['80_65']) || 0) +
+        (parseInt(required['65_50']) || 0) +
+        (parseInt(required['below50']) || 0);
+      
+      totalPositions += positions;
+      totalBudget += positions * salary;
     });
 
-    const totalBasic = employeesWithSalary.reduce((sum, e) => 
-      sum + parseFloat(e.Basic || e.basicSalary || e.salary || 0), 0
-    );
-
-    const totalAllowances = employeesWithSalary.reduce((sum, e) => {
-      const food = parseFloat(e.Food || e.foodAllowance || 0);
-      const transport = parseFloat(e.Transport || e.transportAllowance || 0);
-      const phone = parseFloat(e.Phone || e.phoneAllowance || 0);
-      const other = parseFloat(e.Other || e.otherAllowances || 0);
-      return sum + food + transport + phone + other;
-    }, 0);
-
-    const totalMonthly = totalBasic + totalAllowances;
-    const totalAnnual = totalMonthly * 12;
-
-    const salaries = employeesWithSalary.map(e => 
-      parseFloat(e.Basic || e.basicSalary || e.salary || 0)
-    );
-
-    const avgSalary = salaries.length ? totalBasic / salaries.length : 0;
-    const maxSalary = salaries.length ? Math.max(...salaries) : 0;
-    const minSalary = salaries.length ? Math.min(...salaries) : 0;
+    const annualBudget = totalBudget * 12;
 
     return {
-      totalEmployees: employees.length,
-      employeesWithSalary: employeesWithSalary.length,
-      totalBasic,
-      totalAllowances,
-      totalMonthly,
-      totalAnnual,
-      avgSalary,
-      maxSalary,
-      minSalary
+      totalEntries: budgets.length,
+      totalPositions,
+      totalBudget,
+      annualBudget,
+      avgSalaryPerPosition: totalPositions > 0 ? totalBudget / totalPositions : 0
     };
-  }, [employees]);
+  }, [budgets]);
 
-  // Department-wise breakdown
+  // Department-wise breakdown from manpower budgets
   const departmentStats = useMemo(() => {
-    if (!employees.length) return [];
+    if (!budgets.length) return [];
 
     const deptMap = {};
 
-    employees.forEach(emp => {
-      const dept = emp['Department '] || emp.Department || emp.department || 'Unassigned';
-      const basic = parseFloat(emp.Basic || emp.basicSalary || emp.salary || 0);
-      const food = parseFloat(emp.Food || emp.foodAllowance || 0);
-      const transport = parseFloat(emp.Transport || emp.transportAllowance || 0);
-      const phone = parseFloat(emp.Phone || emp.phoneAllowance || 0);
-      const other = parseFloat(emp.Other || emp.otherAllowances || 0);
-      const total = basic + food + transport + phone + other;
+    budgets.forEach(budget => {
+      const dept = budget.department || 'Unassigned';
+      const salary = parseFloat(budget.salary) || 0;
+      const required = budget.requiredManpower || {};
+      
+      const positions = 
+        (parseInt(required['100_80']) || 0) +
+        (parseInt(required['80_65']) || 0) +
+        (parseInt(required['65_50']) || 0) +
+        (parseInt(required['below50']) || 0);
+      
+      const monthlyTotal = positions * salary;
 
       if (!deptMap[dept]) {
         deptMap[dept] = {
           name: dept,
-          employeeCount: 0,
-          totalBasic: 0,
-          totalAllowances: 0,
+          designationCount: 0,
+          totalPositions: 0,
           totalMonthly: 0,
           salaries: []
         };
       }
 
-      deptMap[dept].employeeCount++;
-      deptMap[dept].totalBasic += basic;
-      deptMap[dept].totalAllowances += (food + transport + phone + other);
-      deptMap[dept].totalMonthly += total;
-      if (basic > 0) deptMap[dept].salaries.push(basic);
+      deptMap[dept].designationCount++;
+      deptMap[dept].totalPositions += positions;
+      deptMap[dept].totalMonthly += monthlyTotal;
+      if (salary > 0) deptMap[dept].salaries.push(salary);
     });
 
     return Object.values(deptMap).map(dept => ({
       ...dept,
-      avgSalary: dept.salaries.length ? dept.totalBasic / dept.salaries.length : 0,
+      avgSalary: dept.salaries.length ? dept.salaries.reduce((a, b) => a + b, 0) / dept.salaries.length : 0,
       annualTotal: dept.totalMonthly * 12
     })).sort((a, b) => b.totalMonthly - a.totalMonthly);
-  }, [employees]);
+  }, [budgets]);
 
-  // Individual salary list
-  const individualSalaries = useMemo(() => {
-    return employees
-      .filter(e => parseFloat(e.Basic || e.basicSalary || e.salary || 0) > 0)
-      .map(e => {
-        const basic = parseFloat(e.Basic || e.basicSalary || e.salary || 0);
-        const food = parseFloat(e.Food || e.foodAllowance || 0);
-        const transport = parseFloat(e.Transport || e.transportAllowance || 0);
-        const phone = parseFloat(e.Phone || emp.phoneAllowance || 0);
-        const other = parseFloat(e.Other || e.otherAllowances || 0);
+  // Individual budget entries list
+  const budgetEntries = useMemo(() => {
+    return budgets
+      .map(b => {
+        const salary = parseFloat(b.salary) || 0;
+        const required = b.requiredManpower || {};
+        
+        const pos100_80 = parseInt(required['100_80']) || 0;
+        const pos80_65 = parseInt(required['80_65']) || 0;
+        const pos65_50 = parseInt(required['65_50']) || 0;
+        const posBelow50 = parseInt(required['below50']) || 0;
+        const totalPositions = pos100_80 + pos80_65 + pos65_50 + posBelow50;
+        const monthlyTotal = totalPositions * salary;
         
         return {
-          id: e.id,
-          name: e.FullName || e.name || 'Unknown',
-          empId: e.EmpID || e.employeeId || 'N/A',
-          department: e['Department '] || e.Department || e.department || 'N/A',
-          designation: e.Designation || e.designation || 'N/A',
-          basic,
-          food,
-          transport,
-          phone,
-          other,
-          total: basic + food + transport + phone + other
+          id: b.id,
+          department: b.department || 'N/A',
+          section: b.section || 'N/A',
+          designation: b.designation || 'N/A',
+          salary,
+          actual2026: b.actual2026 || '0',
+          pos100_80,
+          pos80_65,
+          pos65_50,
+          posBelow50,
+          totalPositions,
+          monthlyTotal,
+          annualTotal: monthlyTotal * 12
         };
       })
-      .sort((a, b) => b.total - a.total);
-  }, [employees]);
+      .sort((a, b) => b.monthlyTotal - a.monthlyTotal);
+  }, [budgets]);
 
   // Export to CSV
   const exportToCSV = () => {
-    const headers = ['Employee ID', 'Name', 'Department', 'Designation', 'Basic Salary', 'Food', 'Transport', 'Phone', 'Other', 'Total Monthly'];
+    const headers = ['Department', 'Section', 'Designation', 'Salary (USD)', 'Actual 2026', '100-80%', '80-65%', '65-50%', 'Below 50%', 'Total Positions', 'Monthly Budget', 'Annual Budget'];
     
-    const rows = individualSalaries.map(emp => [
-      emp.empId,
-      emp.name,
-      emp.department,
-      emp.designation,
-      emp.basic,
-      emp.food,
-      emp.transport,
-      emp.phone,
-      emp.other,
-      emp.total
+    const rows = budgetEntries.map(b => [
+      b.department,
+      b.section,
+      b.designation,
+      b.salary,
+      b.actual2026,
+      b.pos100_80,
+      b.pos80_65,
+      b.pos65_50,
+      b.posBelow50,
+      b.totalPositions,
+      b.monthlyTotal,
+      b.annualTotal
     ]);
 
     const csvContent = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
@@ -184,7 +189,7 @@ export default function BudgetDashboard() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `salary_report_${new Date().toISOString().split('T')[0]}.csv`;
+    a.download = `manpower_budget_report_${new Date().toISOString().split('T')[0]}.csv`;
     a.click();
   };
 
@@ -216,65 +221,65 @@ export default function BudgetDashboard() {
       </div>
 
       {/* Summary Cards */}
-      {salaryStats && (
+      {budgetStats && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl shadow-lg p-6 text-white">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-blue-100 text-sm font-medium">Total Monthly Budget</p>
-                <p className="text-3xl font-bold mt-1">{formatCurrency(salaryStats.totalMonthly)}</p>
+                <p className="text-3xl font-bold mt-1">{formatCurrency(budgetStats.totalBudget)}</p>
               </div>
               <div className="p-3 bg-white/20 rounded-lg">
                 <Wallet className="h-6 w-6 text-white" />
               </div>
             </div>
             <p className="text-blue-100 text-sm mt-2">
-              Annual: {formatCurrency(salaryStats.totalAnnual)}
+              Annual: {formatCurrency(budgetStats.annualBudget)}
             </p>
           </div>
 
           <div className="bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-xl shadow-lg p-6 text-white">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-emerald-100 text-sm font-medium">Total Employees</p>
-                <p className="text-3xl font-bold mt-1">{salaryStats.totalEmployees}</p>
+                <p className="text-emerald-100 text-sm font-medium">Total Positions</p>
+                <p className="text-3xl font-bold mt-1">{budgetStats.totalPositions}</p>
               </div>
               <div className="p-3 bg-white/20 rounded-lg">
                 <Users className="h-6 w-6 text-white" />
               </div>
             </div>
             <p className="text-emerald-100 text-sm mt-2">
-              With Salary: {salaryStats.employeesWithSalary}
+              Across {budgetStats.totalEntries} designations
             </p>
           </div>
 
           <div className="bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl shadow-lg p-6 text-white">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-purple-100 text-sm font-medium">Average Salary</p>
-                <p className="text-3xl font-bold mt-1">{formatCurrency(salaryStats.avgSalary)}</p>
+                <p className="text-purple-100 text-sm font-medium">Avg Salary/Position</p>
+                <p className="text-3xl font-bold mt-1">{formatCurrency(budgetStats.avgSalaryPerPosition)}</p>
               </div>
               <div className="p-3 bg-white/20 rounded-lg">
                 <Calculator className="h-6 w-6 text-white" />
               </div>
             </div>
             <p className="text-purple-100 text-sm mt-2">
-              Range: {formatCurrency(salaryStats.minSalary)} - {formatCurrency(salaryStats.maxSalary)}
+              Based on {budgetStats.totalEntries} entries
             </p>
           </div>
 
           <div className="bg-gradient-to-br from-amber-500 to-amber-600 rounded-xl shadow-lg p-6 text-white">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-amber-100 text-sm font-medium">Total Allowances</p>
-                <p className="text-3xl font-bold mt-1">{formatCurrency(salaryStats.totalAllowances)}</p>
+                <p className="text-amber-100 text-sm font-medium">Departments</p>
+                <p className="text-3xl font-bold mt-1">{departmentStats.length}</p>
               </div>
               <div className="p-3 bg-white/20 rounded-lg">
-                <CreditCard className="h-6 w-6 text-white" />
+                <Building2 className="h-6 w-6 text-white" />
               </div>
             </div>
             <p className="text-amber-100 text-sm mt-2">
-              Monthly average per employee
+              With budget allocations
             </p>
           </div>
         </div>
@@ -296,17 +301,17 @@ export default function BudgetDashboard() {
               Department Overview
             </button>
             <button
-              onClick={() => setActiveTab('individual')}
+              onClick={() => setActiveTab('entries')}
               className={`py-4 px-6 border-b-2 font-medium text-sm flex items-center ${
-                activeTab === 'individual'
+                activeTab === 'entries'
                   ? 'border-blue-500 text-blue-600'
                   : 'border-transparent text-gray-500 hover:text-gray-700'
               }`}
             >
-              <Users className="h-5 w-5 mr-2" />
-              Individual Salaries
+              <Target className="h-5 w-5 mr-2" />
+              Budget Entries
               <span className="ml-2 bg-gray-100 text-gray-700 px-2 py-0.5 rounded-full text-xs">
-                {individualSalaries.length}
+                {budgetEntries.length}
               </span>
             </button>
           </nav>
@@ -325,9 +330,8 @@ export default function BudgetDashboard() {
                 <thead className="bg-gray-50">
                   <tr>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Department</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Employees</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Total Basic</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Allowances</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Designations</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Total Positions</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Monthly Total</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Annual Total</th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Avg Salary</th>
@@ -336,9 +340,9 @@ export default function BudgetDashboard() {
                 <tbody className="bg-white divide-y divide-gray-200">
                   {departmentStats.length === 0 ? (
                     <tr>
-                      <td colSpan="7" className="px-6 py-12 text-center text-gray-500">
+                      <td colSpan="6" className="px-6 py-12 text-center text-gray-500">
                         <Building2 className="h-12 w-12 mx-auto mb-4 text-gray-300" />
-                        <p>No department data available</p>
+                        <p>No budget data available</p>
                       </td>
                     </tr>
                   ) : (
@@ -354,14 +358,13 @@ export default function BudgetDashboard() {
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                           <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                            {dept.employeeCount}
+                            {dept.designationCount}
                           </span>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                          {formatCurrency(dept.totalBasic)}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                          {formatCurrency(dept.totalAllowances)}
+                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                            {dept.totalPositions}
+                          </span>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-gray-900">
                           {formatCurrency(dept.totalMonthly)}
@@ -381,62 +384,77 @@ export default function BudgetDashboard() {
           </div>
         )}
 
-        {/* Individual Salaries Tab */}
-        {activeTab === 'individual' && (
+        {/* Budget Entries Tab */}
+        {activeTab === 'entries' && (
           <div className="p-6">
             <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
-              <Users className="h-5 w-5 mr-2 text-blue-500" />
-              Individual Salary Details
+              <Target className="h-5 w-5 mr-2 text-blue-500" />
+              Individual Budget Entries
             </h3>
             
             <div className="overflow-x-auto">
               <table className="min-w-full divide-y divide-gray-200">
                 <thead className="bg-gray-50">
                   <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Employee</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Department</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Designation</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Basic</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Allowances</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Total</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Department / Designation</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Salary</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actual</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Positions (100-80%)</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Positions (80-65%)</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Positions (65-50%)</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Positions (Below 50%)</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Total Positions</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Monthly Budget</th>
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
-                  {individualSalaries.length === 0 ? (
+                  {budgetEntries.length === 0 ? (
                     <tr>
-                      <td colSpan="6" className="px-6 py-12 text-center text-gray-500">
-                        <Users className="h-12 w-12 mx-auto mb-4 text-gray-300" />
-                        <p>No salary data available</p>
+                      <td colSpan="9" className="px-6 py-12 text-center text-gray-500">
+                        <Target className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+                        <p>No budget entries available</p>
                       </td>
                     </tr>
                   ) : (
-                    individualSalaries.map((emp) => (
-                      <tr key={emp.id} className="hover:bg-gray-50 transition-colors">
+                    budgetEntries.map((entry) => (
+                      <tr key={entry.id} className="hover:bg-gray-50 transition-colors">
                         <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="flex items-center">
-                            <div className="h-8 w-8 rounded-full bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center text-white font-bold text-sm mr-3">
-                              {emp.name.charAt(0)}
-                            </div>
-                            <div>
-                              <p className="font-medium text-gray-900">{emp.name}</p>
-                              <p className="text-xs text-gray-500">{emp.empId}</p>
-                            </div>
+                          <div>
+                            <p className="font-medium text-gray-900">{entry.designation}</p>
+                            <p className="text-xs text-gray-500">{entry.department} • {entry.section}</p>
                           </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                          {emp.department}
+                          {formatCurrency(entry.salary)}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                          {emp.designation}
+                          {entry.actual2026}
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                          {formatCurrency(emp.basic)}
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-center">
+                          <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800">
+                            {entry.pos100_80 || 0}
+                          </span>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                          {formatCurrency(emp.food + emp.transport + emp.phone + emp.other)}
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-center">
+                          <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-800">
+                            {entry.pos80_65 || 0}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-center">
+                          <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-yellow-100 text-yellow-800">
+                            {entry.pos65_50 || 0}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-center">
+                          <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-red-100 text-red-800">
+                            {entry.posBelow50 || 0}
+                          </span>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-gray-900">
-                          {formatCurrency(emp.total)}
+                          {entry.totalPositions}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-emerald-600">
+                          {formatCurrency(entry.monthlyTotal)}
                         </td>
                       </tr>
                     ))

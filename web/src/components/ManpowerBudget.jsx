@@ -472,7 +472,9 @@ export default function ManpowerBudget() {
                         <tr key={budget.id} className="border-b hover:bg-gray-50">
                           <td className="px-3 py-2">{budget.section}</td>
                           <td className="px-3 py-2 font-medium">{budget.designation}</td>
-                          <td className="px-3 py-2 text-right font-medium text-emerald-700">${budget.salary?.toLocaleString() || '-'}</td>
+                          <td className="px-3 py-2 text-right font-medium text-emerald-700">
+                            {parseFloat(budget.salary) > 0 ? `$${parseFloat(budget.salary).toLocaleString()}` : '-'}
+                          </td>
                           <td className="px-3 py-2 text-center">{budget.actual2026 || '-'}</td>
                           <td className="px-3 py-2 text-center bg-blue-50/50">{budget.requiredManpower?.['100_80'] || '-'}</td>
                           <td className="px-3 py-2 text-center bg-green-50/50">{budget.requiredManpower?.['80_65'] || '-'}</td>
