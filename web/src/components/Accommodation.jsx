@@ -212,32 +212,20 @@ const RoomModal = ({ isOpen, onClose, room, onSave, onDelete }) => {
             </div>
           </div>
 
-          {/* Status & Rent */}
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium mb-1">Status</label>
-              <select
-                value={formData.status}
-                onChange={(e) => setFormData({ ...formData, status: e.target.value })}
-                className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
-              >
-                <option value="available">Available</option>
-                <option value="occupied">Occupied</option>
-                <option value="maintenance">Under Maintenance</option>
-                <option value="reserved">Reserved</option>
-                <option value="cleaning">Cleaning</option>
-              </select>
-            </div>
-            <div>
-              <label className="block text-sm font-medium mb-1">Monthly Rent (USD)</label>
-              <input
-                type="number"
-                value={formData.monthlyRent}
-                onChange={(e) => setFormData({ ...formData, monthlyRent: e.target.value })}
-                className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
-                placeholder="0.00"
-              />
-            </div>
+          {/* Status */}
+          <div>
+            <label className="block text-sm font-medium mb-1">Status</label>
+            <select
+              value={formData.status}
+              onChange={(e) => setFormData({ ...formData, status: e.target.value })}
+              className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="available">Available</option>
+              <option value="occupied">Occupied</option>
+              <option value="maintenance">Under Maintenance</option>
+              <option value="reserved">Reserved</option>
+              <option value="cleaning">Cleaning</option>
+            </select>
           </div>
 
           {/* Description */}
@@ -359,49 +347,24 @@ const AssignmentModal = ({ isOpen, onClose, assignment, rooms, employees, onSave
             </select>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium mb-1">Check-in Date *</label>
-              <input
-                type="date"
-                value={formData.checkInDate}
-                onChange={(e) => setFormData({ ...formData, checkInDate: e.target.value })}
-                className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-green-500"
-                required
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium mb-1">Expected Check-out</label>
-              <input
-                type="date"
-                value={formData.expectedCheckOut}
-                onChange={(e) => setFormData({ ...formData, expectedCheckOut: e.target.value })}
-                className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-green-500"
-              />
-            </div>
+          <div>
+            <label className="block text-sm font-medium mb-1">Check-in Date *</label>
+            <input
+              type="date"
+              value={formData.checkInDate}
+              onChange={(e) => setFormData({ ...formData, checkInDate: e.target.value })}
+              className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-green-500"
+              required
+            />
           </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium mb-1">Deposit (USD)</label>
-              <input
-                type="number"
-                value={formData.deposit}
-                onChange={(e) => setFormData({ ...formData, deposit: e.target.value })}
-                className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-green-500"
-                placeholder="0.00"
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium mb-1">Rent Share (USD)</label>
-              <input
-                type="number"
-                value={formData.rentShare}
-                onChange={(e) => setFormData({ ...formData, rentShare: e.target.value })}
-                className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-green-500"
-                placeholder="0.00"
-              />
-            </div>
+          <div>
+            <label className="block text-sm font-medium mb-1">Expected Check-out</label>
+            <input
+              type="date"
+              value={formData.expectedCheckOut}
+              onChange={(e) => setFormData({ ...formData, expectedCheckOut: e.target.value })}
+              className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-green-500"
+            />
           </div>
 
           <div>
@@ -667,8 +630,7 @@ export default function Accommodation() {
     occupied: companyRooms.filter(r => r.status === 'occupied').length,
     maintenance: companyRooms.filter(r => r.status === 'maintenance').length,
     totalOccupancy: companyAssignments.filter(a => !a.checkOutDate).length,
-    pendingMaintenance: companyMaintenance.filter(m => m.status === 'pending').length,
-    monthlyRevenue: companyAssignments.reduce((sum, a) => sum + (parseFloat(a.rentShare) || 0), 0)
+    pendingMaintenance: companyMaintenance.filter(m => m.status === 'pending').length
   };
 
   const handleSaveRoom = async (roomData) => {
@@ -847,14 +809,13 @@ export default function Accommodation() {
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-6 gap-4 mb-6">
+      <div className="grid grid-cols-5 gap-4 mb-6">
         {[
           { label: 'Total Rooms', value: stats.totalRooms, icon: BedDouble, color: 'bg-blue-500' },
           { label: 'Available', value: stats.available, icon: CheckCircle, color: 'bg-green-500' },
           { label: 'Occupied', value: stats.occupied, icon: Users, color: 'bg-purple-500' },
           { label: 'Maintenance', value: stats.maintenance, icon: Wrench, color: 'bg-orange-500' },
           { label: 'Current Occupants', value: stats.totalOccupancy, icon: User, color: 'bg-pink-500' },
-          { label: 'Monthly Revenue', value: `$${stats.monthlyRevenue.toLocaleString()}`, icon: DollarSign, color: 'bg-emerald-500' },
         ].map((stat, idx) => (
           <div key={idx} className="bg-white rounded-xl p-4 shadow-sm">
             <div className="flex items-center justify-between">
@@ -996,12 +957,6 @@ export default function Accommodation() {
                       </div>
                     )}
 
-                    {room.monthlyRent && (
-                      <p className="text-sm font-medium text-gray-700 mb-3">
-                        ${room.monthlyRent}/month
-                      </p>
-                    )}
-
                     {/* Occupancy Bar */}
                     <div className="mb-3">
                       <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
@@ -1102,12 +1057,6 @@ export default function Accommodation() {
                               <p className="text-sm text-gray-500">
                                 Until {new Date(assignment.expectedCheckOut).toLocaleDateString()}
                               </p>
-                            )}
-                          </td>
-                          <td className="py-3 px-4">
-                            <p className="font-medium">${assignment.rentShare || 0}/month</p>
-                            {assignment.deposit > 0 && (
-                              <p className="text-sm text-gray-500">Deposit: ${assignment.deposit}</p>
                             )}
                           </td>
                           <td className="py-3 px-4">
