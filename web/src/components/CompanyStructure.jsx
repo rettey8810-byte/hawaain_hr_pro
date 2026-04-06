@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react';
 import {
   Building2, Plus, Search, X, Edit2, Trash2, CheckCircle, Users,
-  Briefcase, Building, Layers, FolderTree, ChevronRight, ChevronDown,
+  Briefcase, Building, Layers, FolderKanban, ChevronRight, ChevronDown,
   MoreVertical, ArrowUpDown, AlertCircle, Save, RefreshCw
 } from 'lucide-react';
 import { useFirestore } from '../hooks/useFirestore';
@@ -512,7 +512,7 @@ export default function CompanyStructure() {
         </div>
         <div className="relative z-10">
           <h1 className="text-2xl font-bold text-white flex items-center gap-3">
-            <FolderTree className="h-8 w-8" />
+            <FolderKanban className="h-8 w-8" />
             Company Structure
           </h1>
           <p className="text-indigo-100 mt-1">Manage divisions, departments, and designations</p>
