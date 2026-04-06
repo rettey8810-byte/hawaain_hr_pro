@@ -90,14 +90,26 @@ export default function ManpowerBudget() {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
-  const handleSave = async () => {
+  const [saving, setSaving] = useState(false);
+
+  const handleSave = async (options = {}) => {
+    const { keepOpen = false, closeAfter = true } = options;
+    
     if (!formData.department || !formData.section || !formData.designation) {
       toast.error('Please fill Department, Section, and Designation');
-      return;
+      return false;
+    }
+    
+    if (!companyId) {
+      toast.error('No company selected. Please refresh and try again.');
+      return false;
     }
 
+    setSaving(true);
+    console.log('Saving budget entry...', formData);
+
     try {
-      await addDoc(collection(db, 'manpowerBudgets'), {
+      const docRef = await addDoc(collection(db, 'manpowerBudgets'), {
         department: formData.department,
         section: formData.section,
         designation: formData.designation,
@@ -114,7 +126,8 @@ export default function ManpowerBudget() {
         updatedAt: new Date().toISOString()
       });
       
-      toast.success('Budget entry saved!');
+      console.log('Budget saved successfully with ID:', docRef.id);
+      toast.success('Budget entry saved successfully!');
       
       // Clear form for next entry
       setFormData({
@@ -128,16 +141,28 @@ export default function ManpowerBudget() {
         requiredBelow50: ''
       });
       
+      // Close modal if requested
+      if (closeAfter && !keepOpen) {
+        setShowAddModal(false);
+      }
+      
+      return true;
+      
     } catch (error) {
-      toast.error('Failed to save: ' + error.message);
+      console.error('Error saving budget:', error);
+      toast.error('Failed to save: ' + (error.message || 'Unknown error'));
+      return false;
+    } finally {
+      setSaving(false);
     }
   };
 
   const handleSaveAndNewDept = async () => {
-    await handleSave();
-    // After save, modal stays open but form is cleared for new department
-    setShowAddModal(false);
-    setTimeout(() => setShowAddModal(true), 100);
+    const success = await handleSave({ closeAfter: false });
+    if (success) {
+      // Keep modal open with cleared form for new entry
+      toast.success('Entry saved! Add another entry.');
+    }
   };
 
   const handleDelete = async (id) => {
@@ -471,22 +496,28 @@ export default function ManpowerBudget() {
               {/* Action Buttons */}
               <div className="flex gap-3 pt-4 border-t">
                 <button
+                  type="button"
                   onClick={handleSave}
-                  className="flex items-center gap-2 px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                  disabled={saving}
+                  className="flex items-center gap-2 px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <Save className="w-4 h-4" />
-                  Save Entry
+                  {saving ? 'Saving...' : 'Save Entry'}
                 </button>
                 <button
+                  type="button"
                   onClick={handleSaveAndNewDept}
-                  className="flex items-center gap-2 px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
+                  disabled={saving}
+                  className="flex items-center gap-2 px-6 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   <Plus className="w-4 h-4" />
-                  Save & New Entry
+                  {saving ? 'Saving...' : 'Save & New Entry'}
                 </button>
                 <button
+                  type="button"
                   onClick={() => setShowAddModal(false)}
-                  className="px-6 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
+                  disabled={saving}
+                  className="px-6 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50"
                 >
                   Cancel
                 </button>
