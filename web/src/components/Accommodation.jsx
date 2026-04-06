@@ -302,7 +302,7 @@ const RoomModal = ({ isOpen, onClose, room, onSave, onDelete }) => {
 };
 
 // Room Assignment Modal
-const AssignmentModal = ({ isOpen, onClose, assignment, rooms, employees, onSave, onDelete }) => {
+const AssignmentModal = ({ isOpen, onClose, assignment, rooms, employees, assignments, onSave, onDelete }) => {
   const [formData, setFormData] = useState({
     roomId: '',
     employeeId: '',
@@ -315,7 +315,22 @@ const AssignmentModal = ({ isOpen, onClose, assignment, rooms, employees, onSave
   });
 
   const selectedRoom = rooms.find(r => r.id === formData.roomId);
-  const assignedEmployees = assignment?.assignedEmployees || [];
+  
+  // Get current occupants of the selected room
+  const roomOccupants = useMemo(() => {
+    if (!formData.roomId) return [];
+    return assignments
+      .filter(a => a.roomId === formData.roomId && !a.checkOutDate)
+      .map(a => {
+        const emp = employees.find(e => e.id === a.employeeId);
+        return {
+          ...a,
+          employeeName: emp?.FullName || emp?.name || 'Unknown',
+          employeeDesignation: emp?.Designation || emp?.position || 'N/A',
+          employeeDept: emp?.['Department '] || emp?.Department || 'N/A'
+        };
+      });
+  }, [formData.roomId, assignments, employees]);
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -356,10 +371,29 @@ const AssignmentModal = ({ isOpen, onClose, assignment, rooms, employees, onSave
           </div>
 
           {selectedRoom && (
-            <div className="bg-gray-50 rounded-lg p-3 text-sm">
-              <p><strong>Room Details:</strong></p>
-              <p>Floor {selectedRoom.floor}, {selectedRoom.beds} beds, {selectedRoom.bathrooms} bathrooms</p>
-              <p className="text-gray-600">Rent: ${selectedRoom.monthlyRent || 0}/month</p>
+            <div className="bg-blue-50 rounded-lg p-3 text-sm border border-blue-200">
+              <p className="font-semibold text-blue-900 mb-1">Room Details:</p>
+              <p className="text-blue-800">Floor {selectedRoom.floor}, {selectedRoom.beds} beds, {selectedRoom.bathrooms} bathrooms</p>
+              <p className="text-blue-600">Rent: ${selectedRoom.monthlyRent || 0}/month</p>
+              
+              {/* Current Occupants */}
+              {roomOccupants.length > 0 && (
+                <div className="mt-3 pt-3 border-t border-blue-200">
+                  <p className="font-semibold text-blue-900 mb-2">👥 Current Occupants ({roomOccupants.length}):</p>
+                  <div className="space-y-2">
+                    {roomOccupants.map((occupant, idx) => (
+                      <div key={idx} className="bg-white rounded p-2 text-xs border border-blue-100">
+                        <p className="font-medium text-gray-900">{occupant.employeeName}</p>
+                        <p className="text-gray-600">{occupant.employeeDesignation} • {occupant.employeeDept}</p>
+                        <p className="text-gray-500">Since: {new Date(occupant.checkInDate).toLocaleDateString()}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {roomOccupants.length === 0 && selectedRoom.status === 'available' && (
+                <p className="mt-2 text-green-600 font-medium">✓ Room is empty and available</p>
+              )}
             </div>
           )}
 
@@ -1429,8 +1463,9 @@ export default function Accommodation() {
         isOpen={showAssignmentModal}
         onClose={() => { setShowAssignmentModal(false); setSelectedAssignment(null); }}
         assignment={selectedAssignment}
-        rooms={companyRooms.filter(r => r.status === 'available' || r.id === selectedAssignment?.roomId)}
+        rooms={companyRooms}
         employees={employees.filter(e => e.companyId === companyId && e.status === 'active')}
+        assignments={companyAssignments}
         onSave={handleSaveAssignment}
         onDelete={handleDeleteAssignment}
       />
