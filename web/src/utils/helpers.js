@@ -56,3 +56,13 @@ export const filterDocuments = (documents, filters) => {
     return true;
   });
 };
+
+export const formatCurrency = (value, currency = 'USD') => {
+  if (value === null || value === undefined || isNaN(value)) return '-';
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: currency,
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 2
+  }).format(value);
+};
