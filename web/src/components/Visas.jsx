@@ -159,13 +159,13 @@ export default function Visas() {
             <table className="w-full divide-y divide-gray-200">
             <thead className="bg-gradient-to-r from-violet-50 to-purple-50 sticky top-0 z-10">
               <tr>
-                <th className="px-6 py-4 text-left text-xs font-bold text-purple-700 uppercase tracking-wider sticky top-0">👤 Employee</th>
-                <th className="px-6 py-4 text-left text-xs font-bold text-purple-700 uppercase tracking-wider sticky top-0">🎫 Visa Type</th>
-                <th className="px-6 py-4 text-left text-xs font-bold text-purple-700 uppercase tracking-wider sticky top-0">🔢 Visa Number</th>
-                <th className="px-6 py-4 text-left text-xs font-bold text-purple-700 uppercase tracking-wider sticky top-0">🚪 Entry Type</th>
-                <th className="px-6 py-4 text-left text-xs font-bold text-purple-700 uppercase tracking-wider sticky top-0">⏰ Expiry Date</th>
-                <th className="px-6 py-4 text-left text-xs font-bold text-purple-700 uppercase tracking-wider sticky top-0">📊 Status</th>
-                <th className="px-6 py-4 text-right text-xs font-bold text-purple-700 uppercase tracking-wider sticky top-0">⚙️ Actions</th>
+                <th className="px-3 py-4 text-left text-xs font-bold text-purple-700 uppercase tracking-wider sticky top-0 w-32 max-w-[140px]">👤 Employee</th>
+                <th className="px-3 py-4 text-left text-xs font-bold text-purple-700 uppercase tracking-wider sticky top-0 w-24">🎫 Type</th>
+                <th className="px-3 py-4 text-left text-xs font-bold text-purple-700 uppercase tracking-wider sticky top-0 w-32">🔢 Number</th>
+                <th className="px-3 py-4 text-left text-xs font-bold text-purple-700 uppercase tracking-wider sticky top-0 w-24">🚪 Entry</th>
+                <th className="px-3 py-4 text-left text-xs font-bold text-purple-700 uppercase tracking-wider sticky top-0 w-28">⏰ Expiry</th>
+                <th className="px-3 py-4 text-left text-xs font-bold text-purple-700 uppercase tracking-wider sticky top-0 w-28">📊 Status</th>
+                <th className="px-3 py-4 text-right text-xs font-bold text-purple-700 uppercase tracking-wider sticky top-0 w-20">⚙️</th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-100">
@@ -174,13 +174,13 @@ export default function Visas() {
                 const daysRemaining = calculateDaysRemaining(visa.expiryDate);
                 return (
                   <tr key={visa.id} className="hover:bg-purple-50/50 transition-colors">
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900">{getEmployeeName(visa.employeeId)}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{visa.visaType}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700 font-medium">{visa.visaNumber}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{visa.entryType}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm"><span className={daysRemaining <= 30 ? 'text-rose-600 font-bold' : 'text-gray-900 font-medium'}>{formatDate(visa.expiryDate)}</span></td>
-                    <td className="px-6 py-4 whitespace-nowrap"><span className={`px-3 py-1.5 inline-flex text-xs leading-5 font-bold rounded-full border ${status.color === 'green' ? 'bg-emerald-100 text-emerald-700 border-emerald-200' : status.color === 'yellow' ? 'bg-amber-100 text-amber-700 border-amber-200' : status.color === 'red' ? 'bg-rose-100 text-rose-700 border-rose-200' : 'bg-gray-100 text-gray-600 border-gray-200'}`}>{status.label}{daysRemaining !== null && daysRemaining > 0 && ` (${daysRemaining}d)`}</span></td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                    <td className="px-3 py-4 whitespace-nowrap text-sm font-bold text-gray-900 truncate max-w-[140px]" title={getEmployeeName(visa.employeeId)}>{getEmployeeName(visa.employeeId)}</td>
+                    <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-700">{visa.visaType}</td>
+                    <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-700 font-medium">{visa.visaNumber}</td>
+                    <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-500">{visa.entryType}</td>
+                    <td className="px-3 py-4 whitespace-nowrap text-sm"><span className={daysRemaining <= 30 ? 'text-rose-600 font-bold' : 'text-gray-900 font-medium'}>{formatDate(visa.expiryDate)}</span></td>
+                    <td className="px-3 py-4 whitespace-nowrap"><span className={`px-2 py-1 inline-flex text-xs leading-5 font-bold rounded-full border ${status.color === 'green' ? 'bg-emerald-100 text-emerald-700 border-emerald-200' : status.color === 'yellow' ? 'bg-amber-100 text-amber-700 border-amber-200' : status.color === 'red' ? 'bg-rose-100 text-rose-700 border-rose-200' : 'bg-gray-100 text-gray-600 border-gray-200'}`}>{status.label}{daysRemaining !== null && daysRemaining > 0 && ` (${daysRemaining}d)`}</span></td>
+                    <td className="px-3 py-4 whitespace-nowrap text-right text-sm font-medium">
                       <div className="flex justify-end space-x-2">
                         {visa.documentUrl && (<a href={visa.documentUrl} target="_blank" rel="noopener noreferrer" className="p-2 text-purple-600 hover:bg-purple-50 rounded-lg transition-colors"><Eye className="h-4 w-4" /></a>)}
                         {isHR() && (<><Link to={`/visas/${visa.id}/edit`} className="p-2 text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"><Edit2 className="h-4 w-4" /></Link><button onClick={() => {setSelectedVisa(visa); setShowDeleteModal(true);}} className="p-2 text-rose-600 hover:bg-rose-50 rounded-lg transition-colors"><Trash2 className="h-4 w-4" /></button></>)}
