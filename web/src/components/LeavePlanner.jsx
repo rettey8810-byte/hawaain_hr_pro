@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { 
   Plus, 
@@ -22,16 +22,25 @@ import {
   Luggage,
   LayoutGrid,
   Printer,
-  Download
+  Download,
+  Upload,
+  Palmtree,
+  FileSpreadsheet,
+  AlertCircle,
+  Users,
+  CheckSquare,
+  XSquare
 } from 'lucide-react';
 import { useFirestore } from '../hooks/useFirestore';
 import { useAuth } from '../contexts/AuthContext';
+import { useCompany } from '../contexts/CompanyContext';
 import { formatDate, calculateDaysRemaining } from '../utils/helpers';
 import { useToast } from '../contexts/ToastContext';
 import LeaveCalendar from './LeaveCalendar';
 import LeavePrintView from './LeavePrintView';
-import { collection, query, where, getDocs, orderBy } from 'firebase/firestore';
+import { collection, query, where, getDocs, orderBy, addDoc, updateDoc, doc, Timestamp } from 'firebase/firestore';
 import { db } from '../firebase/config';
+import { toast } from 'react-hot-toast';
 
 const STATUS_CONFIG = {
   pending: { color: 'amber', label: '⏳ Pending', bg: 'bg-amber-100', text: 'text-amber-700', border: 'border-amber-200' },
@@ -53,9 +62,21 @@ const TRANSPORT_MODE_ICONS = {
   land: Bus
 };
 
+// Convert Excel serial date to JavaScript Date
+function excelDateToJSDate(serial) {
+  if (!serial || isNaN(serial)) return null;
+  // Excel's epoch is December 30, 1899
+  const excelEpoch = new Date(1899, 11, 30);
+  const days = Math.floor(serial);
+  const fraction = serial - days;
+  const milliseconds = days * 24 * 60 * 60 * 1000 + fraction * 24 * 60 * 60 * 1000;
+  return new Date(excelEpoch.getTime() + milliseconds);
+}
+
 export default function LeavePlanner() {
   const navigate = useNavigate();
   const { user, userData, isHR } = useAuth();
+  const { currentCompany, companyId } = useCompany();
   const { documents: leaves, loading, deleteDocument, getAllDocuments } = useFirestore('leaves');
   
   const [employees, setEmployees] = useState([]);
@@ -65,31 +86,31 @@ export default function LeavePlanner() {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [selectedLeave, setSelectedLeave] = useState(null);
   const [filteredLeaves, setFilteredLeaves] = useState([]);
-  const [viewMode, setViewMode] = useState('list'); // 'list', 'calendar'
+  const [viewMode, setViewMode] = useState('list');
   const [showPrintView, setShowPrintView] = useState(false);
   const [printLeave, setPrintLeave] = useState(null);
-  const toast = useToast();
+  const [activeTab, setActiveTab] = useState('list');
+  const [leaveBalances, setLeaveBalances] = useState({});
 
   // Fetch ALL employees for name lookup
   const fetchAllEmployees = useCallback(async () => {
-    if (!userData?.companyId) return;
+    if (!companyId) return;
     setEmployeesLoading(true);
     try {
       const q = query(
         collection(db, 'employees'),
-        where('companyId', '==', userData.companyId)
+        where('companyId', '==', companyId)
       );
       const snap = await getDocs(q);
       const empList = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-      // Sort client-side by name
-      empList.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+      empList.sort((a, b) => (a.FullName || a.name || '').localeCompare(b.FullName || b.name || ''));
       setEmployees(empList);
     } catch (err) {
       console.error('Error fetching employees:', err);
     } finally {
       setEmployeesLoading(false);
     }
-  }, [userData?.companyId]);
+  }, [companyId]);
 
   useEffect(() => {
     fetchAllEmployees();
@@ -100,6 +121,26 @@ export default function LeavePlanner() {
     return () => unsub?.();
   }, [getAllDocuments]);
 
+  // Calculate leave balances per employee
+  useEffect(() => {
+    const balances = {};
+    employees.forEach(emp => {
+      const empLeaves = leaves.filter(l => l.employeeId === emp.id && l.status === 'approved');
+      const annualUsed = empLeaves
+        .filter(l => l.leaveType === 'annual')
+        .reduce((sum, l) => sum + (parseInt(l.days) || 0), 0);
+      const sickUsed = empLeaves
+        .filter(l => l.leaveType === 'sick')
+        .reduce((sum, l) => sum + (parseInt(l.days) || 0), 0);
+      
+      balances[emp.id] = {
+        annual: { total: 30, used: annualUsed, remaining: 30 - annualUsed },
+        sick: { total: 15, used: sickUsed, remaining: 15 - sickUsed }
+      };
+    });
+    setLeaveBalances(balances);
+  }, [leaves, employees]);
+
   useEffect(() => {
     let filtered = leaves;
     
@@ -108,9 +149,9 @@ export default function LeavePlanner() {
       filtered = filtered.filter(l => {
         const employee = employees.find(e => e.id === l.employeeId);
         return (
-          employee?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          l.destination?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          l.leaveType?.toLowerCase().includes(searchTerm.toLowerCase())
+          (employee?.FullName || employee?.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+          (l.destination || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+          (l.leaveType || '').toLowerCase().includes(searchTerm.toLowerCase())
         );
       });
     }
@@ -138,7 +179,7 @@ export default function LeavePlanner() {
 
   const getEmployeeName = (id) => {
     const emp = employees.find(e => e.id === id);
-    return emp?.name || 'Unknown';
+    return emp?.FullName || emp?.name || 'Unknown';
   };
 
   const getEmployeePhoto = (id) => {
@@ -189,6 +230,104 @@ export default function LeavePlanner() {
     setShowPrintView(true);
   };
 
+  // Import from Leave_Status.json
+  const handleImportFromJSON = async (jsonData) => {
+    try {
+      console.log('Starting leave import with', jsonData.length, 'records');
+      toast.loading('Importing leave data...', { id: 'import' });
+      
+      let leavesCreated = 0;
+      let skipped = 0;
+      
+      for (const record of jsonData) {
+        // Skip header row
+        if (record['Emp ID'] === 'Emp ID' || !record['Emp ID']) {
+          skipped++;
+          continue;
+        }
+        
+        const empId = String(record['Emp ID']).trim();
+        const employee = employees.find(e => 
+          String(e.EmpID) === empId || String(e.id) === empId
+        );
+        
+        if (!employee) {
+          console.warn(`Employee not found: ${empId} - ${record['Name']}`);
+          skipped++;
+          continue;
+        }
+        
+        // Parse dates from Excel format
+        const fromDate = record['From Date'] ? excelDateToJSDate(parseFloat(record['From Date'])) : null;
+        const toDate = record['To Date'] ? excelDateToJSDate(parseFloat(record['To Date'])) : null;
+        
+        if (!fromDate || !toDate) {
+          console.warn('Invalid dates for record:', record);
+          skipped++;
+          continue;
+        }
+        
+        // Calculate days
+        const days = Math.ceil((toDate - fromDate) / (1000 * 60 * 60 * 24)) + 1;
+        
+        // Map leave type
+        let leaveType = 'other';
+        const typeStr = (record['Leave Type'] || '').toLowerCase();
+        if (typeStr.includes('annual')) leaveType = 'annual';
+        else if (typeStr.includes('sick')) leaveType = 'sick';
+        else if (typeStr.includes('emergency')) leaveType = 'emergency';
+        else if (typeStr.includes('unpaid')) leaveType = 'unpaid';
+        
+        // Check if leave already exists
+        const existingLeave = leaves.find(l => 
+          l.employeeId === employee.id && 
+          l.startDate === fromDate.toISOString().split('T')[0]
+        );
+        
+        if (existingLeave) {
+          console.log('Leave already exists, skipping');
+          skipped++;
+          continue;
+        }
+        
+        // Determine status based on approvals
+        let status = 'pending';
+        if (record['Approved By.2'] === 'SYSTEM') {
+          status = 'approved';
+        }
+        
+        // Create leave data
+        const leaveData = {
+          employeeId: employee.id,
+          leaveType,
+          startDate: fromDate.toISOString().split('T')[0],
+          endDate: toDate.toISOString().split('T')[0],
+          days,
+          destination: 'Not specified',
+          reason: record['Reason'] || record['Leave Details'] || '',
+          status,
+          transportation: { required: false },
+          companyId,
+          createdBy: user?.uid,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+          source: 'imported',
+          refNo: record['Ref. No'] || ''
+        };
+        
+        await addDoc(collection(db, 'leaves'), leaveData);
+        leavesCreated++;
+        console.log('Leave created for employee:', employee.id, employee.FullName || employee.name);
+      }
+      
+      console.log(`Import complete: ${leavesCreated} leaves, ${skipped} skipped`);
+      toast.success(`Imported ${leavesCreated} leaves (${skipped} skipped)`, { id: 'import' });
+    } catch (error) {
+      console.error('Import error:', error);
+      toast.error('Import failed: ' + error.message, { id: 'import' });
+    }
+  };
+
   if (loading || employeesLoading) {
     return (
       <div className="flex justify-center items-center h-64">
@@ -202,6 +341,417 @@ export default function LeavePlanner() {
     pending: filteredLeaves.filter(l => l.status === 'pending').length,
     approved: filteredLeaves.filter(l => l.status === 'approved').length,
     withTransport: filteredLeaves.filter(l => l.transportation?.required).length
+  };
+
+  // Tab content based on active tab
+  const renderTabContent = () => {
+    switch (activeTab) {
+      case 'balances':
+        return (
+          <div className="bg-white rounded-2xl shadow-lg p-6">
+            <h3 className="text-xl font-bold text-gray-900 mb-6">Leave Balances</h3>
+            <div className="overflow-x-auto">
+              <table className="w-full divide-y divide-gray-200">
+                <thead className="bg-gradient-to-r from-emerald-50 to-teal-50">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-bold text-emerald-700 uppercase">Employee</th>
+                    <th className="px-6 py-3 text-center text-xs font-bold text-emerald-700 uppercase">Annual (Total/Used/Remaining)</th>
+                    <th className="px-6 py-3 text-center text-xs font-bold text-emerald-700 uppercase">Sick (Total/Used/Remaining)</th>
+                    <th className="px-6 py-3 text-center text-xs font-bold text-emerald-700 uppercase">Status</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100">
+                  {employees.map(emp => {
+                    const balance = leaveBalances[emp.id] || { annual: { total: 30, used: 0, remaining: 30 }, sick: { total: 15, used: 0, remaining: 15 } };
+                    return (
+                      <tr key={emp.id} className="hover:bg-emerald-50/50">
+                        <td className="px-6 py-4">
+                          <div className="flex items-center">
+                            <div className="h-10 w-10 rounded-full bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center text-white font-bold">
+                              {(emp.FullName || emp.name || 'U').charAt(0)}
+                            </div>
+                            <div className="ml-3">
+                              <p className="text-sm font-bold text-gray-900">{emp.FullName || emp.name}</p>
+                              <p className="text-xs text-gray-500">{emp.EmpID || emp.id}</p>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 text-center">
+                          <div className="flex items-center justify-center gap-2">
+                            <span className="text-sm font-medium text-gray-600">{balance.annual.total}</span>
+                            <span className="text-gray-400">/</span>
+                            <span className="text-sm font-medium text-rose-600">{balance.annual.used}</span>
+                            <span className="text-gray-400">/</span>
+                            <span className="text-sm font-bold text-emerald-600">{balance.annual.remaining}</span>
+                          </div>
+                          <div className="w-full bg-gray-200 rounded-full h-2 mt-2 max-w-[200px] mx-auto">
+                            <div 
+                              className="bg-emerald-500 h-2 rounded-full" 
+                              style={{ width: `${Math.min((balance.annual.used / balance.annual.total) * 100, 100)}%` }}
+                            ></div>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 text-center">
+                          <div className="flex items-center justify-center gap-2">
+                            <span className="text-sm font-medium text-gray-600">{balance.sick.total}</span>
+                            <span className="text-gray-400">/</span>
+                            <span className="text-sm font-medium text-rose-600">{balance.sick.used}</span>
+                            <span className="text-gray-400">/</span>
+                            <span className="text-sm font-bold text-emerald-600">{balance.sick.remaining}</span>
+                          </div>
+                          <div className="w-full bg-gray-200 rounded-full h-2 mt-2 max-w-[200px] mx-auto">
+                            <div 
+                              className="bg-blue-500 h-2 rounded-full" 
+                              style={{ width: `${Math.min((balance.sick.used / balance.sick.total) * 100, 100)}%` }}
+                            ></div>
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 text-center">
+                          {balance.annual.remaining < 5 ? (
+                            <span className="px-3 py-1 bg-amber-100 text-amber-700 rounded-full text-xs font-bold">
+                              Low Balance
+                            </span>
+                          ) : (
+                            <span className="px-3 py-1 bg-emerald-100 text-emerald-700 rounded-full text-xs font-bold">
+                              OK
+                            </span>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        );
+      
+      case 'import':
+        return (
+          <div className="bg-white rounded-2xl shadow-lg p-6">
+            <div className="text-center py-12">
+              <div className="w-16 h-16 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Upload className="h-8 w-8 text-emerald-600" />
+              </div>
+              <h3 className="text-xl font-bold text-gray-900 mb-2">Import Leave Data</h3>
+              <p className="text-gray-500 mb-6 max-w-md mx-auto">
+                Upload your Leave_Status.json file to import leave records from Excel. 
+                The system will match employees by Emp ID and create leave entries.
+              </p>
+              
+              <label className="inline-flex items-center px-6 py-3 bg-emerald-600 text-white rounded-xl font-semibold hover:bg-emerald-700 transition-colors cursor-pointer shadow-lg">
+                <Upload className="h-5 w-5 mr-2" />
+                Select JSON File
+                <input
+                  type="file"
+                  accept=".json"
+                  className="hidden"
+                  onChange={(e) => {
+                    console.log('File selected:', e.target.files);
+                    const file = e.target.files[0];
+                    if (file) {
+                      console.log('Reading file:', file.name);
+                      toast.loading('Reading file...', { id: 'file-read' });
+                      const reader = new FileReader();
+                      reader.onload = (event) => {
+                        try {
+                          console.log('File content length:', event.target.result.length);
+                          const jsonData = JSON.parse(event.target.result);
+                          console.log('Parsed JSON records:', jsonData.length);
+                          toast.dismiss('file-read');
+                          handleImportFromJSON(jsonData);
+                        } catch (err) {
+                          console.error('JSON parse error:', err);
+                          toast.dismiss('file-read');
+                          toast.error('Invalid JSON file: ' + err.message);
+                        }
+                      };
+                      reader.onerror = (err) => {
+                        console.error('File read error:', err);
+                        toast.dismiss('file-read');
+                        toast.error('Failed to read file');
+                      };
+                      reader.readAsText(file);
+                    }
+                    e.target.value = '';
+                  }}
+                />
+              </label>
+              
+              <div className="mt-8 text-left max-w-2xl mx-auto">
+                <h4 className="font-semibold text-gray-900 mb-3">Expected JSON Format:</h4>
+                <pre className="bg-gray-100 p-4 rounded-lg text-xs text-gray-700 overflow-x-auto">
+{`[
+  {
+    "Emp ID": "53947",
+    "Name": "IBRAHIM DHIVAAN MUFEED",
+    "Leave Type": "Annual",
+    "From Date": "46244",
+    "To Date": "46279",
+    "Leave Days": "30",
+    "Reason": "Annual leave",
+    "Ref. No": "LR-26-00006453"
+  }
+]`}
+                </pre>
+              </div>
+            </div>
+          </div>
+        );
+      
+      default: // 'list'
+        return (
+          <>
+            {/* Search & Filter - Glass Card */}
+            <div className="bg-white/80 backdrop-blur-md rounded-2xl shadow-lg p-5 border border-white/50">
+              <div className="flex flex-col sm:flex-row gap-4">
+                <div className="flex-1 relative">
+                  <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-emerald-400" />
+                  <input
+                    type="text"
+                    placeholder="🔍 Search by employee, destination, or leave type..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="block w-full rounded-xl border-0 bg-gray-50 pl-12 pr-4 py-3 text-gray-900 shadow-sm ring-1 ring-gray-200 focus:ring-2 focus:ring-emerald-500 transition-all"
+                  />
+                </div>
+                <div className="sm:w-48">
+                  <div className="relative">
+                    <Filter className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                    <select
+                      value={statusFilter}
+                      onChange={(e) => setStatusFilter(e.target.value)}
+                      className="block w-full rounded-xl border-0 bg-gray-50 pl-12 pr-4 py-3 text-gray-900 shadow-sm ring-1 ring-gray-200 focus:ring-2 focus:ring-emerald-500 transition-all appearance-none cursor-pointer"
+                    >
+                      <option value="all">All Status</option>
+                      <option value="pending">⏳ Pending</option>
+                      <option value="approved">✅ Approved</option>
+                      <option value="rejected">❌ Rejected</option>
+                      <option value="cancelled">🚫 Cancelled</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* View Toggle & Export Buttons */}
+            <div className="flex flex-wrap gap-3 items-center justify-between">
+              <div className="flex bg-white rounded-xl shadow p-1">
+                <button
+                  onClick={() => setViewMode('list')}
+                  className={`flex items-center px-4 py-2 rounded-lg transition-all ${
+                    viewMode === 'list' 
+                      ? 'bg-emerald-500 text-white shadow' 
+                      : 'text-gray-600 hover:bg-gray-100'
+                  }`}
+                >
+                  <LayoutGrid className="h-4 w-4 mr-2" />
+                  List View
+                </button>
+                <button
+                  onClick={() => setViewMode('calendar')}
+                  className={`flex items-center px-4 py-2 rounded-lg transition-all ${
+                    viewMode === 'calendar' 
+                      ? 'bg-emerald-500 text-white shadow' 
+                      : 'text-gray-600 hover:bg-gray-100'
+                  }`}
+                >
+                  <Calendar className="h-4 w-4 mr-2" />
+                  Calendar View
+                </button>
+              </div>
+              
+              <div className="flex gap-3">
+                <button
+                  onClick={exportToCSV}
+                  className="flex items-center px-4 py-2 bg-white rounded-xl shadow hover:bg-gray-50 transition-colors text-gray-700"
+                >
+                  <Download className="h-4 w-4 mr-2" />
+                  Export CSV
+                </button>
+              </div>
+            </div>
+
+            {/* Content based on view mode */}
+            {viewMode === 'calendar' ? (
+              <LeaveCalendar 
+                leaves={filteredLeaves} 
+                employees={employees}
+                onLeaveClick={(leave) => navigate(`/leave-planner/${leave.id}`)}
+              />
+            ) : (
+              <>
+            <div className="bg-white rounded-2xl shadow-lg overflow-hidden border border-gray-100">
+              <div className="overflow-x-auto -mx-4 sm:mx-0">
+                <div className="min-w-[1000px] sm:min-w-full px-4 sm:px-0">
+                  <table className="w-full divide-y divide-gray-200">
+                  <thead className="bg-gradient-to-r from-emerald-50 to-teal-50 sticky top-0 z-10">
+                    <tr>
+                      <th className="px-6 py-4 text-left text-xs font-bold text-emerald-700 uppercase tracking-wider sticky top-0">👤 Employee</th>
+                      <th className="px-6 py-4 text-left text-xs font-bold text-emerald-700 uppercase tracking-wider sticky top-0">📅 Leave Period</th>
+                      <th className="px-6 py-4 text-left text-xs font-bold text-emerald-700 uppercase tracking-wider sticky top-0">🌴 Type</th>
+                      <th className="px-6 py-4 text-left text-xs font-bold text-emerald-700 uppercase tracking-wider sticky top-0">📍 Destination</th>
+                      <th className="px-6 py-4 text-left text-xs font-bold text-emerald-700 uppercase tracking-wider sticky top-0">📊 Status</th>
+                      <th className="px-6 py-4 text-left text-xs font-bold text-emerald-700 uppercase tracking-wider sticky top-0">✈️ Transport</th>
+                      <th className="px-6 py-4 text-right text-xs font-bold text-emerald-700 uppercase tracking-wider sticky top-0">⚙️ Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-100">
+                    {filteredLeaves.map((leave) => {
+                      const statusConfig = STATUS_CONFIG[leave.status] || STATUS_CONFIG.pending;
+                      const transportStatus = leave.transportation?.status ? TRANSPORT_STATUS[leave.transportation.status] : null;
+                      const TransportIcon = leave.transportation?.mode ? TRANSPORT_MODE_ICONS[leave.transportation.mode] : Plane;
+                      
+                      return (
+                        <tr key={leave.id} className="hover:bg-emerald-50/50 transition-colors">
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="flex items-center">
+                              {getEmployeePhoto(leave.employeeId) ? (
+                                <img 
+                                  src={getEmployeePhoto(leave.employeeId)} 
+                                  alt="" 
+                                  className="h-10 w-10 rounded-full object-cover border-2 border-emerald-200"
+                                />
+                              ) : (
+                                <div className="h-10 w-10 rounded-full bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center text-white font-bold">
+                                  {getEmployeeName(leave.employeeId).charAt(0)}
+                                </div>
+                              )}
+                              <div className="ml-3">
+                                <p className="text-sm font-bold text-gray-900">{getEmployeeName(leave.employeeId)}</p>
+                                <p className="text-xs text-gray-500">{leave.days} days</p>
+                              </div>
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="flex items-center text-sm text-gray-700">
+                              <Calendar className="h-4 w-4 mr-2 text-emerald-500" />
+                              <div>
+                                <p className="font-medium">{formatDate(leave.startDate)}</p>
+                                <p className="text-xs text-gray-500">to {formatDate(leave.endDate)}</p>
+                              </div>
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <span className="text-sm font-medium text-gray-700 capitalize">
+                              {leave.leaveType === 'annual' && '🏖️ Annual'}
+                              {leave.leaveType === 'sick' && '🤒 Sick'}
+                              {leave.leaveType === 'emergency' && '🚨 Emergency'}
+                              {leave.leaveType === 'unpaid' && '💰 Unpaid'}
+                              {leave.leaveType === 'other' && '📋 Other'}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <div className="flex items-center text-sm text-gray-700">
+                              <MapPin className="h-4 w-4 mr-2 text-rose-500" />
+                              {leave.destination || 'Not specified'}
+                            </div>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            <span className={`px-3 py-1.5 inline-flex text-xs leading-5 font-bold rounded-full border ${statusConfig.bg} ${statusConfig.text} ${statusConfig.border}`}>
+                              {statusConfig.label}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap">
+                            {leave.transportation?.required ? (
+                              <div className="flex flex-col gap-1">
+                                <div className="flex items-center text-sm text-gray-700">
+                                  <TransportIcon className="h-4 w-4 mr-2 text-blue-500" />
+                                  <span className="capitalize">{leave.transportation.mode}</span>
+                                </div>
+                                {transportStatus && (
+                                  <span className={`px-2 py-0.5 text-xs font-medium rounded ${transportStatus.bg} ${transportStatus.text} w-fit`}>
+                                    {transportStatus.label}
+                                  </span>
+                                )}
+                              </div>
+                            ) : (
+                              <span className="text-sm text-gray-400">—</span>
+                            )}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                            <div className="flex justify-end space-x-2">
+                              <Link
+                                to={`/leave-planner/${leave.id}`}
+                                className="p-2 text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors"
+                                title="View Details"
+                              >
+                                <Eye className="h-4 w-4" />
+                              </Link>
+                              {canEdit(leave) && (
+                                <Link
+                                  to={`/leave-planner/${leave.id}/edit`}
+                                  className="p-2 text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
+                                  title="Edit"
+                                >
+                                  <Edit2 className="h-4 w-4" />
+                                </Link>
+                              )}
+                              {leave.status === 'pending' && isHR() && (
+                                <Link
+                                  to={`/leave-planner/${leave.id}/approve`}
+                                  className="p-2 text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors"
+                                  title="Approve/Reject"
+                                >
+                                  <CheckCircle className="h-4 w-4" />
+                                </Link>
+                              )}
+                              {leave.transportation?.required && leave.status === 'approved' && isHR() && (
+                                <Link
+                                  to={`/leave-planner/${leave.id}/transport`}
+                                  className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                                  title="Manage Transport"
+                                >
+                                  <Plane className="h-4 w-4" />
+                                </Link>
+                              )}
+                              {canDelete(leave) && (
+                                <button
+                                  onClick={() => { setSelectedLeave(leave); setShowDeleteModal(true); }}
+                                  className="p-2 text-rose-600 hover:bg-rose-50 rounded-lg transition-colors"
+                                  title="Delete"
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </button>
+                              )}
+                              <button
+                                onClick={() => handlePrint(leave)}
+                                className="p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+                                title="Print"
+                              >
+                                <Printer className="h-4 w-4" />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                    {filteredLeaves.length === 0 && (
+                      <tr>
+                        <td colSpan="7" className="px-6 py-12 text-center">
+                          <div className="text-5xl mb-3">🌴</div>
+                          <p className="text-gray-500 font-medium mb-2">No leave records found</p>
+                          <p className="text-sm text-gray-400">Apply for leave to get started</p>
+                          <Link
+                            to="/leave-planner/apply"
+                            className="inline-flex items-center mt-4 px-4 py-2 bg-emerald-600 text-white rounded-xl font-semibold hover:bg-emerald-700 transition-colors"
+                          >
+                            <Plus className="h-4 w-4 mr-2" />
+                            Apply Now
+                          </Link>
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+                </div>
+              </div>
+            </div>
+            </>
+            )}
+          </>
+        );
+    }
   };
 
   return (
@@ -289,253 +839,34 @@ export default function LeavePlanner() {
         </div>
       </div>
 
-      {/* Search & Filter - Glass Card */}
-      <div className="bg-white/80 backdrop-blur-md rounded-2xl shadow-lg p-5 border border-white/50">
-        <div className="flex flex-col sm:flex-row gap-4">
-          <div className="flex-1 relative">
-            <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-emerald-400" />
-            <input
-              type="text"
-              placeholder="🔍 Search by employee, destination, or leave type..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="block w-full rounded-xl border-0 bg-gray-50 pl-12 pr-4 py-3 text-gray-900 shadow-sm ring-1 ring-gray-200 focus:ring-2 focus:ring-emerald-500 transition-all"
-            />
-          </div>
-          <div className="sm:w-48">
-            <div className="relative">
-              <Filter className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
-              <select
-                value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value)}
-                className="block w-full rounded-xl border-0 bg-gray-50 pl-12 pr-4 py-3 text-gray-900 shadow-sm ring-1 ring-gray-200 focus:ring-2 focus:ring-emerald-500 transition-all appearance-none cursor-pointer"
-              >
-                <option value="all">All Status</option>
-                <option value="pending">⏳ Pending</option>
-                <option value="approved">✅ Approved</option>
-                <option value="rejected">❌ Rejected</option>
-                <option value="cancelled">🚫 Cancelled</option>
-              </select>
-            </div>
-          </div>
+      {/* Tabs */}
+      <div className="bg-white rounded-t-xl shadow-sm">
+        <div className="flex border-b">
+          {[
+            { id: 'list', label: 'Leave List', icon: LayoutGrid },
+            { id: 'balances', label: 'Leave Balances', icon: FileSpreadsheet },
+            { id: 'import', label: 'Import Data', icon: Upload },
+          ].map(tab => (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              className={`flex items-center gap-2 px-6 py-4 font-medium ${
+                activeTab === tab.id
+                  ? 'text-emerald-600 border-b-2 border-emerald-600'
+                  : 'text-gray-600 hover:text-gray-900'
+              }`}
+            >
+              <tab.icon className="h-4 w-4" />
+              {tab.label}
+            </button>
+          ))}
         </div>
       </div>
 
-      {/* View Toggle & Export Buttons */}
-      <div className="flex flex-wrap gap-3 items-center justify-between">
-        <div className="flex bg-white rounded-xl shadow p-1">
-          <button
-            onClick={() => setViewMode('list')}
-            className={`flex items-center px-4 py-2 rounded-lg transition-all ${
-              viewMode === 'list' 
-                ? 'bg-emerald-500 text-white shadow' 
-                : 'text-gray-600 hover:bg-gray-100'
-            }`}
-          >
-            <LayoutGrid className="h-4 w-4 mr-2" />
-            List View
-          </button>
-          <button
-            onClick={() => setViewMode('calendar')}
-            className={`flex items-center px-4 py-2 rounded-lg transition-all ${
-              viewMode === 'calendar' 
-                ? 'bg-emerald-500 text-white shadow' 
-                : 'text-gray-600 hover:bg-gray-100'
-            }`}
-          >
-            <Calendar className="h-4 w-4 mr-2" />
-            Calendar View
-          </button>
-        </div>
-        
-        <div className="flex gap-3">
-          <button
-            onClick={exportToCSV}
-            className="flex items-center px-4 py-2 bg-white rounded-xl shadow hover:bg-gray-50 transition-colors text-gray-700"
-          >
-            <Download className="h-4 w-4 mr-2" />
-            Export CSV
-          </button>
-        </div>
+      {/* Tab Content */}
+      <div className="bg-white rounded-b-xl shadow-sm p-6">
+        {renderTabContent()}
       </div>
-
-      {/* Content based on view mode */}
-      {viewMode === 'calendar' ? (
-        <LeaveCalendar 
-          leaves={filteredLeaves} 
-          employees={employees}
-          onLeaveClick={(leave) => navigate(`/leave-planner/${leave.id}`)}
-        />
-      ) : (
-        <>
-      <div className="bg-white rounded-2xl shadow-lg overflow-hidden border border-gray-100">
-        <div className="overflow-x-auto -mx-4 sm:mx-0">
-          <div className="min-w-[1000px] sm:min-w-full px-4 sm:px-0">
-            <table className="w-full divide-y divide-gray-200">
-            <thead className="bg-gradient-to-r from-emerald-50 to-teal-50 sticky top-0 z-10">
-              <tr>
-                <th className="px-6 py-4 text-left text-xs font-bold text-emerald-700 uppercase tracking-wider sticky top-0">👤 Employee</th>
-                <th className="px-6 py-4 text-left text-xs font-bold text-emerald-700 uppercase tracking-wider sticky top-0">📅 Leave Period</th>
-                <th className="px-6 py-4 text-left text-xs font-bold text-emerald-700 uppercase tracking-wider sticky top-0">🌴 Type</th>
-                <th className="px-6 py-4 text-left text-xs font-bold text-emerald-700 uppercase tracking-wider sticky top-0">📍 Destination</th>
-                <th className="px-6 py-4 text-left text-xs font-bold text-emerald-700 uppercase tracking-wider sticky top-0">📊 Status</th>
-                <th className="px-6 py-4 text-left text-xs font-bold text-emerald-700 uppercase tracking-wider sticky top-0">✈️ Transport</th>
-                <th className="px-6 py-4 text-right text-xs font-bold text-emerald-700 uppercase tracking-wider sticky top-0">⚙️ Actions</th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-100">
-              {filteredLeaves.map((leave) => {
-                const statusConfig = STATUS_CONFIG[leave.status] || STATUS_CONFIG.pending;
-                const transportStatus = leave.transportation?.status ? TRANSPORT_STATUS[leave.transportation.status] : null;
-                const TransportIcon = leave.transportation?.mode ? TRANSPORT_MODE_ICONS[leave.transportation.mode] : Plane;
-                
-                return (
-                  <tr key={leave.id} className="hover:bg-emerald-50/50 transition-colors">
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center">
-                        {getEmployeePhoto(leave.employeeId) ? (
-                          <img 
-                            src={getEmployeePhoto(leave.employeeId)} 
-                            alt="" 
-                            className="h-10 w-10 rounded-full object-cover border-2 border-emerald-200"
-                          />
-                        ) : (
-                          <div className="h-10 w-10 rounded-full bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center text-white font-bold">
-                            {getEmployeeName(leave.employeeId).charAt(0)}
-                          </div>
-                        )}
-                        <div className="ml-3">
-                          <p className="text-sm font-bold text-gray-900">{getEmployeeName(leave.employeeId)}</p>
-                          <p className="text-xs text-gray-500">{leave.days} days</p>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center text-sm text-gray-700">
-                        <Calendar className="h-4 w-4 mr-2 text-emerald-500" />
-                        <div>
-                          <p className="font-medium">{formatDate(leave.startDate)}</p>
-                          <p className="text-xs text-gray-500">to {formatDate(leave.endDate)}</p>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className="text-sm font-medium text-gray-700 capitalize">
-                        {leave.leaveType === 'annual' && '🏖️ Annual'}
-                        {leave.leaveType === 'sick' && '🤒 Sick'}
-                        {leave.leaveType === 'emergency' && '🚨 Emergency'}
-                        {leave.leaveType === 'unpaid' && '💰 Unpaid'}
-                        {leave.leaveType === 'other' && '📋 Other'}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="flex items-center text-sm text-gray-700">
-                        <MapPin className="h-4 w-4 mr-2 text-rose-500" />
-                        {leave.destination || 'Not specified'}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`px-3 py-1.5 inline-flex text-xs leading-5 font-bold rounded-full border ${statusConfig.bg} ${statusConfig.text} ${statusConfig.border}`}>
-                        {statusConfig.label}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      {leave.transportation?.required ? (
-                        <div className="flex flex-col gap-1">
-                          <div className="flex items-center text-sm text-gray-700">
-                            <TransportIcon className="h-4 w-4 mr-2 text-blue-500" />
-                            <span className="capitalize">{leave.transportation.mode}</span>
-                          </div>
-                          {transportStatus && (
-                            <span className={`px-2 py-0.5 text-xs font-medium rounded ${transportStatus.bg} ${transportStatus.text} w-fit`}>
-                              {transportStatus.label}
-                            </span>
-                          )}
-                        </div>
-                      ) : (
-                        <span className="text-sm text-gray-400">—</span>
-                      )}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                      <div className="flex justify-end space-x-2">
-                        <Link
-                          to={`/leave-planner/${leave.id}`}
-                          className="p-2 text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors"
-                          title="View Details"
-                        >
-                          <Eye className="h-4 w-4" />
-                        </Link>
-                        {canEdit(leave) && (
-                          <Link
-                            to={`/leave-planner/${leave.id}/edit`}
-                            className="p-2 text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
-                            title="Edit"
-                          >
-                            <Edit2 className="h-4 w-4" />
-                          </Link>
-                        )}
-                        {leave.status === 'pending' && isHR() && (
-                          <Link
-                            to={`/leave-planner/${leave.id}/approve`}
-                            className="p-2 text-emerald-600 hover:bg-emerald-50 rounded-lg transition-colors"
-                            title="Approve/Reject"
-                          >
-                            <CheckCircle className="h-4 w-4" />
-                          </Link>
-                        )}
-                        {leave.transportation?.required && leave.status === 'approved' && isHR() && (
-                          <Link
-                            to={`/leave-planner/${leave.id}/transport`}
-                            className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                            title="Manage Transport"
-                          >
-                            <Plane className="h-4 w-4" />
-                          </Link>
-                        )}
-                        {canDelete(leave) && (
-                          <button
-                            onClick={() => { setSelectedLeave(leave); setShowDeleteModal(true); }}
-                            className="p-2 text-rose-600 hover:bg-rose-50 rounded-lg transition-colors"
-                            title="Delete"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </button>
-                        )}
-                        <button
-                          onClick={() => handlePrint(leave)}
-                          className="p-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
-                          title="Print"
-                        >
-                          <Printer className="h-4 w-4" />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                );
-              })}
-              {filteredLeaves.length === 0 && (
-                <tr>
-                  <td colSpan="7" className="px-6 py-12 text-center">
-                    <div className="text-5xl mb-3">🌴</div>
-                    <p className="text-gray-500 font-medium mb-2">No leave records found</p>
-                    <p className="text-sm text-gray-400">Apply for leave to get started</p>
-                    <Link
-                      to="/leave-planner/apply"
-                      className="inline-flex items-center mt-4 px-4 py-2 bg-emerald-600 text-white rounded-xl font-semibold hover:bg-emerald-700 transition-colors"
-                    >
-                      <Plus className="h-4 w-4 mr-2" />
-                      Apply Now
-                    </Link>
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-          </div>
-        </div>
-      </div>
-      </>
-      )}
 
       {/* Delete Modal - Mobile Responsive */}
       {showDeleteModal && (
