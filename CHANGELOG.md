@@ -5,6 +5,57 @@ All notable changes to Hawaain HR Pro will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.1.0] - 2026-04-06
+
+### 🚀 Added - Leave Planner Import & Enhanced UI
+
+#### Leave Import Feature
+- **Bulk Import from JSON** - Import leave records from Excel-converted JSON files
+- **Smart Employee Matching** - Matches employees by Emp ID during import
+- **Auto Date Conversion** - Converts Excel serial dates to proper format
+- **Leave Type Mapping** - Maps Annual, Sick, Emergency, Unpaid leave types
+- **Import Summary** - Shows created vs skipped count with toast notifications
+- **Duplicate Detection** - Prevents duplicate leave entries
+- **Auto-Approval** - SYSTEM-approved leaves are auto-approved
+- **Three-Tab Interface** - Leave List, Leave Balances, Import Data tabs
+
+#### Enhanced Leave Planner UI
+- **Department Column** - Shows employee department in leave list
+- **Designation Column** - Shows employee position/title
+- **Section Column** - Shows employee section/sub-department
+- **Inline Actions** - Direct approve/reject buttons in leave list (HR only)
+- **Improved Action Buttons** - View, Edit, Approve, Reject, Delete per row
+- **Role-Based Visibility** - Edit/Delete show for owners and HR only
+
+### 🚀 Added - Accommodation Module v2.1
+
+#### Room Import & Management
+- **JSON Import** - Bulk import rooms and assignments from JSON
+- **New Assignment Button** - "New Assignment" button in Room Assignments tab
+- **Improved Edit Functionality** - Room details properly load when editing
+- **All Rooms Dropdown** - Shows all rooms with status in assignment modal
+- **Debug Logging** - Console logging for troubleshooting
+
+### 🔧 Fixed
+
+#### Accommodation
+- Fixed room data not showing in edit modal (React key prop issue)
+- Fixed room assignment dropdown not showing imported rooms
+- Fixed delete button with better error handling
+- Fixed room status not updating when assignment is removed
+
+#### Leave Planner
+- Fixed import process hanging with async improvements
+- Fixed employee lookup to match by EmpID and id
+- Fixed Excel date parsing
+
+### 🔧 Changed
+- Enhanced error handling in delete functions
+- Improved async patterns in import functions
+- Better loading states and toast notifications
+
+---
+
 ## [2.2.1] - 2026-04-05
 
 ### 🚀 Added - Company Admin & Data Management

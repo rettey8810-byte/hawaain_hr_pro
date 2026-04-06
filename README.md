@@ -16,12 +16,15 @@ A comprehensive HR management system with expatriate compliance tracking, docume
 - **Document Storage**: Firebase Storage integration
 - **Modern UI/UX**: Gradient headers, colorful cards, glass-morphism effects
 
-### 🌴 Leave Planner (Comprehensive)
+### 🌴 Leave Planner (Comprehensive v2.1)
 - **Leave Applications**: 10+ leave types including Annual, Sick, Emergency, Half-Day, Hourly, Compensatory, Study, Maternity, Paternity, Unpaid
+- **Leave Import**: Bulk import leave data from JSON files (Excel converted)
 - **Leave Quota Management**: Track balances per employee per year with auto-calculation
 - **Smart Employee Search**: Type-to-search dropdown for selecting employees
 - **Transportation Booking**: Air, Sea, Land transport options
 - **4-Level Approval Workflow**: Supervisor → Dept Head → HR → GM approval chain
+- **Inline Approve/Reject**: One-click approve/reject buttons for HR users
+- **Enhanced Columns**: Department, Designation, Section displayed in leave list
 - **Status Tracking**: 
   - 📋 Quotation Received
   - 🎫 Tickets Purchased
@@ -157,6 +160,17 @@ A comprehensive HR management system with expatriate compliance tracking, docume
 - **Accounting Integration** - QuickBooks & Xero sync
 - **Webhook Support** - Custom integration endpoints
 - **Sync Status Dashboard** - Health monitoring for all integrations
+
+### 🏢 Staff Accommodation (v2.1)
+- **Room Management**: Add, edit, delete rooms with details (capacity, beds, bathrooms, amenities)
+- **Room Import**: Bulk import rooms and assignments from JSON
+- **Room Assignments**: Assign employees to rooms with check-in/out tracking
+- **New Assignment Button**: Create new room assignments from the assignments tab
+- **Occupancy Tracking**: Real-time occupancy status (available, occupied, maintenance)
+- **Maintenance Requests**: Create and track room maintenance tasks
+- **Room Status Dashboard**: Visual stats (total, available, occupied, maintenance)
+- **Amenities Management**: Track room features (AC, WiFi, TV, Kitchen, etc.)
+- **Building/Wing Support**: Organize rooms by building and wing/block
 
 ### 🏢 HR Operations
 - **Disciplinary Actions** - Warning letters, incident tracking
@@ -353,7 +367,14 @@ A companion mobile app is available for:
 
 ## Updates
 
-### Latest (v2.0.0)
+### Latest (v2.1.0) - April 2026
+- **Leave Planner Import** - Bulk import leave data from JSON/Excel files
+- **Leave Planner Enhanced UI** - Department, Designation, Section columns added
+- **Inline Leave Actions** - Direct approve/reject buttons in leave list for HR
+- **Accommodation Module v2** - Room assignment creation, improved edit functionality
+- **Operations Module** - Disciplinary actions, grievances, and exit management
+
+### Previous (v2.0.0)
 - Company Structure with dynamic divisions/designations
 - Accommodation module (rooms, assignments, maintenance)
 - Promotions with career progression

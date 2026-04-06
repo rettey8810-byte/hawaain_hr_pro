@@ -739,7 +739,39 @@ Configure leave rules:
    - Peak period blocking
 5. Save settings
 
-### 📎 Leave Document Upload
+### � Leave Import (HR Only - v2.1)
+
+Bulk import leave data from Excel/JSON files:
+
+1. Go to "Leave Planner"
+2. Click the "Import Data" tab
+3. Prepare your data in Excel with these columns:
+   - **Emp ID**: Employee ID number
+   - **Name**: Employee full name
+   - **Leave Type**: Annual, Sick, Emergency, Unpaid
+   - **From Date**: Start date (Excel serial format or YYYY-MM-DD)
+   - **To Date**: End date (Excel serial format or YYYY-MM-DD)
+   - **Leave Days**: Number of days
+   - **Reason**: Purpose of leave
+   - **Ref. No**: Reference number (optional)
+   - **Approved By.2**: Set to "SYSTEM" for auto-approved leaves
+
+4. Save Excel file and convert to JSON (use online converter or provided script)
+5. Click "Select JSON File" in the Import Data tab
+6. Select your JSON file
+7. System will:
+   - Match employees by Emp ID
+   - Create leave records for each valid entry
+   - Skip records with missing employees or invalid dates
+   - Show import summary (created vs skipped)
+
+**Tips:**
+- Ensure Emp IDs match exactly with employee records
+- System will auto-calculate days if dates are provided
+- Leaves marked with "SYSTEM" approval will be auto-approved
+- Check browser console for detailed import logs
+
+### � Leave Document Upload
 
 Attach supporting documents:
 
@@ -1137,10 +1169,10 @@ Ensure labor law compliance and manage contracts.
 
 ---
 
-## Accommodation
+## Accommodation (v2.1)
 
 ### Overview
-Manage staff accommodation with room assignments, occupancy tracking, and maintenance requests.
+Manage staff accommodation with room assignments, occupancy tracking, and maintenance requests. Now includes bulk import and enhanced room management.
 
 ### Access
 Go to **Accommodation** in the main navigation
@@ -1164,30 +1196,54 @@ Go to **Accommodation** in the main navigation
 4. Set room status: Available, Occupied, Maintenance, Cleaning, Reserved
 5. Save room
 
+#### Importing Rooms (v2.1)
+Bulk import rooms and assignments from JSON:
+
+1. Prepare Excel file with columns:
+   - **Emp ID**: Employee ID (for assignments)
+   - **Name**: Employee name
+   - **Building Name**: Building identifier
+   - **Room No**: Room number
+   - **Flat Name**: Floor/flat name
+   - **Bed No**: Bed count
+   - **In House**: TRUE/FALSE (only TRUE records are imported)
+   - **Check In**: Check-in date
+   - **Entry By**: Who made the entry
+
+2. Convert Excel to JSON using provided script or online tool
+3. In Accommodation, click "Import JSON" button
+4. Select your JSON file
+5. System will:
+   - Create unique rooms based on Building + Room No
+   - Match employees by Emp ID
+   - Create room assignments automatically
+   - Skip duplicates and invalid records
+
 #### Managing Rooms
 - View all rooms with occupancy status
 - Filter by building, status, or search by room number
 - Edit room details or delete rooms
 - View occupancy percentage per room
+- Room details now persist correctly when editing
 
-### Room Assignment
+### Room Assignments
 
-#### Assigning Staff to Rooms
-1. Go to "Accommodation" → "Room Assignment"
-2. Click "New Assignment"
-3. Select:
-   - **Room**: Choose from available rooms
-   - **Employee**: Select staff member
-   - **Check-in Date**: Start date
-   - **Expected Check-out**: End date (optional)
-4. Add notes if needed
-5. Save assignment
+#### Creating New Assignments (v2.1)
+1. Go to "Accommodation" → "Room Assignments"
+2. Click **"New Assignment"** button (top right)
+3. Select from available rooms (shows all rooms with status)
+4. Choose employee from dropdown
+5. Set check-in date
+6. Add optional notes
+7. Save - room status automatically updates to "occupied"
 
 #### Managing Assignments
 - View all current occupants
 - See check-in dates and expected duration
+- Edit assignments if needed
 - Vacate rooms when staff move out
 - Room status automatically updates to "Cleaning" when vacated
+- Room status updates to "available" when assignment is removed
 
 ### Maintenance
 
@@ -1208,6 +1264,7 @@ Go to **Accommodation** in the main navigation
 - Filter by priority, status, or room
 - Room status automatically set to "Maintenance" when request created
 - Mark requests as completed when done
+- Room status returns to previous state when maintenance completed
 
 ---
 
