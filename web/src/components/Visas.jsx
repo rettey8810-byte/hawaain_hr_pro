@@ -83,7 +83,8 @@ export default function Visas() {
     const emp = employees.find(e => e.id === id);
     return {
       name: emp?.FullName || emp?.name || 'Unknown',
-      empId: emp?.EmpID || emp?.employeeId || 'N/A'
+      empId: emp?.EmpID || emp?.employeeId || 'N/A',
+      passportNumber: emp?.passportNumber || emp?.passportNo || 'N/A'
     };
   };
 
@@ -259,8 +260,9 @@ export default function Visas() {
             <thead className="bg-gradient-to-r from-violet-50 to-purple-50 sticky top-0 z-10">
               <tr>
                 <th className="px-3 py-4 text-left text-xs font-bold text-purple-700 uppercase tracking-wider sticky top-0 w-32 max-w-[140px]">👤 Employee</th>
-                <th className="px-3 py-4 text-left text-xs font-bold text-purple-700 uppercase tracking-wider sticky top-0 w-24">🎫 Type</th>
-                <th className="px-3 py-4 text-left text-xs font-bold text-purple-700 uppercase tracking-wider sticky top-0 w-32">🔢 Number</th>
+                <th className="px-3 py-4 text-left text-xs font-bold text-purple-700 uppercase tracking-wider sticky top-0 w-24">� Staff ID</th>
+                <th className="px-3 py-4 text-left text-xs font-bold text-purple-700 uppercase tracking-wider sticky top-0 w-28">🛂 Passport</th>
+                <th className="px-3 py-4 text-left text-xs font-bold text-purple-700 uppercase tracking-wider sticky top-0 w-32">🔢 Visa Number</th>
                 <th className="px-3 py-4 text-left text-xs font-bold text-purple-700 uppercase tracking-wider sticky top-0 w-24">🚪 Entry</th>
                 <th className="px-3 py-4 text-left text-xs font-bold text-purple-700 uppercase tracking-wider sticky top-0 w-28">⏰ Expiry</th>
                 <th className="px-3 py-4 text-left text-xs font-bold text-purple-700 uppercase tracking-wider sticky top-0 w-28">📊 Status</th>
@@ -274,7 +276,8 @@ export default function Visas() {
                 return (
                   <tr key={visa.id} className="hover:bg-purple-50/50 transition-colors">
                     <td className="px-3 py-4 whitespace-nowrap text-sm font-bold text-gray-900 truncate max-w-[140px]" title={getEmployeeInfo(visa.employeeId).name}>{getEmployeeInfo(visa.employeeId).name}</td>
-                    <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-700">{visa.visaType}</td>
+                    <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-700">{getEmployeeInfo(visa.employeeId).empId}</td>
+                    <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-700 font-medium">{getEmployeeInfo(visa.employeeId).passportNumber}</td>
                     <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-700 font-medium">{visa.visaNumber}</td>
                     <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-500">{visa.entryType}</td>
                     <td className="px-3 py-4 whitespace-nowrap text-sm"><span className={daysRemaining <= 30 ? 'text-rose-600 font-bold' : 'text-gray-900 font-medium'}>{formatDate(visa.expiryDate)}</span></td>
@@ -288,7 +291,7 @@ export default function Visas() {
                   </tr>
                 );
               })}
-              {filteredVisas.length === 0 && (<tr><td colSpan="7" className="px-6 py-12 text-center"><div className="text-5xl mb-3">🎫</div><p className="text-gray-500 font-medium">No visas found</p><p className="text-sm text-gray-400 mt-2">Use Import CSV to add records</p></td></tr>)}
+              {filteredVisas.length === 0 && (<tr><td colSpan="8" className="px-6 py-12 text-center"><div className="text-5xl mb-3">🎫</div><p className="text-gray-500 font-medium">No visas found</p><p className="text-sm text-gray-400 mt-2">Use Import CSV to add records</p></td></tr>)}
             </tbody>
           </table>
           </div>
