@@ -2,7 +2,8 @@ import { useState, useMemo } from 'react';
 import {
   Building2, Plus, Search, X, Edit2, Trash2, CheckCircle, Users,
   Briefcase, Building, Layers, FolderKanban, ChevronRight, ChevronDown,
-  MoreVertical, ArrowUpDown, AlertCircle, Save, RefreshCw
+  MoreVertical, ArrowUpDown, AlertCircle, Save, RefreshCw, Calendar,
+  Palmtree
 } from 'lucide-react';
 import { useFirestore } from '../hooks/useFirestore';
 import { useCompany } from '../contexts/CompanyContext';
@@ -315,22 +316,203 @@ const DesignationModal = ({ isOpen, onClose, designation, divisions, onSave, onD
   );
 };
 
-// Main Component
+// Leave Type Modal
+const LeaveTypeModal = ({ isOpen, onClose, leaveType, onSave, onDelete }) => {
+  const [formData, setFormData] = useState({
+    name: '',
+    value: '',
+    daysPerYear: 0,
+    daysPerMonth: 0,
+    isPaid: true,
+    requiresApproval: true,
+    color: 'blue',
+    emoji: '📋',
+    description: '',
+    ...leaveType
+  });
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    onSave(formData);
+  };
+
+  if (!isOpen) return null;
+
+  const colorOptions = [
+    { value: 'blue', label: 'Blue', class: 'bg-blue-100 text-blue-700' },
+    { value: 'emerald', label: 'Emerald', class: 'bg-emerald-100 text-emerald-700' },
+    { value: 'rose', label: 'Rose', class: 'bg-rose-100 text-rose-700' },
+    { value: 'amber', label: 'Amber', class: 'bg-amber-100 text-amber-700' },
+    { value: 'purple', label: 'Purple', class: 'bg-purple-100 text-purple-700' },
+    { value: 'cyan', label: 'Cyan', class: 'bg-cyan-100 text-cyan-700' },
+    { value: 'fuchsia', label: 'Fuchsia', class: 'bg-fuchsia-100 text-fuchsia-700' },
+    { value: 'indigo', label: 'Indigo', class: 'bg-indigo-100 text-indigo-700' },
+    { value: 'gray', label: 'Gray', class: 'bg-gray-100 text-gray-700' },
+  ];
+
+  return (
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-xl w-full max-w-lg">
+        <div className="border-b px-6 py-4 flex items-center justify-between">
+          <h2 className="text-xl font-bold flex items-center gap-2">
+            <Palmtree className="w-6 h-6 text-emerald-600" />
+            {leaveType?.id ? 'Edit Leave Type' : 'Add Leave Type'}
+          </h2>
+          <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-lg">
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+
+        <form onSubmit={handleSubmit} className="p-6 space-y-4">
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium mb-1">Name *</label>
+              <input
+                type="text"
+                value={formData.name}
+                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-emerald-500"
+                placeholder="e.g., Annual Leave"
+                required
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1">Value (key) *</label>
+              <input
+                type="text"
+                value={formData.value}
+                onChange={(e) => setFormData({ ...formData, value: e.target.value.toLowerCase().replace(/\s+/g, '_') })}
+                className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-emerald-500"
+                placeholder="e.g., annual_leave"
+                required
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium mb-1">Days Per Year</label>
+              <input
+                type="number"
+                value={formData.daysPerYear}
+                onChange={(e) => setFormData({ ...formData, daysPerYear: parseInt(e.target.value) || 0 })}
+                className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-emerald-500"
+                placeholder="0"
+                min="0"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1">Days Per Month</label>
+              <input
+                type="number"
+                value={formData.daysPerMonth}
+                onChange={(e) => setFormData({ ...formData, daysPerMonth: parseInt(e.target.value) || 0 })}
+                className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-emerald-500"
+                placeholder="0"
+                min="0"
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium mb-1">Color</label>
+              <select
+                value={formData.color}
+                onChange={(e) => setFormData({ ...formData, color: e.target.value })}
+                className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-emerald-500"
+              >
+                {colorOptions.map(c => (
+                  <option key={c.value} value={c.value}>{c.label}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1">Emoji</label>
+              <input
+                type="text"
+                value={formData.emoji}
+                onChange={(e) => setFormData({ ...formData, emoji: e.target.value })}
+                className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-emerald-500"
+                placeholder="e.g., 🏖️"
+                maxLength="2"
+              />
+            </div>
+          </div>
+
+          <div className="flex gap-4">
+            <label className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                checked={formData.isPaid}
+                onChange={(e) => setFormData({ ...formData, isPaid: e.target.checked })}
+                className="rounded text-emerald-600"
+              />
+              <span className="text-sm">Paid Leave</span>
+            </label>
+            <label className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                checked={formData.requiresApproval}
+                onChange={(e) => setFormData({ ...formData, requiresApproval: e.target.checked })}
+                className="rounded text-emerald-600"
+              />
+              <span className="text-sm">Requires Approval</span>
+            </label>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium mb-1">Description</label>
+            <textarea
+              value={formData.description}
+              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+              rows={3}
+              className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-emerald-500"
+              placeholder="Description of this leave type..."
+            />
+          </div>
+
+          <div className="flex gap-3 pt-4 border-t">
+            <button type="submit" className="flex-1 bg-emerald-600 text-white py-2 rounded-lg hover:bg-emerald-700">
+              {leaveType?.id ? 'Update Leave Type' : 'Create Leave Type'}
+            </button>
+            {leaveType?.id && (
+              <button
+                type="button"
+                onClick={() => onDelete(leaveType.id)}
+                className="px-4 py-2 border border-red-300 text-red-600 rounded-lg hover:bg-red-50"
+              >
+                Delete
+              </button>
+            )}
+            <button type="button" onClick={onClose} className="px-4 py-2 border rounded-lg hover:bg-gray-50">
+              Cancel
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+};
 export default function CompanyStructure() {
   const [activeTab, setActiveTab] = useState('divisions');
   const [showDivisionModal, setShowDivisionModal] = useState(false);
   const [showDesignationModal, setShowDesignationModal] = useState(false);
+  const [showLeaveTypeModal, setShowLeaveTypeModal] = useState(false);
   const [selectedDivision, setSelectedDivision] = useState(null);
   const [selectedDesignation, setSelectedDesignation] = useState(null);
+  const [selectedLeaveType, setSelectedLeaveType] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [expandedDivisions, setExpandedDivisions] = useState([]);
 
   const { companyId } = useCompany();
-  const { user } = useAuth();
+  const { user, userData } = useAuth();
+  const isSuperAdmin = userData?.role === 'superadmin';
 
   const { documents: divisions, loading: divisionsLoading } = useFirestore('divisions');
   const { documents: designations, loading: designationsLoading } = useFirestore('designations');
   const { documents: employees } = useFirestore('employees');
+  const { documents: leaveTypes, loading: leaveTypesLoading } = useFirestore('leaveTypes');
 
   const companyEmployees = useMemo(() => {
     return employees.filter(e => !companyId || e.companyId === companyId);
@@ -560,6 +742,44 @@ export default function CompanyStructure() {
     }
   };
 
+  const handleSaveLeaveType = async (leaveTypeData) => {
+    try {
+      const data = {
+        ...leaveTypeData,
+        companyId,
+        createdBy: user?.uid,
+        createdAt: leaveTypeData.id ? undefined : new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      };
+
+      if (selectedLeaveType?.id) {
+        await updateDoc(doc(db, 'leaveTypes', selectedLeaveType.id), data);
+        toast.success('Leave type updated successfully');
+      } else {
+        await addDoc(collection(db, 'leaveTypes'), data);
+        toast.success('Leave type created successfully');
+      }
+
+      setShowLeaveTypeModal(false);
+      setSelectedLeaveType(null);
+    } catch (error) {
+      toast.error('Failed to save leave type: ' + error.message);
+    }
+  };
+
+  const handleDeleteLeaveType = async (id) => {
+    if (!confirm('Are you sure you want to delete this leave type?')) return;
+
+    try {
+      await deleteDoc(doc(db, 'leaveTypes', id));
+      toast.success('Leave type deleted');
+      setShowLeaveTypeModal(false);
+      setSelectedLeaveType(null);
+    } catch (error) {
+      toast.error('Failed to delete leave type');
+    }
+  };
+
   const toggleExpand = (id) => {
     setExpandedDivisions(prev =>
       prev.includes(id)
@@ -568,7 +788,7 @@ export default function CompanyStructure() {
     );
   };
 
-  if (divisionsLoading || designationsLoading) {
+  if (divisionsLoading || designationsLoading || leaveTypesLoading) {
     return (
       <div className="min-h-screen bg-gray-50 p-6 flex items-center justify-center">
         <div className="flex items-center gap-3 text-gray-500">
@@ -623,6 +843,7 @@ export default function CompanyStructure() {
           {[
             { id: 'divisions', label: 'Divisions & Departments', icon: Building },
             { id: 'designations', label: 'Designations', icon: Briefcase },
+            ...(isSuperAdmin ? [{ id: 'leaveTypes', label: 'Leave Types', icon: Palmtree }] : []),
           ].map(tab => (
             <button
               key={tab.id}
@@ -659,19 +880,24 @@ export default function CompanyStructure() {
               if (activeTab === 'divisions') {
                 setSelectedDivision(null);
                 setShowDivisionModal(true);
-              } else {
+              } else if (activeTab === 'designations') {
                 setSelectedDesignation(null);
                 setShowDesignationModal(true);
+              } else if (activeTab === 'leaveTypes') {
+                setSelectedLeaveType(null);
+                setShowLeaveTypeModal(true);
               }
             }}
             className={`text-white px-4 py-2 rounded-lg flex items-center gap-2 ${
               activeTab === 'divisions'
                 ? 'bg-blue-600 hover:bg-blue-700'
-                : 'bg-purple-600 hover:bg-purple-700'
+                : activeTab === 'designations'
+                  ? 'bg-purple-600 hover:bg-purple-700'
+                  : 'bg-emerald-600 hover:bg-emerald-700'
             }`}
           >
             <Plus className="h-4 w-4" />
-            Add {activeTab === 'divisions' ? 'Division' : 'Designation'}
+            Add {activeTab === 'divisions' ? 'Division' : activeTab === 'designations' ? 'Designation' : 'Leave Type'}
           </button>
         </div>
 
@@ -827,6 +1053,87 @@ export default function CompanyStructure() {
             )}
           </div>
         )}
+
+        {/* Leave Types Tab */}
+        {activeTab === 'leaveTypes' && (
+          <div>
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="text-left py-3 px-4">Leave Type</th>
+                    <th className="text-left py-3 px-4">Value</th>
+                    <th className="text-left py-3 px-4">Days/Year</th>
+                    <th className="text-left py-3 px-4">Days/Month</th>
+                    <th className="text-left py-3 px-4">Paid</th>
+                    <th className="text-left py-3 px-4">Approval</th>
+                    <th className="text-right py-3 px-4">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y">
+                  {leaveTypes.map(leaveType => (
+                    <tr key={leaveType.id} className="hover:bg-gray-50">
+                      <td className="py-3 px-4">
+                        <div className="flex items-center gap-3">
+                          <div className={`w-8 h-8 rounded-full bg-${leaveType.color || 'gray'}-100 flex items-center justify-center`}>
+                            <span className="text-lg">{leaveType.emoji || '📋'}</span>
+                          </div>
+                          <div>
+                            <p className="font-medium">{leaveType.name}</p>
+                            <p className="text-sm text-gray-500 truncate max-w-xs">
+                              {leaveType.description}
+                            </p>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="py-3 px-4">
+                        <span className="px-2 py-1 bg-gray-100 rounded text-sm font-medium">
+                          {leaveType.value}
+                        </span>
+                      </td>
+                      <td className="py-3 px-4">{leaveType.daysPerYear || 0}</td>
+                      <td className="py-3 px-4">{leaveType.daysPerMonth || 0}</td>
+                      <td className="py-3 px-4">
+                        <span className={`px-2 py-1 rounded-full text-xs ${leaveType.isPaid ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700'}`}>
+                          {leaveType.isPaid ? 'Yes' : 'No'}
+                        </span>
+                      </td>
+                      <td className="py-3 px-4">
+                        <span className={`px-2 py-1 rounded-full text-xs ${leaveType.requiresApproval ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-700'}`}>
+                          {leaveType.requiresApproval ? 'Required' : 'Auto'}
+                        </span>
+                      </td>
+                      <td className="py-3 px-4 text-right">
+                        <div className="flex items-center justify-end gap-2">
+                          <button
+                            onClick={() => { setSelectedLeaveType(leaveType); setShowLeaveTypeModal(true); }}
+                            className="p-2 text-gray-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg"
+                          >
+                            <Edit2 className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => handleDeleteLeaveType(leaveType.id)}
+                            className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {leaveTypes.length === 0 && (
+              <div className="text-center py-12 text-gray-500">
+                <Palmtree className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+                <p>No leave types found</p>
+                <p className="text-sm mt-2">Create leave types for your company</p>
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Modals */}
@@ -845,6 +1152,14 @@ export default function CompanyStructure() {
         divisions={companyDivisions}
         onSave={handleSaveDesignation}
         onDelete={handleDeleteDesignation}
+      />
+
+      <LeaveTypeModal
+        isOpen={showLeaveTypeModal}
+        onClose={() => { setShowLeaveTypeModal(false); setSelectedLeaveType(null); }}
+        leaveType={selectedLeaveType}
+        onSave={handleSaveLeaveType}
+        onDelete={handleDeleteLeaveType}
       />
     </div>
   );
