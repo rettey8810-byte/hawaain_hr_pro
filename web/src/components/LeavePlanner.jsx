@@ -366,14 +366,6 @@ export default function LeavePlanner() {
     }
   };
 
-  if (loading || employeesLoading) {
-    return (
-      <div className="flex justify-center items-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-600"></div>
-      </div>
-    );
-  }
-
   const stats = useMemo(() => {
     const base = { total: filteredLeaves.length };
     const types = [
@@ -385,6 +377,14 @@ export default function LeavePlanner() {
     });
     return base;
   }, [filteredLeaves]);
+
+  if (loading || employeesLoading) {
+    return (
+      <div className="flex justify-center items-center h-64">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-emerald-600"></div>
+      </div>
+    );
+  }
 
   // Tab content based on active tab
   const renderTabContent = () => {
