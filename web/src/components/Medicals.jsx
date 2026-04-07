@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
-import { Plus, Search, Eye, Edit2, Trash2, AlertTriangle } from 'lucide-react';
+import { Plus, Search, Eye, Edit2, Trash2, AlertTriangle, Download, Upload } from 'lucide-react';
 import { useFirestore } from '../hooks/useFirestore';
 import { useAuth } from '../contexts/AuthContext';
 import { formatDate, getDocumentStatus, calculateDaysRemaining } from '../utils/helpers';
@@ -73,9 +73,85 @@ export default function Medicals() {
     }
   };
 
-  const getEmployeeName = (id) => {
+  const getEmployeeInfo = (id) => {
     const emp = employees.find(e => e.id === id);
-    return emp?.name || 'Unknown';
+    return {
+      name: emp?.FullName || emp?.name || 'Unknown',
+      empId: emp?.EmpID || emp?.employeeId || 'N/A'
+    };
+  };
+
+  // Export to CSV
+  const exportToCSV = () => {
+    const headers = [
+      'WorkpermitNumber',
+      'PassportNumber',
+      'WorkpermitExpiryDate',
+      'MedicalExpiry',
+      'InsuranceExpiry',
+      'ArrivalDate',
+      'WorkVisaNumber',
+      'WorkVisaExpiryDate',
+      'WorkpermitContractExpiry',
+      'WorkpermitState'
+    ];
+    
+    const rows = filteredMedicals.map(medical => {
+      return [
+        '',
+        '',
+        '',
+        formatDate(medical.expiryDate),
+        '',
+        '',
+        '',
+        '',
+        '',
+        medical.result === 'approved' ? 'Valid' : 'Pending'
+      ];
+    });
+
+    const csvContent = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `medicals_${new Date().toISOString().split('T')[0]}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  // Import from CSV
+  const handleImport = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const text = event.target.result;
+      const lines = text.split('\n');
+      const headers = lines[0].split(',');
+      
+      const medicalIdx = headers.findIndex(h => h.toLowerCase().includes('medical'));
+      
+      const imported = [];
+      for (let i = 1; i < lines.length; i++) {
+        if (!lines[i].trim()) continue;
+        const cols = lines[i].split(',');
+        if (medicalIdx >= 0 && cols[medicalIdx]) {
+          imported.push({
+            testDate: '',
+            expiryDate: cols[medicalIdx]?.trim(),
+            result: 'pending',
+            testCenter: '',
+            employeeId: ''
+          });
+        }
+      }
+      
+      alert(`Found ${imported.length} medical records to import. Please review and save manually.`);
+    };
+    reader.readAsText(file);
   };
 
   if (loading || employeesLoading) {
@@ -105,15 +181,38 @@ export default function Medicals() {
             Track employee medical tests and health certificates
           </p>
         </div>
-        <div className="mt-4 flex md:ml-4 md:mt-0">
+        <div className="mt-4 flex md:ml-4 md:mt-0 space-x-2">
           {isHR() && (
-            <Link
-              to={employeeId ? `/medical/new?employee=${employeeId}` : '/medical/new'}
-              className="inline-flex items-center rounded-xl bg-white px-5 py-2.5 text-sm font-bold text-rose-600 shadow-lg hover:bg-gray-50 transition-all hover:scale-105"
-            >
-              <Plus className="h-5 w-5 mr-2" />
-              Add Medical Record
-            </Link>
+            <>
+              <input
+                type="file"
+                accept=".csv"
+                onChange={handleImport}
+                className="hidden"
+                id="import-medicals"
+              />
+              <label
+                htmlFor="import-medicals"
+                className="inline-flex items-center rounded-xl bg-white/20 px-5 py-2.5 text-sm font-bold text-white shadow-lg hover:bg-white/30 transition-all cursor-pointer"
+              >
+                <Upload className="h-5 w-5 mr-2" />
+                Import CSV
+              </label>
+              <button
+                onClick={exportToCSV}
+                className="inline-flex items-center rounded-xl bg-white px-5 py-2.5 text-sm font-bold text-rose-600 shadow-lg hover:bg-gray-50 transition-all"
+              >
+                <Download className="h-5 w-5 mr-2" />
+                Export CSV
+              </button>
+              <Link
+                to={employeeId ? `/medical/new?employee=${employeeId}` : '/medical/new'}
+                className="inline-flex items-center rounded-xl bg-white px-5 py-2.5 text-sm font-bold text-rose-600 shadow-lg hover:bg-gray-50 transition-all hover:scale-105"
+              >
+                <Plus className="h-5 w-5 mr-2" />
+                Add Medical
+              </Link>
+            </>
           )}
         </div>
       </div>
@@ -211,7 +310,7 @@ export default function Medicals() {
                 
                 return (
                   <tr key={medical.id} className="hover:bg-rose-50/50 transition-colors">
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900">{getEmployeeName(medical.employeeId)}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900">{getEmployeeInfo(medical.employeeId).name}</td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{formatDate(medical.testDate)}</td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm"><span className={daysRemaining <= 30 ? 'text-rose-600 font-bold' : 'text-gray-900 font-medium'}>{formatDate(medical.expiryDate)}</span></td>
                     <td className="px-6 py-4 whitespace-nowrap"><span className={`px-3 py-1.5 inline-flex text-xs leading-5 font-bold rounded-full border ${medical.result === 'approved' ? 'bg-emerald-100 text-emerald-700 border-emerald-200' : medical.result === 'failed' ? 'bg-rose-100 text-rose-700 border-rose-200' : 'bg-amber-100 text-amber-700 border-amber-200'}`}>{medical.result === 'approved' ? '✅ Approved' : medical.result === 'failed' ? '❌ Failed' : '⏳ Pending'}</span></td>
@@ -225,7 +324,7 @@ export default function Medicals() {
                   </tr>
                 );
               })}
-              {filteredMedicals.length === 0 && (<tr><td colSpan="6" className="px-6 py-12 text-center"><div className="text-5xl mb-3">🏥</div><p className="text-gray-500 font-medium">No medical records found</p></td></tr>)}
+              {filteredMedicals.length === 0 && (<tr><td colSpan="6" className="px-6 py-12 text-center"><div className="text-5xl mb-3">🏥</div><p className="text-gray-500 font-medium">No medical records found</p><p className="text-sm text-gray-400 mt-2">Use Import CSV to add records</p></td></tr>)}
             </tbody>
           </table>
           </div>

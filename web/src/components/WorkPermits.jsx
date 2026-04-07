@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
-import { Plus, Search, Eye, Edit2, Trash2, AlertTriangle } from 'lucide-react';
+import { Plus, Search, Eye, Edit2, Trash2, AlertTriangle, Download, Upload } from 'lucide-react';
 import { useFirestore } from '../hooks/useFirestore';
 import { useAuth } from '../contexts/AuthContext';
 import { useCompany } from '../contexts/CompanyContext';
@@ -79,9 +79,85 @@ export default function WorkPermits() {
     }
   };
 
-  const getEmployeeName = (id) => {
+  const getEmployeeInfo = (id) => {
     const emp = employees.find(e => e.id === id);
-    return emp?.name || 'Unknown';
+    return {
+      name: emp?.FullName || emp?.name || 'Unknown',
+      empId: emp?.EmpID || emp?.employeeId || 'N/A'
+    };
+  };
+
+  // Export to CSV
+  const exportToCSV = () => {
+    const headers = [
+      'WorkpermitNumber',
+      'PassportNumber',
+      'WorkpermitExpiryDate',
+      'MedicalExpiry',
+      'InsuranceExpiry',
+      'ArrivalDate',
+      'WorkVisaNumber',
+      'WorkVisaExpiryDate',
+      'WorkpermitContractExpiry',
+      'WorkpermitState'
+    ];
+    
+    const rows = filteredPermits.map(permit => {
+      return [
+        permit.permitNumber || '',
+        '',
+        formatDate(permit.expiryDate),
+        '',
+        '',
+        '',
+        '',
+        '',
+        '',
+        'Issued'
+      ];
+    });
+
+    const csvContent = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `work_permits_${new Date().toISOString().split('T')[0]}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  // Import from CSV
+  const handleImport = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const text = event.target.result;
+      const lines = text.split('\n');
+      const headers = lines[0].split(',');
+      
+      const permitIdx = headers.findIndex(h => h.toLowerCase().includes('workpermit'));
+      
+      const imported = [];
+      for (let i = 1; i < lines.length; i++) {
+        if (!lines[i].trim()) continue;
+        const cols = lines[i].split(',');
+        if (permitIdx >= 0 && cols[permitIdx]) {
+          imported.push({
+            permitNumber: cols[permitIdx]?.trim(),
+            jobPosition: '',
+            employer: '',
+            expiryDate: '',
+            employeeId: ''
+          });
+        }
+      }
+      
+      alert(`Found ${imported.length} work permit records to import. Please review and save manually.`);
+    };
+    reader.readAsText(file);
   };
 
   if (loading || employeesLoading) {
@@ -111,15 +187,38 @@ export default function WorkPermits() {
             Track employee work permits and renewal status
           </p>
         </div>
-        <div className="mt-4 flex md:ml-4 md:mt-0">
+        <div className="mt-4 flex md:ml-4 md:mt-0 space-x-2">
           {isHR() && (
-            <Link
-              to={employeeId ? `/work-permits/new?employee=${employeeId}` : '/work-permits/new'}
-              className="inline-flex items-center rounded-xl bg-white px-5 py-2.5 text-sm font-bold text-indigo-600 shadow-lg hover:bg-gray-50 transition-all hover:scale-105"
-            >
-              <Plus className="h-5 w-5 mr-2" />
-              Add Work Permit
-            </Link>
+            <>
+              <input
+                type="file"
+                accept=".csv"
+                onChange={handleImport}
+                className="hidden"
+                id="import-permits"
+              />
+              <label
+                htmlFor="import-permits"
+                className="inline-flex items-center rounded-xl bg-white/20 px-5 py-2.5 text-sm font-bold text-white shadow-lg hover:bg-white/30 transition-all cursor-pointer"
+              >
+                <Upload className="h-5 w-5 mr-2" />
+                Import CSV
+              </label>
+              <button
+                onClick={exportToCSV}
+                className="inline-flex items-center rounded-xl bg-white px-5 py-2.5 text-sm font-bold text-indigo-600 shadow-lg hover:bg-gray-50 transition-all"
+              >
+                <Download className="h-5 w-5 mr-2" />
+                Export CSV
+              </button>
+              <Link
+                to={employeeId ? `/work-permits/new?employee=${employeeId}` : '/work-permits/new'}
+                className="inline-flex items-center rounded-xl bg-white px-5 py-2.5 text-sm font-bold text-indigo-600 shadow-lg hover:bg-gray-50 transition-all hover:scale-105"
+              >
+                <Plus className="h-5 w-5 mr-2" />
+                Add Work Permit
+              </Link>
+            </>
           )}
         </div>
       </div>
@@ -233,7 +332,7 @@ export default function WorkPermits() {
                 return (
                   <tr key={permit.id} className="hover:bg-blue-50/50 transition-colors">
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900">
-                      {getEmployeeName(permit.employeeId)}
+                      {getEmployeeInfo(permit.employeeId).name}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700 font-medium">
                       {permit.permitNumber}
@@ -301,6 +400,7 @@ export default function WorkPermits() {
                   <td colSpan="7" className="px-6 py-12 text-center">
                     <div className="text-5xl mb-3">📄</div>
                     <p className="text-gray-500 font-medium">No work permits found</p>
+                    <p className="text-sm text-gray-400 mt-2">Use Import CSV to add records</p>
                   </td>
                 </tr>
               )}
