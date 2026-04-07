@@ -34,7 +34,6 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true);
 
   const setUserData = (data) => {
-    console.log('[Auth] Setting userData:', data);
     setUserDataState(data);
     if (data) {
       localStorage.setItem('auth_userData', JSON.stringify(data));
@@ -45,14 +44,11 @@ export function AuthProvider({ children }) {
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      console.log('[Auth] User changed:', user?.uid, user?.email);
       setUser(user);
       if (user) {
         const userDoc = await getDoc(doc(db, 'users', user.uid));
-        console.log('[Auth] User doc exists:', userDoc.exists());
         if (userDoc.exists()) {
           let data = userDoc.data();
-          console.log('[Auth] User data from Firestore:', data);
           
           // If superadmin has no company, auto-assign to first company
           if (data.role === 'superadmin' && !data.companyId) {
