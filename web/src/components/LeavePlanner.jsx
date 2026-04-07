@@ -372,17 +372,18 @@ export default function LeavePlanner() {
     }
   };
 
+  // Calculate stats from ALL leaves, not filtered leaves
   const stats = useMemo(() => {
-    const base = { total: filteredLeaves.length };
+    const base = { total: leaves.length };
     const types = [
       'annual', 'unpaid', 'off_day', 'ph', 'family_responsibility',
       'medical', 'special', 'on_duty', 'sick', 'hajju', 'emergency', 'other'
     ];
     types.forEach(t => {
-      base[t] = filteredLeaves.filter(l => (l.leaveType || 'other') === t).length;
+      base[t] = leaves.filter(l => (l.leaveType || 'other') === t).length;
     });
     return base;
-  }, [filteredLeaves]);
+  }, [leaves]);
 
   if (loading || employeesLoading) {
     return (
@@ -641,16 +642,18 @@ export default function LeavePlanner() {
               <>
             <div className="bg-white rounded-2xl shadow-lg overflow-hidden border border-gray-100">
               <div className="overflow-x-auto -mx-4 sm:mx-0">
-                <div className="min-w-[1000px] sm:min-w-full px-4 sm:px-0">
+                <div className="min-w-[1100px] sm:min-w-full px-4 sm:px-0">
                   <table className="w-full divide-y divide-gray-200">
                   <thead className="bg-gradient-to-r from-emerald-50 to-teal-50 sticky top-0 z-10">
                     <tr>
-                      <th className="px-6 py-4 text-left text-xs font-bold text-emerald-700 uppercase tracking-wider sticky top-0">👤 Employee</th>
-                      <th className="px-6 py-4 text-left text-xs font-bold text-emerald-700 uppercase tracking-wider sticky top-0">🏢 Department</th>
-                      <th className="px-6 py-4 text-left text-xs font-bold text-emerald-700 uppercase tracking-wider sticky top-0">📅 Leave Period</th>
-                      <th className="px-6 py-4 text-left text-xs font-bold text-emerald-700 uppercase tracking-wider sticky top-0">🌴 Type</th>
-                      <th className="px-6 py-4 text-left text-xs font-bold text-emerald-700 uppercase tracking-wider sticky top-0">📊 Status</th>
-                      <th className="px-6 py-4 text-right text-xs font-bold text-emerald-700 uppercase tracking-wider sticky top-0">⚙️ Actions</th>
+                      <th className="px-3 py-4 text-left text-xs font-bold text-emerald-700 uppercase tracking-wider sticky top-0 w-32 max-w-[140px]">👤 Employee</th>
+                      <th className="px-3 py-4 text-left text-xs font-bold text-emerald-700 uppercase tracking-wider sticky top-0 w-24">🆔 Emp ID</th>
+                      <th className="px-3 py-4 text-left text-xs font-bold text-emerald-700 uppercase tracking-wider sticky top-0 w-32">🏢 Department</th>
+                      <th className="px-3 py-4 text-left text-xs font-bold text-emerald-700 uppercase tracking-wider sticky top-0 w-32">📅 Leave Period</th>
+                      <th className="px-3 py-4 text-left text-xs font-bold text-emerald-700 uppercase tracking-wider sticky top-0 w-20">📊 Days</th>
+                      <th className="px-3 py-4 text-left text-xs font-bold text-emerald-700 uppercase tracking-wider sticky top-0 w-32">🌴 Type</th>
+                      <th className="px-3 py-4 text-left text-xs font-bold text-emerald-700 uppercase tracking-wider sticky top-0 w-28">📊 Status</th>
+                      <th className="px-3 py-4 text-right text-xs font-bold text-emerald-700 uppercase tracking-wider sticky top-0 w-20">⚙️</th>
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-100">
@@ -660,7 +663,7 @@ export default function LeavePlanner() {
                       
                       return (
                         <tr key={leave.id} className="hover:bg-emerald-50/50 transition-colors">
-                          <td className="px-6 py-4 whitespace-nowrap">
+                          <td className="px-3 py-4 whitespace-nowrap">
                             <div className="flex items-center">
                               {getEmployeePhoto(leave.employeeId) ? (
                                 <img 
@@ -676,17 +679,19 @@ export default function LeavePlanner() {
                               <div className="ml-3">
                                 <p className="text-sm font-bold text-gray-900">{getEmployeeName(leave.employeeId)}</p>
                                 <p className="text-xs text-gray-500">{emp?.Designation || 'No designation'}</p>
-                                <p className="text-xs text-gray-400">{leave.days} days</p>
                               </div>
                             </div>
                           </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
+                          <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-700 font-medium">
+                            {emp?.EmpID || emp?.employeeId || 'N/A'}
+                          </td>
+                          <td className="px-3 py-4 whitespace-nowrap">
                             <div className="text-sm text-gray-700">
                               <p className="font-medium">{emp?.Department || 'N/A'}</p>
                               <p className="text-xs text-gray-500">{emp?.Section || ''}</p>
                             </div>
                           </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
+                          <td className="px-3 py-4 whitespace-nowrap">
                             <div className="flex items-center text-sm text-gray-700">
                               <Calendar className="h-4 w-4 mr-2 text-emerald-500" />
                               <div>
@@ -695,7 +700,10 @@ export default function LeavePlanner() {
                               </div>
                             </div>
                           </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
+                          <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-700 font-bold">
+                            {leave.days} days
+                          </td>
+                          <td className="px-3 py-4 whitespace-nowrap">
                             <span className="text-sm font-medium text-gray-700 capitalize">
                               {leave.leaveType === 'annual' && '🏖️ Annual Leave'}
                               {leave.leaveType === 'sick' && '🤒 Sick Leave'}
@@ -711,12 +719,12 @@ export default function LeavePlanner() {
                               {(leave.leaveType === 'other' || !leave.leaveType) && '📋 Other'}
                             </span>
                           </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
+                          <td className="px-3 py-4 whitespace-nowrap">
                             <span className={`px-3 py-1.5 inline-flex text-xs leading-5 font-bold rounded-full border ${statusConfig.bg} ${statusConfig.text} ${statusConfig.border}`}>
                               {statusConfig.label}
                             </span>
                           </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                          <td className="px-3 py-4 whitespace-nowrap text-right text-sm font-medium">
                             <div className="flex justify-end space-x-1">
                               <button
                                 onClick={() => navigate(`/leave-planner/${leave.id}`)}
@@ -774,7 +782,7 @@ export default function LeavePlanner() {
                     })}
                     {filteredLeaves.length === 0 && (
                       <tr>
-                        <td colSpan="7" className="px-6 py-12 text-center">
+                        <td colSpan="8" className="px-6 py-12 text-center">
                           <div className="text-5xl mb-3">🌴</div>
                           <p className="text-gray-500 font-medium mb-2">No leave records found</p>
                           <p className="text-sm text-gray-400">Apply for leave to get started</p>
