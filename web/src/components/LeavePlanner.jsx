@@ -968,6 +968,13 @@ export default function LeavePlanner() {
               {tab.label}
             </button>
           ))}
+          <Link
+            to="/leave-planner/public-holidays"
+            className="flex items-center gap-2 px-6 py-4 font-medium text-gray-600 hover:text-gray-900"
+          >
+            <Calendar className="h-4 w-4" />
+            Public Holidays
+          </Link>
         </div>
       </div>
 
