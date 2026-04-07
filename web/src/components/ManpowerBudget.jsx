@@ -74,16 +74,22 @@ export default function ManpowerBudget() {
         const uniqueSections = [...new Set(employees.map(e => e.Section).filter(Boolean))].sort();
         const uniqueDesignations = [...new Set(employees.map(e => e.Designation || e.designation).filter(Boolean))].sort();
         
+        // Merge with designations from Company Structure
+        const designationTitles = designations
+          .filter(d => d.companyId === companyId)
+          .map(d => d.title);
+        const mergedDesignations = [...new Set([...uniqueDesignations, ...designationTitles])].sort();
+        
         setDepartments(uniqueDepts);
         setSections(uniqueSections);
-        setDesignationsList(uniqueDesignations);
+        setDesignationsList(mergedDesignations);
       } catch (err) {
         console.error('Error fetching employee data:', err);
       }
     };
     
     fetchEmployeeData();
-  }, [companyId]);
+  }, [companyId, designations]);
 
   // Group budgets by department
   const groupedByDepartment = budgets?.reduce((acc, budget) => {
