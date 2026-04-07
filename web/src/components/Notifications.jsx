@@ -20,6 +20,11 @@ export default function Notifications() {
     return emp?.name || 'Unknown';
   };
 
+  const getEmployeeId = (id) => {
+    const emp = employees.find(e => e.id === id);
+    return emp?.EmpID || emp?.employeeId || 'N/A';
+  };
+
   const getDocumentIcon = (type) => {
     switch(type) {
       case 'passport': return FileText;
@@ -103,6 +108,8 @@ export default function Notifications() {
                   <tr>
                     <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Type</th>
                     <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Employee</th>
+                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Emp ID</th>
+                    <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Doc Number</th>
                     <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Expiry Date</th>
                     <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Days Left</th>
                     <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
@@ -123,6 +130,12 @@ export default function Notifications() {
                         </td>
                         <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
                           {getEmployeeName(doc.employeeId)}
+                        </td>
+                        <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-blue-600">
+                          {getEmployeeId(doc.employeeId)}
+                        </td>
+                        <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-600 font-mono">
+                          {doc.passportNo || doc.visaNo || doc.documentNumber || doc.permitNo || 'N/A'}
                         </td>
                         <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
                           {formatDate(doc.expiryDate)}
