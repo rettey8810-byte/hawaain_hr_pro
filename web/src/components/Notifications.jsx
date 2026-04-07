@@ -135,7 +135,7 @@ export default function Notifications() {
                           {getEmployeeId(doc.employeeId)}
                         </td>
                         <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-600 font-mono">
-                          {doc.passportNo || doc.visaNo || doc.documentNumber || doc.permitNo || 'N/A'}
+                          {doc.passportNumber || doc.visaNumber || doc.permitNumber || 'N/A'}
                         </td>
                         <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
                           {formatDate(doc.expiryDate)}
