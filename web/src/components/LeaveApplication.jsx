@@ -27,10 +27,17 @@ import { db } from '../firebase/config';
 
 const LEAVE_TYPES = [
   { value: 'annual', label: '🏖️ Annual Leave', color: 'bg-blue-100 text-blue-700' },
+  { value: 'unpaid', label: '💰 No Pay', color: 'bg-gray-100 text-gray-700' },
+  { value: 'off_day', label: '🛌 Off Day', color: 'bg-slate-100 text-slate-700' },
+  { value: 'ph', label: '🎉 PH', color: 'bg-fuchsia-100 text-fuchsia-700' },
+  { value: 'family_responsibility', label: '� Family Responsibility', color: 'bg-amber-100 text-amber-700' },
+  { value: 'medical', label: '🏥 Medical Leave', color: 'bg-emerald-100 text-emerald-700' },
+  { value: 'special', label: '✨ Special Leave', color: 'bg-purple-100 text-purple-700' },
+  { value: 'on_duty', label: '🧑‍� On Duty', color: 'bg-cyan-100 text-cyan-700' },
   { value: 'sick', label: '🤒 Sick Leave', color: 'bg-rose-100 text-rose-700' },
+  { value: 'hajju', label: '🕋 Hajju Leave', color: 'bg-indigo-100 text-indigo-700' },
   { value: 'emergency', label: '🚨 Emergency Leave', color: 'bg-red-100 text-red-700' },
-  { value: 'unpaid', label: '💰 Unpaid Leave', color: 'bg-gray-100 text-gray-700' },
-  { value: 'other', label: '📋 Other', color: 'bg-purple-100 text-purple-700' }
+  { value: 'other', label: '📋 Other', color: 'bg-gray-100 text-gray-700' }
 ];
 
 const TRANSPORT_MODES = [
@@ -100,8 +107,8 @@ export default function LeaveApplication() {
   const filteredEmployees = useMemo(() => {
     if (!employeeSearchTerm) return employees;
     return employees.filter(emp => 
-      (emp.FullName || emp.name || '')?.toLowerCase().includes(employeeSearchTerm.toLowerCase()) ||
-      (emp.EmpID || emp.employeeCode || '')?.toLowerCase().includes(employeeSearchTerm.toLowerCase())
+      String(emp.FullName || emp.name || '').toLowerCase().includes(employeeSearchTerm.toLowerCase()) ||
+      String(emp.EmpID || emp.employeeCode || '').toLowerCase().includes(employeeSearchTerm.toLowerCase())
     );
   }, [employees, employeeSearchTerm]);
 

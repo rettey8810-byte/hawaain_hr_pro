@@ -374,14 +374,17 @@ export default function LeavePlanner() {
     );
   }
 
-  const stats = {
-    total: filteredLeaves.length,
-    annual: filteredLeaves.filter(l => l.leaveType === 'annual').length,
-    sick: filteredLeaves.filter(l => l.leaveType === 'sick').length,
-    unpaid: filteredLeaves.filter(l => l.leaveType === 'unpaid').length,
-    emergency: filteredLeaves.filter(l => l.leaveType === 'emergency').length,
-    other: filteredLeaves.filter(l => l.leaveType === 'other' || !l.leaveType).length
-  };
+  const stats = useMemo(() => {
+    const base = { total: filteredLeaves.length };
+    const types = [
+      'annual', 'unpaid', 'off_day', 'ph', 'family_responsibility',
+      'medical', 'special', 'on_duty', 'sick', 'hajju', 'emergency', 'other'
+    ];
+    types.forEach(t => {
+      base[t] = filteredLeaves.filter(l => (l.leaveType || 'other') === t).length;
+    });
+    return base;
+  }, [filteredLeaves]);
 
   // Tab content based on active tab
   const renderTabContent = () => {
@@ -679,11 +682,18 @@ export default function LeavePlanner() {
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
                             <span className="text-sm font-medium text-gray-700 capitalize">
-                              {leave.leaveType === 'annual' && '🏖️ Annual'}
-                              {leave.leaveType === 'sick' && '🤒 Sick'}
-                              {leave.leaveType === 'emergency' && '🚨 Emergency'}
-                              {leave.leaveType === 'unpaid' && '💰 Unpaid'}
-                              {leave.leaveType === 'other' && '📋 Other'}
+                              {leave.leaveType === 'annual' && '🏖️ Annual Leave'}
+                              {leave.leaveType === 'sick' && '🤒 Sick Leave'}
+                              {leave.leaveType === 'emergency' && '🚨 Emergency Leave'}
+                              {leave.leaveType === 'unpaid' && '💰 No Pay'}
+                              {leave.leaveType === 'off_day' && '🛌 Off Day'}
+                              {leave.leaveType === 'ph' && '🎉 PH'}
+                              {leave.leaveType === 'family_responsibility' && '👪 Family Responsibility'}
+                              {leave.leaveType === 'medical' && '🏥 Medical Leave'}
+                              {leave.leaveType === 'special' && '✨ Special Leave'}
+                              {leave.leaveType === 'on_duty' && '🧑‍💼 On Duty'}
+                              {leave.leaveType === 'hajju' && '🕋 Hajju Leave'}
+                              {(leave.leaveType === 'other' || !leave.leaveType) && '📋 Other'}
                             </span>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap">
@@ -814,72 +824,33 @@ export default function LeavePlanner() {
 
       {/* Stats Summary - Colorful Cards - Mobile Responsive */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4">
-        <div className="bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl p-4 text-white shadow-lg transform hover:scale-105 transition-all">
-          <div className="flex items-center">
-            <div className="p-2 bg-white/20 rounded-lg mr-3">
-              <Luggage className="h-5 w-5 text-white" />
-            </div>
-            <div>
-              <p className="text-xs text-white/80 font-medium">Total Leaves</p>
-              <p className="text-2xl font-bold">{stats.total}</p>
-            </div>
-          </div>
-        </div>
-        <div className="bg-gradient-to-br from-emerald-400 to-green-500 rounded-2xl p-4 text-white shadow-lg transform hover:scale-105 transition-all">
-          <div className="flex items-center">
-            <div className="p-2 bg-white/20 rounded-lg mr-3">
-              <span className="text-lg">🏖️</span>
-            </div>
-            <div>
-              <p className="text-xs text-white/80 font-medium">Annual</p>
-              <p className="text-2xl font-bold">{stats.annual}</p>
-            </div>
-          </div>
-        </div>
-        <div className="bg-gradient-to-br from-rose-400 to-red-500 rounded-2xl p-4 text-white shadow-lg transform hover:scale-105 transition-all">
-          <div className="flex items-center">
-            <div className="p-2 bg-white/20 rounded-lg mr-3">
-              <span className="text-lg">🤒</span>
-            </div>
-            <div>
-              <p className="text-xs text-white/80 font-medium">Sick</p>
-              <p className="text-2xl font-bold">{stats.sick}</p>
+        {[
+          { key: 'total', label: 'Total Leaves', icon: Luggage, emoji: null, colors: 'from-blue-500 to-indigo-600' },
+          { key: 'annual', label: 'Annual', icon: null, emoji: '🏖️', colors: 'from-emerald-400 to-green-500' },
+          { key: 'sick', label: 'Sick', icon: null, emoji: '🤒', colors: 'from-rose-400 to-red-500' },
+          { key: 'unpaid', label: 'No Pay', icon: null, emoji: '💰', colors: 'from-gray-400 to-slate-500' },
+          { key: 'off_day', label: 'Off Day', icon: null, emoji: '🛌', colors: 'from-slate-400 to-gray-500' },
+          { key: 'ph', label: 'PH', icon: null, emoji: '🎉', colors: 'from-fuchsia-500 to-pink-600' },
+          { key: 'family_responsibility', label: 'Family', icon: null, emoji: '👪', colors: 'from-amber-400 to-orange-500' },
+          { key: 'medical', label: 'Medical', icon: null, emoji: '🏥', colors: 'from-emerald-500 to-teal-600' },
+          { key: 'special', label: 'Special', icon: null, emoji: '✨', colors: 'from-purple-500 to-violet-600' },
+          { key: 'on_duty', label: 'On Duty', icon: null, emoji: '🧑‍💼', colors: 'from-cyan-400 to-blue-500' },
+          { key: 'hajju', label: 'Hajju', icon: null, emoji: '🕋', colors: 'from-indigo-500 to-purple-600' },
+          { key: 'emergency', label: 'Emergency', icon: null, emoji: '🚨', colors: 'from-red-500 to-rose-600' },
+          { key: 'other', label: 'Other', icon: null, emoji: '📋', colors: 'from-gray-400 to-slate-500' },
+        ].map((s) => (
+          <div key={s.key} className={`bg-gradient-to-br ${s.colors} rounded-2xl p-4 text-white shadow-lg transform hover:scale-105 transition-all`}>
+            <div className="flex items-center">
+              <div className="p-2 bg-white/20 rounded-lg mr-3">
+                {s.icon ? <s.icon className="h-5 w-5 text-white" /> : <span className="text-lg">{s.emoji}</span>}
+              </div>
+              <div>
+                <p className="text-xs text-white/80 font-medium">{s.label}</p>
+                <p className="text-2xl font-bold">{stats[s.key] || 0}</p>
+              </div>
             </div>
           </div>
-        </div>
-        <div className="bg-gradient-to-br from-amber-400 to-orange-500 rounded-2xl p-4 text-white shadow-lg transform hover:scale-105 transition-all">
-          <div className="flex items-center">
-            <div className="p-2 bg-white/20 rounded-lg mr-3">
-              <span className="text-lg">💰</span>
-            </div>
-            <div>
-              <p className="text-xs text-white/80 font-medium">Unpaid</p>
-              <p className="text-2xl font-bold">{stats.unpaid}</p>
-            </div>
-          </div>
-        </div>
-        <div className="bg-gradient-to-br from-purple-500 to-violet-600 rounded-2xl p-4 text-white shadow-lg transform hover:scale-105 transition-all">
-          <div className="flex items-center">
-            <div className="p-2 bg-white/20 rounded-lg mr-3">
-              <span className="text-lg">🚨</span>
-            </div>
-            <div>
-              <p className="text-xs text-white/80 font-medium">Emergency</p>
-              <p className="text-2xl font-bold">{stats.emergency}</p>
-            </div>
-          </div>
-        </div>
-        <div className="bg-gradient-to-br from-cyan-400 to-blue-500 rounded-2xl p-4 text-white shadow-lg transform hover:scale-105 transition-all">
-          <div className="flex items-center">
-            <div className="p-2 bg-white/20 rounded-lg mr-3">
-              <span className="text-lg">📋</span>
-            </div>
-            <div>
-              <p className="text-xs text-white/80 font-medium">Other</p>
-              <p className="text-2xl font-bold">{stats.other}</p>
-            </div>
-          </div>
-        </div>
+        ))}
       </div>
 
       {/* Tabs */}

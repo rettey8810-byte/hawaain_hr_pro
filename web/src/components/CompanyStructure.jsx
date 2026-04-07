@@ -332,17 +332,91 @@ export default function CompanyStructure() {
   const { documents: designations, loading: designationsLoading } = useFirestore('designations');
   const { documents: employees } = useFirestore('employees');
 
+  const companyEmployees = useMemo(() => {
+    return employees.filter(e => !companyId || e.companyId === companyId);
+  }, [employees, companyId]);
+
+  const employeeDerivedDepartments = useMemo(() => {
+    const byName = new Map();
+    for (const e of companyEmployees) {
+      const name = (e['Department '] || e.Department || e.department || '').toString().trim();
+      if (!name) continue;
+      const key = name.toLowerCase();
+      if (byName.has(key)) continue;
+      byName.set(key, {
+        id: `derived-dept-${key}`,
+        name,
+        code: name
+          .split(' ')
+          .filter(Boolean)
+          .map(w => w[0])
+          .join('')
+          .toUpperCase()
+          .slice(0, 6) || 'DEPT',
+        type: 'department',
+        description: '',
+        companyId
+      });
+    }
+    return Array.from(byName.values()).sort((a, b) => a.name.localeCompare(b.name));
+  }, [companyEmployees, companyId]);
+
+  const employeeDerivedDesignations = useMemo(() => {
+    const byTitle = new Map();
+    for (const e of companyEmployees) {
+      const title = (e.Designation || e.position || '').toString().trim();
+      if (!title) continue;
+      const dept = (e['Department '] || e.Department || e.department || '').toString().trim();
+      const key = title.toLowerCase();
+      if (byTitle.has(key)) continue;
+      byTitle.set(key, {
+        id: `derived-desig-${key}`,
+        title,
+        code: title
+          .split(' ')
+          .filter(Boolean)
+          .map(w => w[0])
+          .join('')
+          .toUpperCase()
+          .slice(0, 6) || 'ROLE',
+        department: dept,
+        level: 'staff',
+        grade: '',
+        description: '',
+        responsibilities: '',
+        companyId
+      });
+    }
+    return Array.from(byTitle.values()).sort((a, b) => a.title.localeCompare(b.title));
+  }, [companyEmployees, companyId]);
+
   const companyDivisions = useMemo(() => {
-    return divisions
-      .filter(d => d.companyId === companyId)
-      .sort((a, b) => a.name.localeCompare(b.name));
-  }, [divisions, companyId]);
+    const firestoreDivisions = divisions.filter(d => !companyId || d.companyId === companyId);
+    const existingNames = new Set(
+      firestoreDivisions
+        .map(d => (d.name || '').toString().trim().toLowerCase())
+        .filter(Boolean)
+    );
+    const merged = [...firestoreDivisions];
+    for (const d of employeeDerivedDepartments) {
+      if (!existingNames.has(d.name.toLowerCase())) merged.push(d);
+    }
+    return merged.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+  }, [divisions, companyId, employeeDerivedDepartments]);
 
   const companyDesignations = useMemo(() => {
-    return designations
-      .filter(d => d.companyId === companyId)
-      .sort((a, b) => a.title.localeCompare(b.title));
-  }, [designations, companyId]);
+    const firestoreDesignations = designations.filter(d => !companyId || d.companyId === companyId);
+    const existingTitles = new Set(
+      firestoreDesignations
+        .map(d => (d.title || '').toString().trim().toLowerCase())
+        .filter(Boolean)
+    );
+    const merged = [...firestoreDesignations];
+    for (const d of employeeDerivedDesignations) {
+      if (!existingTitles.has(d.title.toLowerCase())) merged.push(d);
+    }
+    return merged.sort((a, b) => (a.title || '').localeCompare(b.title || ''));
+  }, [designations, companyId, employeeDerivedDesignations]);
 
   const filteredDivisions = useMemo(() => {
     return companyDivisions.filter(d =>
@@ -370,10 +444,10 @@ export default function CompanyStructure() {
   };
 
   const getEmployeeCount = (divisionName) => {
-    return employees.filter(e =>
-      e.companyId === companyId &&
-      (e.Department === divisionName || e.department === divisionName)
-    ).length;
+    return companyEmployees.filter(e => {
+      const dept = (e['Department '] || e.Department || e.department || '').toString().trim();
+      return dept === divisionName;
+    }).length;
   };
 
   const getDesignationCount = (divisionName) => {
@@ -390,7 +464,8 @@ export default function CompanyStructure() {
         updatedAt: new Date().toISOString()
       };
 
-      if (selectedDivision?.id) {
+      const canUpdateExisting = selectedDivision?.id && !String(selectedDivision.id).startsWith('derived-dept-');
+      if (canUpdateExisting) {
         await updateDoc(doc(db, 'divisions', selectedDivision.id), data);
         toast.success('Division updated successfully');
       } else {
@@ -444,7 +519,8 @@ export default function CompanyStructure() {
         updatedAt: new Date().toISOString()
       };
 
-      if (selectedDesignation?.id) {
+      const canUpdateExisting = selectedDesignation?.id && !String(selectedDesignation.id).startsWith('derived-desig-');
+      if (canUpdateExisting) {
         await updateDoc(doc(db, 'designations', selectedDesignation.id), data);
         toast.success('Designation updated successfully');
       } else {
