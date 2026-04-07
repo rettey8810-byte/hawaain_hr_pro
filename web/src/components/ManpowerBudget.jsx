@@ -148,7 +148,7 @@ export default function ManpowerBudget() {
         section: formData.section,
         designation: formData.designation,
         salary: parseFloat(formData.salary) || 0,
-        actual2026: formData.actual2026,
+        actual2026: parseInt(formData.actual2026) || 0,
         requiredManpower: {
           '100_80': formData.required100_80,
           '80_65': formData.required80_65,
@@ -218,7 +218,7 @@ export default function ManpowerBudget() {
       section: budget.section || '',
       designation: budget.designation || '',
       salary: budget.salary || '',
-      actual2026: budget.actual2026 || '',
+      actual2026: budget.actual2026 !== undefined && budget.actual2026 !== null ? String(budget.actual2026) : '',
       required100_80: budget.requiredManpower?.['100_80'] || '',
       required80_65: budget.requiredManpower?.['80_65'] || '',
       required65_50: budget.requiredManpower?.['65_50'] || '',
@@ -245,7 +245,7 @@ export default function ManpowerBudget() {
         section: formData.section,
         designation: formData.designation,
         salary: parseFloat(formData.salary) || 0,
-        actual2026: formData.actual2026,
+        actual2026: parseInt(formData.actual2026) || 0,
         requiredManpower: {
           '100_80': formData.required100_80,
           '80_65': formData.required80_65,
@@ -475,7 +475,9 @@ export default function ManpowerBudget() {
                           <td className="px-3 py-2 text-right font-medium text-emerald-700">
                             {parseFloat(budget.salary) > 0 ? `$${parseFloat(budget.salary).toLocaleString()}` : '-'}
                           </td>
-                          <td className="px-3 py-2 text-center">{budget.actual2026 || '-'}</td>
+                          <td className="px-3 py-2 text-center font-medium text-blue-700">
+                            {budget.actual2026 !== undefined && budget.actual2026 !== null && budget.actual2026 !== '' ? budget.actual2026 : '0'}
+                          </td>
                           <td className="px-3 py-2 text-center bg-blue-50/50">{budget.requiredManpower?.['100_80'] || '-'}</td>
                           <td className="px-3 py-2 text-center bg-green-50/50">{budget.requiredManpower?.['80_65'] || '-'}</td>
                           <td className="px-3 py-2 text-center bg-yellow-50/50">{budget.requiredManpower?.['65_50'] || '-'}</td>
@@ -598,14 +600,15 @@ export default function ManpowerBudget() {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium mb-1">Actual 2026</label>
+                  <label className="block text-sm font-medium mb-1">Actual 2026 (Count)</label>
                   <input
-                    type="text"
+                    type="number"
                     value={formData.actual2026}
                     onChange={(e) => handleInputChange('actual2026', e.target.value)}
-                    placeholder="Current actual count or value for 2026"
+                    placeholder="Enter actual employee count for 2026"
                     className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
                   />
+                  <p className="text-xs text-gray-500 mt-1">Current actual headcount or value</p>
                 </div>
               </div>
 

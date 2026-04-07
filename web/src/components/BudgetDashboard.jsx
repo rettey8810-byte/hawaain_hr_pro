@@ -169,7 +169,7 @@ export default function BudgetDashboard() {
           section: b.section || 'N/A',
           designation: b.designation || 'N/A',
           salary,
-          actual2026: b.actual2026 || '0',
+          actual2026: b.actual2026 !== undefined && b.actual2026 !== null ? parseInt(b.actual2026) || 0 : 0,
           pos100_80,
           pos80_65,
           pos65_50,
