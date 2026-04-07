@@ -14,7 +14,8 @@ import {
   Calculator,
   Target,
   TrendingDown,
-  AlertCircle
+  AlertCircle,
+  CheckCircle
 } from 'lucide-react';
 import { useFirestore } from '../hooks/useFirestore';
 import { useCompany } from '../contexts/CompanyContext';
