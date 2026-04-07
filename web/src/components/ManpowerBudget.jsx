@@ -535,8 +535,6 @@ export default function ManpowerBudget() {
                 <span className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full font-medium">5. Required</span>
               </div>
 
-              {/* Step 1-3: Department Info */}
-              <div className="grid grid-cols-3 gap-4">
                 <div>
                   <label className="block text-sm font-medium mb-1">Department *</label>
                   <select
@@ -545,11 +543,11 @@ export default function ManpowerBudget() {
                     className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
                   >
                     <option value="">Select Department...</option>
-                    {formData.department && !companyDivisions.find(d => d.name === formData.department && d.type === 'department') && (
+                    {formData.department && !departments.includes(formData.department) && (
                       <option value={formData.department}>{formData.department} (stored)</option>
                     )}
-                    {companyDivisions.filter(d => d.type === 'department').map(d => (
-                      <option key={d.id} value={d.name}>{d.name}</option>
+                    {departments.map(dept => (
+                      <option key={dept} value={dept}>{dept}</option>
                     ))}
                   </select>
                 </div>
@@ -561,11 +559,11 @@ export default function ManpowerBudget() {
                     className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
                   >
                     <option value="">Select Section...</option>
-                    {formData.section && !companyDivisions.find(d => d.name === formData.section && d.type === 'section') && (
+                    {formData.section && !sections.includes(formData.section) && (
                       <option value={formData.section}>{formData.section} (stored)</option>
                     )}
-                    {companyDivisions.filter(d => d.type === 'section').map(d => (
-                      <option key={d.id} value={d.name}>{d.name}</option>
+                    {sections.map(section => (
+                      <option key={section} value={section}>{section}</option>
                     ))}
                   </select>
                 </div>
@@ -573,19 +571,35 @@ export default function ManpowerBudget() {
                   <label className="block text-sm font-medium mb-1">Designation *</label>
                   <select
                     value={formData.designation}
-                    onChange={(e) => handleInputChange('designation', e.target.value)}
+                    onChange={(e) => {
+                      handleInputChange('designation', e.target.value);
+                      // Auto-fill salary from employee database
+                      const matchingEmps = employeesData.filter(emp => 
+                        (emp.Designation || emp.designation) === e.target.value
+                      );
+                      if (matchingEmps.length > 0) {
+                        const avgSalary = matchingEmps.reduce((sum, emp) => {
+                          const sal = parseFloat(emp['Basic(USD)'] || emp['Fixed(USD)'] || emp['TotalSalary(USD)'] || 0);
+                          return sum + sal;
+                        }, 0) / matchingEmps.length;
+                        if (avgSalary > 0) {
+                          handleInputChange('salary', avgSalary.toFixed(2));
+                          toast.success(`Auto-filled average salary: $${avgSalary.toFixed(2)} from ${matchingEmps.length} employee(s)`);
+                        }
+                      }
+                    }}
                     className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
                   >
                     <option value="">Select Designation...</option>
-                    {formData.designation && !companyDesignations.find(d => d.title === formData.designation) && (
+                    {formData.designation && !designationsList.includes(formData.designation) && (
                       <option value={formData.designation}>{formData.designation} (stored)</option>
                     )}
-                    {companyDesignations.map(d => (
-                      <option key={d.id} value={d.title}>{d.title}</option>
+                    {designationsList.map(desig => (
+                      <option key={desig} value={desig}>{desig}</option>
                     ))}
                   </select>
+                  <p className="text-xs text-gray-500 mt-1">Selecting designation will auto-fill average salary from database</p>
                 </div>
-              </div>
 
               {/* Step 4: Salary and Actual 2026 */}
               <div className="grid grid-cols-2 gap-4">

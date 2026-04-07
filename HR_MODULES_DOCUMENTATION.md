@@ -175,16 +175,34 @@
 
 #### Features:
 - **Salary Management**: Set salaries by designation
+- **Auto-fill Salary**: When selecting designation, automatically fills average salary from employee database
 - **Manpower Tiers**: Define positions by tier (100-80%, 80-65%, 65-50%, Below 50%)
-- **Department/Section/Designation**: Hierarchical structure
-- **Actual 2026**: Track actual vs budgeted
+- **Department/Section/Designation**: Hierarchical structure with dropdowns from employee data
+- **Actual 2026**: Track actual employee count vs budgeted positions
+- **Department Grouping**: Budget entries grouped by department with expandable sections
 
 #### How to Use:
 1. Click "Add Budget Entry"
-2. Select Department, Section, Designation
-3. Enter salary
-4. Set manpower requirements by tier
-5. Save and view totals
+2. Select Department, Section, Designation from dropdowns (populated from employee database)
+3. **Salary Auto-fill**: When you select a designation, the system automatically calculates and fills the average salary from existing employees with that designation
+4. Review the auto-filled salary (you can modify if needed)
+5. Enter "Actual 2026" count (current actual employees in this position)
+6. Set manpower requirements by tier (100-80%, 80-65%, 65-50%, Below 50%)
+7. Save entry
+8. Click department header to expand/collapse and view entries
+
+#### Editing Budget Entries:
+- Click edit icon on any entry
+- Dropdowns will show stored values even if not in current employee data
+- All fields can be modified
+- Click "Update Entry" to save changes
+
+#### Stats Shown:
+- Total Departments
+- Total Budget Entries
+- Total Positions (sum of all tiers)
+- Unique Designations
+- Total Budget (USD)
 
 ---
 
@@ -279,16 +297,23 @@ For technical issues, contact IT support or check browser console for errors.
 - Variance Budget vs Actuals tab
 - Room occupancy view in Accommodation
 - Enhanced Document Reports with alerts
-- Fixed Leave Planner apply button
-- Fixed Employee edit navigation
+- **Salary Auto-fill** in Manpower Budget (fills from employee database when selecting designation)
+- **Fixed dropdown pre-fill** in Manpower Budget edit mode (stored values now show properly)
+- Enhanced Notifications page with Employee ID and Document Number columns
+- Full Recruitment workflow with prescreening, interviews, offers, onboarding, expat tracking
+- MVR salary display for Maldivian employees in Employee Profile
 
 ### Fixed:
+- Actual 2026 field now properly saves and displays as integer
 - Salary display in Manpower Budget
 - Budget Dashboard totals
-- Dropdown pre-fill in edit mode
+- Dropdown pre-fill in edit mode for all modules
 - Deployment issues on Vercel
+- CheckCircle import error in BudgetDashboard
+- Employee edit navigation for non-HR users
+- Leave Planner apply button functionality
 
 ---
 
-*Documentation Version: 1.0*
+*Documentation Version: 1.1*
 *Last Updated: April 7, 2026*
