@@ -14,6 +14,7 @@ export default function Visas() {
   
   const { documents: visas, loading, deleteDocument, getAllDocuments } = useFirestore('visas');
   const [employees, setEmployees] = useState([]);
+  const [passports, setPassports] = useState([]);
   const [employeesLoading, setEmployeesLoading] = useState(true);
   const { isHR, userData } = useAuth();
   const { companyId } = useCompany();
@@ -23,27 +24,32 @@ export default function Visas() {
   const [selectedVisa, setSelectedVisa] = useState(null);
   const [filteredVisas, setFilteredVisas] = useState([]);
 
-  // Fetch ALL employees for name lookup
-  const fetchAllEmployees = useCallback(async () => {
+  // Fetch ALL employees and passports for name/passport lookup
+  const fetchAllData = useCallback(async () => {
     if (!companyId) return;
     setEmployeesLoading(true);
     try {
-      const q = query(
+      // Fetch employees
+      const empQuery = query(
         collection(db, 'employees'),
         where('companyId', '==', companyId)
       );
-      const snap = await getDocs(q);
-      setEmployees(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+      const empSnap = await getDocs(empQuery);
+      setEmployees(empSnap.docs.map(d => ({ id: d.id, ...d.data() })));
+      
+      // Fetch passports (without company filter - same as Passports component)
+      const passportSnap = await getDocs(collection(db, 'passports'));
+      setPassports(passportSnap.docs.map(d => ({ id: d.id, ...d.data() })));
     } catch (err) {
-      console.error('Error fetching employees:', err);
+      console.error('Error fetching data:', err);
     } finally {
       setEmployeesLoading(false);
     }
   }, [companyId]);
 
   useEffect(() => {
-    fetchAllEmployees();
-  }, [fetchAllEmployees]);
+    fetchAllData();
+  }, [fetchAllData]);
 
   useEffect(() => {
     const unsub = getAllDocuments();
@@ -81,10 +87,11 @@ export default function Visas() {
 
   const getEmployeeInfo = (id) => {
     const emp = employees.find(e => e.id === id);
+    const passport = passports.find(p => p.employeeId === id);
     return {
       name: emp?.FullName || emp?.name || 'Unknown',
       empId: emp?.EmpID || emp?.employeeId || 'N/A',
-      passportNumber: emp?.passportNumber || emp?.passportNo || 'N/A'
+      passportNumber: passport?.passportNumber || 'N/A'
     };
   };
 
@@ -248,7 +255,7 @@ export default function Visas() {
       <div className="bg-white/80 backdrop-blur-md rounded-2xl shadow-lg p-5 border border-white/50">
         <div className="relative">
           <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-purple-400" />
-          <input type="text" placeholder="🔍 Search by visa number, type, or employee name..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="block w-full rounded-xl border-0 bg-gray-50 pl-12 pr-4 py-3 text-gray-900 shadow-sm ring-1 ring-gray-200 focus:ring-2 focus:ring-purple-500 transition-all" />
+          <input type="text" placeholder="🔍 Search by visa number, passport number, or employee name..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="block w-full rounded-xl border-0 bg-gray-50 pl-12 pr-4 py-3 text-gray-900 shadow-sm ring-1 ring-gray-200 focus:ring-2 focus:ring-purple-500 transition-all" />
         </div>
       </div>
 
@@ -260,7 +267,7 @@ export default function Visas() {
             <thead className="bg-gradient-to-r from-violet-50 to-purple-50 sticky top-0 z-10">
               <tr>
                 <th className="px-3 py-4 text-left text-xs font-bold text-purple-700 uppercase tracking-wider sticky top-0 w-32 max-w-[140px]">👤 Employee</th>
-                <th className="px-3 py-4 text-left text-xs font-bold text-purple-700 uppercase tracking-wider sticky top-0 w-24">� Staff ID</th>
+                <th className="px-3 py-4 text-left text-xs font-bold text-purple-700 uppercase tracking-wider sticky top-0 w-24">🆔 Staff ID</th>
                 <th className="px-3 py-4 text-left text-xs font-bold text-purple-700 uppercase tracking-wider sticky top-0 w-28">🛂 Passport</th>
                 <th className="px-3 py-4 text-left text-xs font-bold text-purple-700 uppercase tracking-wider sticky top-0 w-32">🔢 Visa Number</th>
                 <th className="px-3 py-4 text-left text-xs font-bold text-purple-700 uppercase tracking-wider sticky top-0 w-24">🚪 Entry</th>
