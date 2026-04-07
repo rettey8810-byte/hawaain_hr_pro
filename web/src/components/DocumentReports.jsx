@@ -10,7 +10,11 @@ import {
   Search,
   ChevronDown,
   ChevronUp,
-  Building2
+  Building2,
+  Bell,
+  Mail,
+  Clock,
+  RefreshCw
 } from 'lucide-react';
 import { useFirestore } from '../hooks/useFirestore';
 import { useCompany } from '../contexts/CompanyContext';
@@ -184,6 +188,27 @@ export default function DocumentReports() {
           <p className="mt-1 text-sm text-gray-500">Visa and Passport status reports with expiry tracking</p>
         </div>
       </div>
+
+      {/* Notification Alert for Critical Documents */}
+      {(visaStats.critical > 0 || passportStats.critical > 0) && (
+        <div className="bg-gradient-to-r from-rose-500 to-red-600 rounded-xl shadow-lg p-4 text-white mb-6">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center">
+              <Bell className="h-6 w-6 mr-3 animate-pulse" />
+              <div>
+                <p className="font-bold text-lg">⚠️ Urgent Action Required</p>
+                <p className="text-rose-100 text-sm">
+                  {visaStats.critical + passportStats.critical} document(s) expiring within 30 days
+                </p>
+              </div>
+            </div>
+            <button className="bg-white text-rose-600 px-4 py-2 rounded-lg font-semibold hover:bg-rose-50 transition-colors">
+              <Mail className="h-4 w-4 mr-2 inline" />
+              Send Reminders
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
