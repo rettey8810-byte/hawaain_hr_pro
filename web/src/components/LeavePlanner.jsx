@@ -399,23 +399,72 @@ export default function LeavePlanner() {
       case 'balances':
         return (
           <div className="bg-white rounded-2xl shadow-lg p-6">
-            <h3 className="text-xl font-bold text-gray-900 mb-6">Leave Balances</h3>
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-xl font-bold text-gray-900">Leave Balances (From 1st Jan 2025)</h3>
+              <div className="text-sm text-gray-500">
+                <span className="inline-flex items-center px-3 py-1 bg-emerald-100 text-emerald-700 rounded-full text-xs font-bold mr-2">30 days/year Annual</span>
+                <span className="inline-flex items-center px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-xs font-bold mr-2">4 days/month Off Day</span>
+                <span className="inline-flex items-center px-3 py-1 bg-rose-100 text-rose-700 rounded-full text-xs font-bold mr-2">10 Medical</span>
+                <span className="inline-flex items-center px-3 py-1 bg-amber-100 text-amber-700 rounded-full text-xs font-bold">10 Family Care</span>
+              </div>
+            </div>
             <div className="overflow-x-auto">
               <table className="w-full divide-y divide-gray-200">
                 <thead className="bg-gradient-to-r from-emerald-50 to-teal-50">
                   <tr>
-                    <th className="px-6 py-3 text-left text-xs font-bold text-emerald-700 uppercase">Employee</th>
-                    <th className="px-6 py-3 text-center text-xs font-bold text-emerald-700 uppercase">Annual (Total/Used/Remaining)</th>
-                    <th className="px-6 py-3 text-center text-xs font-bold text-emerald-700 uppercase">Sick (Total/Used/Remaining)</th>
-                    <th className="px-6 py-3 text-center text-xs font-bold text-emerald-700 uppercase">Status</th>
+                    <th className="px-4 py-3 text-left text-xs font-bold text-emerald-700 uppercase">Employee</th>
+                    <th className="px-4 py-3 text-center text-xs font-bold text-emerald-700 uppercase">Annual<br/>(Total/Used/Remain)</th>
+                    <th className="px-4 py-3 text-center text-xs font-bold text-emerald-700 uppercase">Off Days<br/>(Total/Used/Remain)</th>
+                    <th className="px-4 py-3 text-center text-xs font-bold text-emerald-700 uppercase">Medical<br/>(Total/Used/Remain)</th>
+                    <th className="px-4 py-3 text-center text-xs font-bold text-emerald-700 uppercase">Family Care<br/>(Total/Used/Remain)</th>
+                    <th className="px-4 py-3 text-center text-xs font-bold text-emerald-700 uppercase">PH<br/>(Used)</th>
+                    <th className="px-4 py-3 text-center text-xs font-bold text-emerald-700 uppercase">Status</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">
                   {employees.map(emp => {
-                    const balance = leaveBalances[emp.id] || { annual: { total: 30, used: 0, remaining: 30 }, sick: { total: 15, used: 0, remaining: 15 } };
+                    const hireDate = emp.JoinDate || emp.joinDate || emp.HireDate || '2025-01-01';
+                    const startDate = new Date('2025-01-01');
+                    const now = new Date();
+                    
+                    // Calculate months since Jan 2025 or hire date (whichever is later)
+                    const effectiveStart = new Date(Math.max(startDate.getTime(), new Date(hireDate).getTime()));
+                    const monthsSinceStart = Math.max(1, Math.floor((now - effectiveStart) / (1000 * 60 * 60 * 24 * 30.44)));
+                    const yearsSinceStart = monthsSinceStart / 12;
+                    
+                    // Get leaves for this employee from 2025
+                    const empLeaves = leaves.filter(l => 
+                      l.employeeId === emp.id && 
+                      l.status === 'approved' &&
+                      new Date(l.startDate) >= startDate
+                    );
+                    
+                    // Calculate used leaves by type
+                    const annualUsed = empLeaves
+                      .filter(l => l.leaveType === 'annual')
+                      .reduce((sum, l) => sum + (parseInt(l.days) || 0), 0);
+                    const offDayUsed = empLeaves
+                      .filter(l => l.leaveType === 'off_day')
+                      .reduce((sum, l) => sum + (parseInt(l.days) || 0), 0);
+                    const medicalUsed = empLeaves
+                      .filter(l => l.leaveType === 'medical')
+                      .reduce((sum, l) => sum + (parseInt(l.days) || 0), 0);
+                    const familyUsed = empLeaves
+                      .filter(l => l.leaveType === 'family_responsibility')
+                      .reduce((sum, l) => sum + (parseInt(l.days) || 0), 0);
+                    const phUsed = empLeaves
+                      .filter(l => l.leaveType === 'ph')
+                      .reduce((sum, l) => sum + (parseInt(l.days) || 0), 0);
+                    
+                    // Calculate entitlements (prorated based on time)
+                    const annualTotal = Math.round(30 * yearsSinceStart);
+                    const offDayTotal = Math.min(48, monthsSinceStart * 4); // 4 per month, max 48
+                    const medicalTotal = 10;
+                    const familyTotal = 10;
+                    
                     return (
                       <tr key={emp.id} className="hover:bg-emerald-50/50">
-                        <td className="px-6 py-4">
+                        <td className="px-4 py-4">
                           <div className="flex items-center">
                             <div className="h-10 w-10 rounded-full bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center text-white font-bold">
                               {(emp.FullName || emp.name || 'U').charAt(0)}
@@ -423,48 +472,66 @@ export default function LeavePlanner() {
                             <div className="ml-3">
                               <p className="text-sm font-bold text-gray-900">{emp.FullName || emp.name}</p>
                               <p className="text-xs text-gray-500">{emp.EmpID || emp.id}</p>
+                              <p className="text-xs text-gray-400">Hired: {formatDate(hireDate)}</p>
                             </div>
                           </div>
                         </td>
-                        <td className="px-6 py-4 text-center">
-                          <div className="flex items-center justify-center gap-2">
-                            <span className="text-sm font-medium text-gray-600">{balance.annual.total}</span>
+                        <td className="px-4 py-4 text-center">
+                          <div className="flex items-center justify-center gap-1 text-xs">
+                            <span className="text-gray-600">{annualTotal}</span>
                             <span className="text-gray-400">/</span>
-                            <span className="text-sm font-medium text-rose-600">{balance.annual.used}</span>
+                            <span className="text-rose-600">{annualUsed}</span>
                             <span className="text-gray-400">/</span>
-                            <span className="text-sm font-bold text-emerald-600">{balance.annual.remaining}</span>
+                            <span className="font-bold text-emerald-600">{Math.max(0, annualTotal - annualUsed)}</span>
                           </div>
-                          <div className="w-full bg-gray-200 rounded-full h-2 mt-2 max-w-[200px] mx-auto">
-                            <div 
-                              className="bg-emerald-500 h-2 rounded-full" 
-                              style={{ width: `${Math.min((balance.annual.used / balance.annual.total) * 100, 100)}%` }}
-                            ></div>
+                          <div className="w-full bg-gray-200 rounded-full h-1.5 mt-1 max-w-[100px] mx-auto">
+                            <div className="bg-emerald-500 h-1.5 rounded-full" style={{ width: `${annualTotal > 0 ? Math.min((annualUsed / annualTotal) * 100, 100) : 0}%` }}></div>
                           </div>
                         </td>
-                        <td className="px-6 py-4 text-center">
-                          <div className="flex items-center justify-center gap-2">
-                            <span className="text-sm font-medium text-gray-600">{balance.sick.total}</span>
+                        <td className="px-4 py-4 text-center">
+                          <div className="flex items-center justify-center gap-1 text-xs">
+                            <span className="text-gray-600">{offDayTotal}</span>
                             <span className="text-gray-400">/</span>
-                            <span className="text-sm font-medium text-rose-600">{balance.sick.used}</span>
+                            <span className="text-rose-600">{offDayUsed}</span>
                             <span className="text-gray-400">/</span>
-                            <span className="text-sm font-bold text-emerald-600">{balance.sick.remaining}</span>
+                            <span className="font-bold text-emerald-600">{Math.max(0, offDayTotal - offDayUsed)}</span>
                           </div>
-                          <div className="w-full bg-gray-200 rounded-full h-2 mt-2 max-w-[200px] mx-auto">
-                            <div 
-                              className="bg-blue-500 h-2 rounded-full" 
-                              style={{ width: `${Math.min((balance.sick.used / balance.sick.total) * 100, 100)}%` }}
-                            ></div>
+                          <div className="w-full bg-gray-200 rounded-full h-1.5 mt-1 max-w-[100px] mx-auto">
+                            <div className="bg-blue-500 h-1.5 rounded-full" style={{ width: `${offDayTotal > 0 ? Math.min((offDayUsed / offDayTotal) * 100, 100) : 0}%` }}></div>
                           </div>
                         </td>
-                        <td className="px-6 py-4 text-center">
-                          {balance.annual.remaining < 5 ? (
-                            <span className="px-3 py-1 bg-amber-100 text-amber-700 rounded-full text-xs font-bold">
-                              Low Balance
-                            </span>
+                        <td className="px-4 py-4 text-center">
+                          <div className="flex items-center justify-center gap-1 text-xs">
+                            <span className="text-gray-600">{medicalTotal}</span>
+                            <span className="text-gray-400">/</span>
+                            <span className="text-rose-600">{medicalUsed}</span>
+                            <span className="text-gray-400">/</span>
+                            <span className="font-bold text-emerald-600">{Math.max(0, medicalTotal - medicalUsed)}</span>
+                          </div>
+                          <div className="w-full bg-gray-200 rounded-full h-1.5 mt-1 max-w-[100px] mx-auto">
+                            <div className="bg-rose-500 h-1.5 rounded-full" style={{ width: `${(medicalUsed / medicalTotal) * 100}%` }}></div>
+                          </div>
+                        </td>
+                        <td className="px-4 py-4 text-center">
+                          <div className="flex items-center justify-center gap-1 text-xs">
+                            <span className="text-gray-600">{familyTotal}</span>
+                            <span className="text-gray-400">/</span>
+                            <span className="text-rose-600">{familyUsed}</span>
+                            <span className="text-gray-400">/</span>
+                            <span className="font-bold text-emerald-600">{Math.max(0, familyTotal - familyUsed)}</span>
+                          </div>
+                          <div className="w-full bg-gray-200 rounded-full h-1.5 mt-1 max-w-[100px] mx-auto">
+                            <div className="bg-amber-500 h-1.5 rounded-full" style={{ width: `${(familyUsed / familyTotal) * 100}%` }}></div>
+                          </div>
+                        </td>
+                        <td className="px-4 py-4 text-center">
+                          <span className="text-sm font-bold text-purple-600">{phUsed}</span>
+                        </td>
+                        <td className="px-4 py-4 text-center">
+                          {(annualTotal - annualUsed) < 5 ? (
+                            <span className="px-2 py-1 bg-amber-100 text-amber-700 rounded-full text-xs font-bold">Low</span>
                           ) : (
-                            <span className="px-3 py-1 bg-emerald-100 text-emerald-700 rounded-full text-xs font-bold">
-                              OK
-                            </span>
+                            <span className="px-2 py-1 bg-emerald-100 text-emerald-700 rounded-full text-xs font-bold">OK</span>
                           )}
                         </td>
                       </tr>
