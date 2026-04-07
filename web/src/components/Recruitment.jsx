@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import {
   Briefcase, Users, Calendar, Filter, Search, Plus, CheckCircle, Clock, Loader2, Mail, Phone, X, Star, MapPin, DollarSign,
   FileText, Send, CheckSquare, UserCheck, Plane, FileCheck, MoreHorizontal, Download, Eye, ChevronRight, Building2,
-  Upload, ClipboardCheck, Ticket, Passport, CreditCard
+  Upload, ClipboardCheck
 } from 'lucide-react';
 import { useFirestore } from '../hooks/useFirestore';
 import { useCompany } from '../contexts/CompanyContext';
