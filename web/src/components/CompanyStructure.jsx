@@ -843,7 +843,7 @@ export default function CompanyStructure() {
           {[
             { id: 'divisions', label: 'Divisions & Departments', icon: Building },
             { id: 'designations', label: 'Designations', icon: Briefcase },
-            ...(isSuperAdmin ? [{ id: 'leaveTypes', label: 'Leave Types', icon: Palmtree }] : []),
+            ...(isSuperAdmin() ? [{ id: 'leaveTypes', label: 'Leave Types', icon: Palmtree }] : []),
           ].map(tab => (
             <button
               key={tab.id}
