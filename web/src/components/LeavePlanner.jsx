@@ -117,8 +117,16 @@ export default function LeavePlanner() {
   }, [fetchAllEmployees]);
 
   useEffect(() => {
-    const unsub = getAllDocuments();
-    return () => unsub?.();
+    try {
+      const unsub = getAllDocuments();
+      return () => {
+        if (typeof unsub === 'function') {
+          unsub();
+        }
+      };
+    } catch (error) {
+      console.error('Error fetching leave data:', error);
+    }
   }, [getAllDocuments]);
 
   // Calculate leave balances per employee

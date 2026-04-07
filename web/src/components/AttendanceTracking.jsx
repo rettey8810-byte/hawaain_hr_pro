@@ -6,7 +6,7 @@ import { db } from '../firebase';
 import { 
   Clock, Calendar, Users, TrendingUp, AlertCircle, CheckCircle, XCircle,
   Plus, Search, Printer, Download, Filter, ChevronDown, ChevronUp,
-  Clock8, Clock4, Coffee, ArrowRight, MapPin
+  Clock8, Clock4, Coffee, ArrowRight, MapPin, Briefcase
 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 
@@ -318,89 +318,89 @@ export default function AttendanceTracking() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex justify-between items-start">
-        <div>
-          <div className="flex items-center gap-2">
-            <Clock className="h-8 w-8 text-blue-600" />
-            <h2 className="text-2xl font-bold text-gray-900">Attendance & Time Tracking</h2>
-          </div>
-          <p className="text-gray-600 mt-1">Daily attendance, overtime, and timesheet management</p>
+      {/* Header - Modern Gradient */}
+      <div className="md:flex md:items-center md:justify-between bg-gradient-to-r from-blue-600 via-indigo-600 to-violet-600 rounded-2xl p-6 text-white shadow-xl relative overflow-hidden">
+        <div className="min-w-0 flex-1 relative z-10">
+          <h2 className="text-3xl font-bold leading-7 flex items-center gap-3">
+            <Clock className="h-8 w-8" />
+            Attendance & Time Tracking
+          </h2>
+          <p className="mt-1 text-sm text-white/80">Daily attendance, overtime, and timesheet management</p>
         </div>
-        <div className="flex gap-2">
+        <div className="mt-4 flex md:ml-4 md:mt-0 gap-3">
           <button
             onClick={exportToCSV}
-            className="px-4 py-2 border rounded-lg hover:bg-gray-50 flex items-center gap-2"
+            className="inline-flex items-center rounded-xl bg-white/20 px-5 py-2.5 text-sm font-bold text-white shadow-lg hover:bg-white/30 transition-all"
           >
-            <Download className="h-4 w-4" />
+            <Download className="h-5 w-5 mr-2" />
             Export CSV
           </button>
           {hasAccess('employees', 'create') && (
             <button
               onClick={() => setShowModal(true)}
-              className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 flex items-center gap-2"
+              className="inline-flex items-center rounded-xl bg-white px-5 py-2.5 text-sm font-bold text-blue-600 shadow-lg hover:bg-gray-50 transition-all hover:scale-105"
             >
-              <Plus className="h-4 w-4" />
+              <Plus className="h-5 w-5 mr-2" />
               Add Record
             </button>
           )}
         </div>
       </div>
 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3 sm:gap-4">
-        <div className="bg-white p-4 rounded-lg shadow-sm border">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600">Total Staff</p>
-              <p className="text-2xl font-bold text-gray-900">{stats.totalEmployees}</p>
+      {/* Stats Cards - Modern Gradient */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4">
+        <div className="bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl p-4 text-white shadow-lg transform hover:scale-105 transition-all">
+          <div className="flex items-center">
+            <div className="p-2 bg-white/20 rounded-lg mr-3">
+              <Users className="h-5 w-5 text-white" />
             </div>
-            <div className="bg-blue-100 p-2 rounded-lg">
-              <Users className="h-5 w-5 text-blue-600" />
+            <div>
+              <p className="text-xs text-white/80 font-medium">Total Staff</p>
+              <p className="text-2xl font-bold">{stats.totalEmployees}</p>
             </div>
           </div>
         </div>
-        <div className="bg-white p-4 rounded-lg shadow-sm border">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600">Present</p>
-              <p className="text-2xl font-bold text-green-600">{stats.present}</p>
+        <div className="bg-gradient-to-br from-emerald-400 to-green-500 rounded-2xl p-4 text-white shadow-lg transform hover:scale-105 transition-all">
+          <div className="flex items-center">
+            <div className="p-2 bg-white/20 rounded-lg mr-3">
+              <CheckCircle className="h-5 w-5 text-white" />
             </div>
-            <div className="bg-green-100 p-2 rounded-lg">
-              <CheckCircle className="h-5 w-5 text-green-600" />
+            <div>
+              <p className="text-xs text-white/80 font-medium">Present</p>
+              <p className="text-2xl font-bold">{stats.present}</p>
             </div>
           </div>
         </div>
-        <div className="bg-white p-4 rounded-lg shadow-sm border">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600">Late</p>
-              <p className="text-2xl font-bold text-orange-600">{stats.late}</p>
+        <div className="bg-gradient-to-br from-orange-400 to-amber-500 rounded-2xl p-4 text-white shadow-lg transform hover:scale-105 transition-all">
+          <div className="flex items-center">
+            <div className="p-2 bg-white/20 rounded-lg mr-3">
+              <Clock8 className="h-5 w-5 text-white" />
             </div>
-            <div className="bg-orange-100 p-2 rounded-lg">
-              <Clock8 className="h-5 w-5 text-orange-600" />
+            <div>
+              <p className="text-xs text-white/80 font-medium">Late</p>
+              <p className="text-2xl font-bold">{stats.late}</p>
             </div>
           </div>
         </div>
-        <div className="bg-white p-4 rounded-lg shadow-sm border">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600">Absent</p>
-              <p className="text-2xl font-bold text-red-600">{stats.absent}</p>
+        <div className="bg-gradient-to-br from-rose-400 to-red-500 rounded-2xl p-4 text-white shadow-lg transform hover:scale-105 transition-all">
+          <div className="flex items-center">
+            <div className="p-2 bg-white/20 rounded-lg mr-3">
+              <XCircle className="h-5 w-5 text-white" />
             </div>
-            <div className="bg-red-100 p-2 rounded-lg">
-              <XCircle className="h-5 w-5 text-red-600" />
+            <div>
+              <p className="text-xs text-white/80 font-medium">Absent</p>
+              <p className="text-2xl font-bold">{stats.absent}</p>
             </div>
           </div>
         </div>
-        <div className="bg-white p-4 rounded-lg shadow-sm border">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600">On Leave</p>
-              <p className="text-2xl font-bold text-blue-600">{stats.onLeave}</p>
+        <div className="bg-gradient-to-br from-cyan-400 to-blue-500 rounded-2xl p-4 text-white shadow-lg transform hover:scale-105 transition-all">
+          <div className="flex items-center">
+            <div className="p-2 bg-white/20 rounded-lg mr-3">
+              <Coffee className="h-5 w-5 text-white" />
             </div>
-            <div className="bg-blue-100 p-2 rounded-lg">
-              <Coffee className="h-5 w-5 text-blue-600" />
+            <div>
+              <p className="text-xs text-white/80 font-medium">On Leave</p>
+              <p className="text-2xl font-bold">{stats.onLeave}</p>
             </div>
           </div>
         </div>
@@ -460,132 +460,190 @@ export default function AttendanceTracking() {
 
       {/* Daily View */}
       {activeTab === 'daily' && (
-        <div className="bg-white rounded-lg shadow-sm border overflow-hidden">
+        <div className="bg-white rounded-2xl shadow-lg overflow-hidden border border-gray-100">
           <div className="overflow-x-auto -mx-4 sm:mx-0">
-            <div className="min-w-[1000px] sm:min-w-full px-4 sm:px-0">
+            <div className="min-w-[1100px] sm:min-w-full px-4 sm:px-0">
               <table className="w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Employee</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Department</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Check In</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Check Out</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Working Hours</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Overtime</th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-200">
-              {employees
-                .filter(emp => (emp.FullName || emp.name || '')?.toLowerCase().includes(searchTerm.toLowerCase()))
-                .map((employee) => {
-                  const record = getEmployeeAttendance(employee.id);
-                  return (
-                    <tr key={employee.id} className="hover:bg-gray-50">
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="font-medium text-gray-900">{employee.FullName || employee.name || 'N/A'}</div>
-                        <div className="text-sm text-gray-500">{employee.Designation || employee.position || 'N/A'}</div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                        {employee['Department '] || employee.Department || employee.department || 'N/A'}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                        {record?.checkIn ? (
-                          <span className="flex items-center gap-1">
-                            <Clock8 className="h-4 w-4 text-green-600" />
-                            {record.checkIn}
-                          </span>
-                        ) : (
-                          <span className="text-gray-400">-</span>
-                        )}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                        {record?.checkOut ? (
-                          <span className="flex items-center gap-1">
-                            <Clock4 className="h-4 w-4 text-blue-600" />
-                            {record.checkOut}
-                          </span>
-                        ) : record?.checkIn ? (
-                          <button
-                            onClick={() => handleCheckOut(record.id, new Date().toTimeString().slice(0, 5))}
-                            className="text-blue-600 hover:text-blue-800 text-sm"
-                          >
-                            Check Out
-                          </button>
-                        ) : (
-                          <span className="text-gray-400">-</span>
-                        )}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600">
-                        {record?.workingHours ? `${record.workingHours}h` : '-'}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        {record ? (
-                          <span className={`px-2 py-1 text-xs font-semibold rounded-full ${
-                            ATTENDANCE_STATUS[record.status]?.color || 'bg-gray-100 text-gray-800'
-                          }`}>
-                            {ATTENDANCE_STATUS[record.status]?.label || record.status}
-                          </span>
-                        ) : (
-                          <span className="px-2 py-1 text-xs font-semibold rounded-full bg-gray-100 text-gray-800">
-                            Not Recorded
-                          </span>
-                        )}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm">
-                        {record?.overtime?.hours > 0 ? (
-                          <div className="flex items-center gap-2">
-                            <span className="text-orange-600 font-medium">{record.overtime.hours}h</span>
-                            {record.overtime.approved ? (
-                              <span className="text-xs text-green-600">(Approved)</span>
-                            ) : hasAccess('payroll', 'approve') ? (
+                <thead className="bg-gradient-to-r from-blue-50 to-indigo-50 sticky top-0 z-10">
+                  <tr>
+                    <th className="px-4 py-4 text-left text-xs font-bold text-blue-700 uppercase tracking-wider">👤 Employee</th>
+                    <th className="px-4 py-4 text-left text-xs font-bold text-blue-700 uppercase tracking-wider">🆔 Emp ID</th>
+                    <th className="px-4 py-4 text-left text-xs font-bold text-blue-700 uppercase tracking-wider">🏢 Department</th>
+                    <th className="px-4 py-4 text-left text-xs font-bold text-blue-700 uppercase tracking-wider">⏰ Check In</th>
+                    <th className="px-4 py-4 text-left text-xs font-bold text-blue-700 uppercase tracking-wider">🚪 Check Out</th>
+                    <th className="px-4 py-4 text-left text-xs font-bold text-blue-700 uppercase tracking-wider">⏱️ Hours</th>
+                    <th className="px-4 py-4 text-left text-xs font-bold text-blue-700 uppercase tracking-wider">📊 Status</th>
+                    <th className="px-4 py-4 text-left text-xs font-bold text-blue-700 uppercase tracking-wider">🕐 Overtime</th>
+                    <th className="px-4 py-4 text-right text-xs font-bold text-blue-700 uppercase tracking-wider">⚙️ Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-100">
+                  {employees
+                    .filter(emp => (emp.FullName || emp.name || '')?.toLowerCase().includes(searchTerm.toLowerCase()))
+                    .map((employee) => {
+                      const record = getEmployeeAttendance(employee.id);
+                      return (
+                        <tr key={employee.id} className="hover:bg-blue-50/50 transition-colors">
+                          <td className="px-4 py-4 whitespace-nowrap">
+                            <div className="flex items-center">
+                              {employee.photoURL ? (
+                                <img 
+                                  src={employee.photoURL} 
+                                  alt="" 
+                                  className="h-10 w-10 rounded-full object-cover border-2 border-blue-200"
+                                />
+                              ) : (
+                                <div className="h-10 w-10 rounded-full bg-gradient-to-br from-blue-400 to-indigo-500 flex items-center justify-center text-white font-bold">
+                                  {(employee.FullName || employee.name || 'U').charAt(0)}
+                                </div>
+                              )}
+                              <div className="ml-3">
+                                <p className="text-sm font-bold text-gray-900">{employee.FullName || employee.name || 'N/A'}</p>
+                                <p className="text-xs text-gray-500">{employee.Designation || employee.position || 'No designation'}</p>
+                              </div>
+                            </div>
+                          </td>
+                          <td className="px-4 py-4 whitespace-nowrap text-sm font-medium text-blue-600">
+                            {employee.EmpID || employee.employeeId || 'N/A'}
+                          </td>
+                          <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-700">
+                            <div className="flex items-center gap-1">
+                              <Briefcase className="h-3 w-3 text-gray-400" />
+                              {employee['Department '] || employee.Department || employee.department || 'N/A'}
+                            </div>
+                          </td>
+                          <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-600">
+                            {record?.checkIn ? (
+                              <span className="flex items-center gap-1">
+                                <Clock8 className="h-4 w-4 text-emerald-600" />
+                                <span className="font-medium">{record.checkIn}</span>
+                              </span>
+                            ) : (
+                              <span className="text-gray-400">-</span>
+                            )}
+                          </td>
+                          <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-600">
+                            {record?.checkOut ? (
+                              <span className="flex items-center gap-1">
+                                <Clock4 className="h-4 w-4 text-blue-600" />
+                                <span className="font-medium">{record.checkOut}</span>
+                              </span>
+                            ) : record?.checkIn ? (
                               <button
-                                onClick={() => approveOvertime(record.id)}
-                                className="text-xs text-blue-600 hover:underline"
+                                onClick={() => handleCheckOut(record.id, new Date().toTimeString().slice(0, 5))}
+                                className="inline-flex items-center px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-xs font-medium hover:bg-blue-200 transition-colors"
                               >
-                                Approve
+                                Check Out
                               </button>
                             ) : (
-                              <span className="text-xs text-orange-600">(Pending)</span>
+                              <span className="text-gray-400">-</span>
                             )}
-                          </div>
-                        ) : (
-                          <span className="text-gray-400">-</span>
-                        )}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                        {!record && (
-                          <button
-                            onClick={() => handleCheckIn(employee.id)}
-                            className="text-green-600 hover:text-green-900"
-                          >
-                            Check In
-                          </button>
-                        )}
-                      </td>
-                    </tr>
-                  );
-                })}
-            </tbody>
-          </table>
-          </div>
+                          </td>
+                          <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-600">
+                            {record?.workingHours ? (
+                              <span className="font-medium">{record.workingHours}h</span>
+                            ) : (
+                              <span className="text-gray-400">-</span>
+                            )}
+                          </td>
+                          <td className="px-4 py-4 whitespace-nowrap">
+                            {record ? (
+                              <span className={`px-3 py-1.5 inline-flex text-xs leading-5 font-bold rounded-full border ${
+                                record.status === 'present' ? 'bg-emerald-100 text-emerald-700 border-emerald-200' :
+                                record.status === 'late' ? 'bg-amber-100 text-amber-700 border-amber-200' :
+                                record.status === 'absent' ? 'bg-rose-100 text-rose-700 border-rose-200' :
+                                record.status === 'on_leave' ? 'bg-blue-100 text-blue-700 border-blue-200' :
+                                'bg-gray-100 text-gray-700 border-gray-200'
+                              }`}>
+                                {ATTENDANCE_STATUS[record.status]?.label || record.status}
+                              </span>
+                            ) : (
+                              <span className="px-3 py-1.5 inline-flex text-xs leading-5 font-bold rounded-full bg-gray-100 text-gray-600 border border-gray-200">
+                                Not Recorded
+                              </span>
+                            )}
+                          </td>
+                          <td className="px-4 py-4 whitespace-nowrap text-sm">
+                            {record?.overtime?.hours > 0 ? (
+                              <div className="flex items-center gap-2">
+                                <span className="text-orange-600 font-medium">{record.overtime.hours}h</span>
+                                {record.overtime.approved ? (
+                                  <span className="px-2 py-0.5 text-xs bg-emerald-100 text-emerald-700 rounded-full">Approved</span>
+                                ) : hasAccess('payroll', 'approve') ? (
+                                  <button
+                                    onClick={() => approveOvertime(record.id)}
+                                    className="text-xs text-blue-600 hover:underline font-medium"
+                                  >
+                                    Approve
+                                  </button>
+                                ) : (
+                                  <span className="px-2 py-0.5 text-xs bg-amber-100 text-amber-700 rounded-full">Pending</span>
+                                )}
+                              </div>
+                            ) : (
+                              <span className="text-gray-400">-</span>
+                            )}
+                          </td>
+                          <td className="px-4 py-4 whitespace-nowrap text-right text-sm font-medium">
+                            {!record && (
+                              <button
+                                onClick={() => handleCheckIn(employee.id)}
+                                className="inline-flex items-center px-3 py-1.5 bg-emerald-100 text-emerald-700 rounded-lg text-xs font-medium hover:bg-emerald-200 transition-colors"
+                              >
+                                <Clock className="h-3 w-3 mr-1" />
+                                Check In
+                              </button>
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
       )}
 
-      {/* Monthly View */}
+      {/* Monthly View - Modern UI */}
       {activeTab === 'monthly' && (
-        <div className="bg-white rounded-lg shadow-sm border p-6">
-          <div className="text-center text-gray-500 py-8">
-            Monthly attendance summary view with:
-            <ul className="mt-2 text-left max-w-md mx-auto space-y-1">
-              <li>• Total working days per employee</li>
-              <li>• Late arrivals count</li>
-              <li>• Absent days</li>
-              <li>• Total overtime hours</li>
-              <li>• Attendance percentage</li>
-            </ul>
+        <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-6">
+          <div className="flex items-center gap-3 mb-6">
+            <div className="p-3 bg-gradient-to-br from-blue-100 to-indigo-100 rounded-xl">
+              <Calendar className="h-6 w-6 text-blue-600" />
+            </div>
+            <div>
+              <h3 className="text-lg font-bold text-gray-900">Monthly Attendance Summary</h3>
+              <p className="text-sm text-gray-500">View aggregated attendance data for {selectedMonth}</p>
+            </div>
+          </div>
+          
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+            <div className="bg-blue-50 p-4 rounded-xl border border-blue-100">
+              <p className="text-sm text-blue-600 font-medium">Total Working Days</p>
+              <p className="text-2xl font-bold text-blue-700 mt-1">{attendanceRecords.length}</p>
+            </div>
+            <div className="bg-orange-50 p-4 rounded-xl border border-orange-100">
+              <p className="text-sm text-orange-600 font-medium">Late Arrivals</p>
+              <p className="text-2xl font-bold text-orange-700 mt-1">{attendanceRecords.filter(r => r.status === 'late').length}</p>
+            </div>
+            <div className="bg-emerald-50 p-4 rounded-xl border border-emerald-100">
+              <p className="text-sm text-emerald-600 font-medium">Total Overtime Hours</p>
+              <p className="text-2xl font-bold text-emerald-700 mt-1">
+                {attendanceRecords.reduce((sum, r) => sum + (r.overtime?.hours || 0), 0).toFixed(1)}h
+              </p>
+            </div>
+            <div className="bg-violet-50 p-4 rounded-xl border border-violet-100">
+              <p className="text-sm text-violet-600 font-medium">Avg Attendance %</p>
+              <p className="text-2xl font-bold text-violet-700 mt-1">
+                {employees.length > 0 ? ((stats.present / employees.length) * 100).toFixed(0) : 0}%
+              </p>
+            </div>
+          </div>
+          
+          <div className="text-center py-8 bg-gray-50 rounded-xl border border-gray-200">
+            <p className="text-gray-500">📊 Detailed monthly report view coming soon</p>
+            <p className="text-sm text-gray-400 mt-2">Export data to CSV for full monthly analysis</p>
           </div>
         </div>
       )}
