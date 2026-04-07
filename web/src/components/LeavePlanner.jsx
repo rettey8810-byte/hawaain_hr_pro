@@ -83,6 +83,7 @@ export default function LeavePlanner() {
   const [employeesLoading, setEmployeesLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [leaveTypeFilter, setLeaveTypeFilter] = useState('all');
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [selectedLeave, setSelectedLeave] = useState(null);
   const [filteredLeaves, setFilteredLeaves] = useState([]);
@@ -169,13 +170,18 @@ export default function LeavePlanner() {
       filtered = filtered.filter(l => l.status === statusFilter);
     }
     
+    // Filter by leave type
+    if (leaveTypeFilter !== 'all') {
+      filtered = filtered.filter(l => (l.leaveType || 'other') === leaveTypeFilter);
+    }
+    
     // Non-HR users can only see their own leaves
     if (!isHR() && userData?.employeeId) {
       filtered = filtered.filter(l => l.employeeId === userData.employeeId);
     }
     
     setFilteredLeaves(filtered);
-  }, [leaves, searchTerm, statusFilter, employees, isHR, userData]);
+  }, [leaves, searchTerm, statusFilter, leaveTypeFilter, employees, isHR, userData]);
 
   const handleDelete = async () => {
     if (selectedLeave) {
@@ -605,12 +611,21 @@ export default function LeavePlanner() {
               </div>
               
               <div className="flex gap-3">
+                {leaveTypeFilter !== 'all' && (
+                  <button
+                    onClick={() => setLeaveTypeFilter('all')}
+                    className="flex items-center px-4 py-2 bg-amber-100 text-amber-700 rounded-xl hover:bg-amber-200 transition-colors"
+                  >
+                    <XCircle className="h-4 w-4 mr-2" />
+                    Clear Filter
+                  </button>
+                )}
                 <button
                   onClick={exportToCSV}
                   className="flex items-center px-4 py-2 bg-white rounded-xl shadow hover:bg-gray-50 transition-colors text-gray-700"
                 >
                   <Download className="h-4 w-4 mr-2" />
-                  Export CSV
+                  Export {leaveTypeFilter !== 'all' ? `(${filteredLeaves.length})` : ''}
                 </button>
               </div>
             </div>
@@ -828,18 +843,22 @@ export default function LeavePlanner() {
           { key: 'total', label: 'Total Leaves', icon: Luggage, emoji: null, colors: 'from-blue-500 to-indigo-600' },
           { key: 'annual', label: 'Annual', icon: null, emoji: '🏖️', colors: 'from-emerald-400 to-green-500' },
           { key: 'sick', label: 'Sick', icon: null, emoji: '🤒', colors: 'from-rose-400 to-red-500' },
-          { key: 'unpaid', label: 'No Pay', icon: null, emoji: '💰', colors: 'from-gray-400 to-slate-500' },
+          { key: 'unpaid', label: 'NoPay', icon: null, emoji: '💰', colors: 'from-gray-400 to-slate-500' },
           { key: 'off_day', label: 'Off Day', icon: null, emoji: '🛌', colors: 'from-slate-400 to-gray-500' },
           { key: 'ph', label: 'PH', icon: null, emoji: '🎉', colors: 'from-fuchsia-500 to-pink-600' },
-          { key: 'family_responsibility', label: 'Family', icon: null, emoji: '👪', colors: 'from-amber-400 to-orange-500' },
+          { key: 'family_responsibility', label: 'Family Care', icon: null, emoji: '👪', colors: 'from-amber-400 to-orange-500' },
           { key: 'medical', label: 'Medical', icon: null, emoji: '🏥', colors: 'from-emerald-500 to-teal-600' },
           { key: 'special', label: 'Special', icon: null, emoji: '✨', colors: 'from-purple-500 to-violet-600' },
-          { key: 'on_duty', label: 'On Duty', icon: null, emoji: '🧑‍💼', colors: 'from-cyan-400 to-blue-500' },
+          { key: 'on_duty', label: 'OnDuty', icon: null, emoji: '🧑‍💼', colors: 'from-cyan-400 to-blue-500' },
           { key: 'hajju', label: 'Hajju', icon: null, emoji: '🕋', colors: 'from-indigo-500 to-purple-600' },
           { key: 'emergency', label: 'Emergency', icon: null, emoji: '🚨', colors: 'from-red-500 to-rose-600' },
           { key: 'other', label: 'Other', icon: null, emoji: '📋', colors: 'from-gray-400 to-slate-500' },
         ].map((s) => (
-          <div key={s.key} className={`bg-gradient-to-br ${s.colors} rounded-2xl p-4 text-white shadow-lg transform hover:scale-105 transition-all`}>
+          <div 
+            key={s.key} 
+            onClick={() => setLeaveTypeFilter(leaveTypeFilter === s.key ? 'all' : s.key)}
+            className={`bg-gradient-to-br ${s.colors} rounded-2xl p-4 text-white shadow-lg transform hover:scale-105 transition-all cursor-pointer ${leaveTypeFilter === s.key ? 'ring-4 ring-yellow-400 scale-105' : ''}`}
+          >
             <div className="flex items-center">
               <div className="p-2 bg-white/20 rounded-lg mr-3">
                 {s.icon ? <s.icon className="h-5 w-5 text-white" /> : <span className="text-lg">{s.emoji}</span>}
