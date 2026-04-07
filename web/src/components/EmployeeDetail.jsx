@@ -375,10 +375,13 @@ export default function EmployeeDetail() {
 
       {/* Salary Information Section */}
       <Section title="Salary Information" icon={DollarSign}>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           <InfoCard icon={DollarSign} label="Fixed (USD)" value={formatCurrency(displayData?.['Fixed(USD)'])} />
+          <InfoCard icon={DollarSign} label="Fixed (MVR)" value={displayData?.['Fixed(MVR)'] ? `${displayData['Fixed(MVR)'].toLocaleString()} MVR` : '-'} />
           <InfoCard icon={DollarSign} label="Basic (USD)" value={formatCurrency(displayData?.['Basic(USD)'])} />
+          <InfoCard icon={DollarSign} label="Basic (MVR)" value={displayData?.['Basic(MVR)'] ? `${displayData['Basic(MVR)'].toLocaleString()} MVR` : '-'} />
           <InfoCard icon={DollarSign} label="Total Salary (USD)" value={formatCurrency(displayData?.['TotalSalary(USD)'])} />
+          <InfoCard icon={DollarSign} label="Total Salary (MVR)" value={displayData?.['TotalSalary(MVR)'] ? `${displayData['TotalSalary(MVR)'].toLocaleString()} MVR` : '-'} />
           <InfoCard icon={CreditCard} label="Pay Through" value={displayData?.PayThrough1} />
         </div>
       </Section>
