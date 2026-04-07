@@ -13,6 +13,7 @@ export default function Medicals() {
   const employeeId = searchParams.get('employee');
   
   const { documents: medicals, loading, deleteDocument, getAllDocuments } = useFirestore('medicals');
+  const [allMedicals, setAllMedicals] = useState([]);
   const [employees, setEmployees] = useState([]);
   const [passports, setPassports] = useState([]);
   const [employeesLoading, setEmployeesLoading] = useState(true);
@@ -25,7 +26,7 @@ export default function Medicals() {
   const [filteredMedicals, setFilteredMedicals] = useState([]);
   const [activeTab, setActiveTab] = useState('medical'); // 'medical' or 'insurance'
 
-  // Fetch ALL employees and passports for name/passport lookup
+  // Fetch ALL employees, passports, and medicals for lookup
   const fetchAllData = useCallback(async () => {
     if (!companyId) return;
     setEmployeesLoading(true);
@@ -41,6 +42,10 @@ export default function Medicals() {
       // Fetch passports (without company filter - same as Passports component)
       const passportSnap = await getDocs(collection(db, 'passports'));
       setPassports(passportSnap.docs.map(d => ({ id: d.id, ...d.data() })));
+      
+      // Fetch ALL medicals (without company filter - medicals may not have companyId)
+      const medicalsSnap = await getDocs(collection(db, 'medicals'));
+      setAllMedicals(medicalsSnap.docs.map(d => ({ id: d.id, ...d.data() })));
     } catch (err) {
       console.error('Error fetching data:', err);
     } finally {
@@ -58,7 +63,7 @@ export default function Medicals() {
   }, [getAllDocuments]);
 
   useEffect(() => {
-    let filtered = medicals;
+    let filtered = allMedicals;
     
     if (employeeId) {
       filtered = filtered.filter(m => m.employeeId === employeeId);
@@ -72,7 +77,7 @@ export default function Medicals() {
     }
     
     setFilteredMedicals(filtered);
-  }, [medicals, employeeId, searchTerm, employees]);
+  }, [allMedicals, employeeId, searchTerm, employees]);
 
   const handleDelete = async () => {
     if (selectedMedical) {
