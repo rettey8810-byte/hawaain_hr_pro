@@ -13,6 +13,7 @@ export default function WorkPermits() {
   const employeeId = searchParams.get('employee');
   
   const { documents: permits, loading, deleteDocument, getAllDocuments } = useFirestore('workPermits');
+  const [allPermits, setAllPermits] = useState([]);
   const [employees, setEmployees] = useState([]);
   const [employeesLoading, setEmployeesLoading] = useState(true);
   const { isHR, userData } = useAuth();
@@ -23,8 +24,8 @@ export default function WorkPermits() {
   const [selectedPermit, setSelectedPermit] = useState(null);
   const [filteredPermits, setFilteredPermits] = useState([]);
 
-  // Fetch ALL employees for name lookup
-  const fetchAllEmployees = useCallback(async () => {
+  // Fetch ALL employees and work permits for lookup
+  const fetchAllData = useCallback(async () => {
     if (!companyId) return;
     setEmployeesLoading(true);
     try {
@@ -34,16 +35,20 @@ export default function WorkPermits() {
       );
       const snap = await getDocs(q);
       setEmployees(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+      
+      // Fetch ALL work permits (without company filter - permits may not have companyId)
+      const permitsSnap = await getDocs(collection(db, 'workPermits'));
+      setAllPermits(permitsSnap.docs.map(d => ({ id: d.id, ...d.data() })));
     } catch (err) {
-      console.error('Error fetching employees:', err);
+      console.error('Error fetching data:', err);
     } finally {
       setEmployeesLoading(false);
     }
   }, [companyId]);
 
   useEffect(() => {
-    fetchAllEmployees();
-  }, [fetchAllEmployees]);
+    fetchAllData();
+  }, [fetchAllData]);
 
   useEffect(() => {
     const unsub = getAllDocuments();
@@ -51,7 +56,7 @@ export default function WorkPermits() {
   }, [getAllDocuments]);
 
   useEffect(() => {
-    let filtered = permits;
+    let filtered = allPermits;
     
     if (employeeId) {
       filtered = filtered.filter(p => p.employeeId === employeeId);
@@ -69,7 +74,7 @@ export default function WorkPermits() {
     }
     
     setFilteredPermits(filtered);
-  }, [permits, employeeId, searchTerm, employees]);
+  }, [allPermits, employeeId, searchTerm, employees]);
 
   const handleDelete = async () => {
     if (selectedPermit) {
@@ -301,65 +306,32 @@ export default function WorkPermits() {
             <table className="w-full divide-y divide-gray-200">
             <thead className="bg-gradient-to-r from-blue-50 to-indigo-50 sticky top-0 z-10">
               <tr>
-                <th className="px-6 py-4 text-left text-xs font-bold text-indigo-700 uppercase tracking-wider sticky top-0">
-                  👤 Employee
-                </th>
-                <th className="px-6 py-4 text-left text-xs font-bold text-indigo-700 uppercase tracking-wider sticky top-0">
-                  📄 Permit Number
-                </th>
-                <th className="px-6 py-4 text-left text-xs font-bold text-indigo-700 uppercase tracking-wider sticky top-0">
-                  💼 Job Position
-                </th>
-                <th className="px-6 py-4 text-left text-xs font-bold text-indigo-700 uppercase tracking-wider sticky top-0">
-                  🏢 Employer
-                </th>
-                <th className="px-6 py-4 text-left text-xs font-bold text-indigo-700 uppercase tracking-wider sticky top-0">
-                  ⏰ Expiry Date
-                </th>
-                <th className="px-6 py-4 text-left text-xs font-bold text-indigo-700 uppercase tracking-wider sticky top-0">
-                  📊 Status
-                </th>
-                <th className="px-6 py-4 text-right text-xs font-bold text-indigo-700 uppercase tracking-wider sticky top-0">
-                  ⚙️ Actions
-                </th>
+                <th className="px-3 py-4 text-left text-xs font-bold text-indigo-700 uppercase tracking-wider sticky top-0 w-32 max-w-[140px]">👤 Employee</th>
+                <th className="px-3 py-4 text-left text-xs font-bold text-indigo-700 uppercase tracking-wider sticky top-0 w-24">🆔 Emp ID</th>
+                <th className="px-3 py-4 text-left text-xs font-bold text-indigo-700 uppercase tracking-wider sticky top-0 w-32">📄 Permit Number</th>
+                <th className="px-3 py-4 text-left text-xs font-bold text-indigo-700 uppercase tracking-wider sticky top-0 w-28">💼 Job Position</th>
+                <th className="px-3 py-4 text-left text-xs font-bold text-indigo-700 uppercase tracking-wider sticky top-0 w-28">🏢 Employer</th>
+                <th className="px-3 py-4 text-left text-xs font-bold text-indigo-700 uppercase tracking-wider sticky top-0 w-28">⏰ Expiry Date</th>
+                <th className="px-3 py-4 text-left text-xs font-bold text-indigo-700 uppercase tracking-wider sticky top-0 w-24">📊 Status</th>
+                <th className="px-3 py-4 text-right text-xs font-bold text-indigo-700 uppercase tracking-wider sticky top-0 w-20">⚙️</th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-100">
               {filteredPermits.map((permit) => {
                 const status = getDocumentStatus(permit.expiryDate);
                 const daysRemaining = calculateDaysRemaining(permit.expiryDate);
+                const empInfo = getEmployeeInfo(permit.employeeId);
                 
                 return (
                   <tr key={permit.id} className="hover:bg-blue-50/50 transition-colors">
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900">
-                      {getEmployeeInfo(permit.employeeId).name}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700 font-medium">
-                      {permit.permitNumber}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
-                      {permit.jobPosition}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {permit.employer}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm">
-                      <span className={daysRemaining <= 30 ? 'text-rose-600 font-bold' : 'text-gray-900 font-medium'}>
-                        {formatDate(permit.expiryDate)}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`px-3 py-1.5 inline-flex text-xs leading-5 font-bold rounded-full border ${
-                        status.color === 'green' ? 'bg-emerald-100 text-emerald-700 border-emerald-200' :
-                        status.color === 'yellow' ? 'bg-amber-100 text-amber-700 border-amber-200' :
-                        status.color === 'red' ? 'bg-rose-100 text-rose-700 border-rose-200' :
-                        'bg-gray-100 text-gray-600 border-gray-200'
-                      }`}>
-                        {status.label}
-                        {daysRemaining !== null && daysRemaining > 0 && ` (${daysRemaining}d)`}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                    <td className="px-3 py-4 whitespace-nowrap text-sm font-bold text-gray-900 truncate max-w-[140px]" title={empInfo.name}>{empInfo.name}</td>
+                    <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-700">{empInfo.empId}</td>
+                    <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-700 font-medium">{permit.permitNumber}</td>
+                    <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-700">{permit.jobPosition}</td>
+                    <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-500">{permit.employer}</td>
+                    <td className="px-3 py-4 whitespace-nowrap text-sm"><span className={daysRemaining <= 30 ? 'text-rose-600 font-bold' : 'text-gray-900 font-medium'}>{formatDate(permit.expiryDate)}</span></td>
+                    <td className="px-3 py-4 whitespace-nowrap"><span className={`px-2 py-1 inline-flex text-xs leading-5 font-bold rounded-full border ${status.color === 'green' ? 'bg-emerald-100 text-emerald-700 border-emerald-200' : status.color === 'yellow' ? 'bg-amber-100 text-amber-700 border-amber-200' : status.color === 'red' ? 'bg-rose-100 text-rose-700 border-rose-200' : 'bg-gray-100 text-gray-600 border-gray-200'}`}>{status.label}{daysRemaining !== null && daysRemaining > 0 && ` (${daysRemaining}d)`}</span></td>
+                    <td className="px-3 py-4 whitespace-nowrap text-right text-sm font-medium">
                       <div className="flex justify-end space-x-2">
                         {permit.documentUrl && (
                           <a
