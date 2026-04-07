@@ -1,8 +1,9 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
-import { Plus, Search, Eye, Edit2, Trash2, AlertTriangle, Download, Upload } from 'lucide-react';
+import { Plus, Search, Eye, Edit2, Trash2, AlertTriangle, Download, Upload, Shield } from 'lucide-react';
 import { useFirestore } from '../hooks/useFirestore';
 import { useAuth } from '../contexts/AuthContext';
+import { useCompany } from '../contexts/CompanyContext';
 import { formatDate, getDocumentStatus, calculateDaysRemaining } from '../utils/helpers';
 import { collection, query, where, getDocs } from 'firebase/firestore';
 import { db } from '../firebase/config';
@@ -13,35 +14,43 @@ export default function Medicals() {
   
   const { documents: medicals, loading, deleteDocument, getAllDocuments } = useFirestore('medicals');
   const [employees, setEmployees] = useState([]);
+  const [passports, setPassports] = useState([]);
   const [employeesLoading, setEmployeesLoading] = useState(true);
   const { isHR, userData } = useAuth();
+  const { companyId } = useCompany();
   
   const [searchTerm, setSearchTerm] = useState('');
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [selectedMedical, setSelectedMedical] = useState(null);
   const [filteredMedicals, setFilteredMedicals] = useState([]);
+  const [activeTab, setActiveTab] = useState('medical'); // 'medical' or 'insurance'
 
-  // Fetch ALL employees for name lookup
-  const fetchAllEmployees = useCallback(async () => {
-    if (!userData?.companyId) return;
+  // Fetch ALL employees and passports for name/passport lookup
+  const fetchAllData = useCallback(async () => {
+    if (!companyId) return;
     setEmployeesLoading(true);
     try {
-      const q = query(
+      // Fetch employees
+      const empQuery = query(
         collection(db, 'employees'),
-        where('companyId', '==', userData.companyId)
+        where('companyId', '==', companyId)
       );
-      const snap = await getDocs(q);
-      setEmployees(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+      const empSnap = await getDocs(empQuery);
+      setEmployees(empSnap.docs.map(d => ({ id: d.id, ...d.data() })));
+      
+      // Fetch passports (without company filter - same as Passports component)
+      const passportSnap = await getDocs(collection(db, 'passports'));
+      setPassports(passportSnap.docs.map(d => ({ id: d.id, ...d.data() })));
     } catch (err) {
-      console.error('Error fetching employees:', err);
+      console.error('Error fetching data:', err);
     } finally {
       setEmployeesLoading(false);
     }
-  }, [userData?.companyId]);
+  }, [companyId]);
 
   useEffect(() => {
-    fetchAllEmployees();
-  }, [fetchAllEmployees]);
+    fetchAllData();
+  }, [fetchAllData]);
 
   useEffect(() => {
     const unsub = getAllDocuments();
@@ -75,9 +84,11 @@ export default function Medicals() {
 
   const getEmployeeInfo = (id) => {
     const emp = employees.find(e => e.id === id);
+    const passport = passports.find(p => p.employeeId === id);
     return {
       name: emp?.FullName || emp?.name || 'Unknown',
-      empId: emp?.EmpID || emp?.employeeId || 'N/A'
+      empId: emp?.EmpID || emp?.employeeId || 'N/A',
+      passportNumber: passport?.passportNumber || 'N/A'
     };
   };
 
@@ -217,6 +228,34 @@ export default function Medicals() {
         </div>
       </div>
 
+      {/* Sub-nav Tabs for Medical and Insurance */}
+      <div className="bg-white rounded-xl shadow-sm">
+        <div className="flex border-b">
+          <button
+            onClick={() => setActiveTab('medical')}
+            className={`flex items-center gap-2 px-6 py-4 font-medium ${
+              activeTab === 'medical'
+                ? 'text-rose-600 border-b-2 border-rose-600'
+                : 'text-gray-600 hover:text-gray-900'
+            }`}
+          >
+            <AlertTriangle className="h-4 w-4" />
+            Medical Expiry
+          </button>
+          <button
+            onClick={() => setActiveTab('insurance')}
+            className={`flex items-center gap-2 px-6 py-4 font-medium ${
+              activeTab === 'insurance'
+                ? 'text-rose-600 border-b-2 border-rose-600'
+                : 'text-gray-600 hover:text-gray-900'
+            }`}
+          >
+            <Shield className="h-4 w-4" />
+            Insurance Expiry
+          </button>
+        </div>
+      </div>
+
       {/* Alerts Summary - Colorful Cards - Mobile Responsive */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
         <div className="bg-gradient-to-br from-rose-500 to-red-600 rounded-2xl p-4 text-white shadow-lg transform hover:scale-105 transition-all">
@@ -280,7 +319,7 @@ export default function Medicals() {
           <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-rose-400" />
           <input
             type="text"
-            placeholder="🔍 Search by employee name..."
+            placeholder="🔍 Search by employee name, passport, or ID..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="block w-full rounded-xl border-0 bg-gray-50 pl-12 pr-4 py-3 text-gray-900 shadow-sm ring-1 ring-gray-200 focus:ring-2 focus:ring-rose-500 transition-all"
@@ -288,34 +327,56 @@ export default function Medicals() {
         </div>
       </div>
 
-      {/* Medicals Table - Mobile Responsive with Horizontal Scroll */}
+      {/* Medicals/Insurance Table - Mobile Responsive with Horizontal Scroll */}
       <div className="bg-white rounded-2xl shadow-lg overflow-hidden border border-gray-100">
         <div className="overflow-x-auto -mx-4 sm:mx-0">
-          <div className="min-w-[800px] sm:min-w-full px-4 sm:px-0">
+          <div className="min-w-[1000px] sm:min-w-full px-4 sm:px-0">
             <table className="w-full divide-y divide-gray-200">
             <thead className="bg-gradient-to-r from-rose-50 to-pink-50 sticky top-0 z-10">
               <tr>
-                <th className="px-6 py-4 text-left text-xs font-bold text-rose-700 uppercase tracking-wider sticky top-0">👤 Employee</th>
-                <th className="px-6 py-4 text-left text-xs font-bold text-rose-700 uppercase tracking-wider sticky top-0">📅 Test Date</th>
-                <th className="px-6 py-4 text-left text-xs font-bold text-rose-700 uppercase tracking-wider sticky top-0">⏰ Expiry Date</th>
-                <th className="px-6 py-4 text-left text-xs font-bold text-rose-700 uppercase tracking-wider sticky top-0">✅ Result</th>
-                <th className="px-6 py-4 text-left text-xs font-bold text-rose-700 uppercase tracking-wider sticky top-0">📊 Status</th>
-                <th className="px-6 py-4 text-right text-xs font-bold text-rose-700 uppercase tracking-wider sticky top-0">⚙️ Actions</th>
+                <th className="px-3 py-4 text-left text-xs font-bold text-rose-700 uppercase tracking-wider sticky top-0 w-32 max-w-[140px]">👤 Employee</th>
+                <th className="px-3 py-4 text-left text-xs font-bold text-rose-700 uppercase tracking-wider sticky top-0 w-24">🆔 Staff ID</th>
+                <th className="px-3 py-4 text-left text-xs font-bold text-rose-700 uppercase tracking-wider sticky top-0 w-28">🛂 Passport</th>
+                <th className="px-3 py-4 text-left text-xs font-bold text-rose-700 uppercase tracking-wider sticky top-0 w-28">💰 Fee</th>
+                {activeTab === 'medical' ? (
+                  <>
+                    <th className="px-3 py-4 text-left text-xs font-bold text-rose-700 uppercase tracking-wider sticky top-0 w-28">📅 Test Date</th>
+                    <th className="px-3 py-4 text-left text-xs font-bold text-rose-700 uppercase tracking-wider sticky top-0 w-28">⏰ Med Expiry</th>
+                    <th className="px-3 py-4 text-left text-xs font-bold text-rose-700 uppercase tracking-wider sticky top-0 w-24">📊 Status</th>
+                  </>
+                ) : (
+                  <>
+                    <th className="px-3 py-4 text-left text-xs font-bold text-rose-700 uppercase tracking-wider sticky top-0 w-28">🛡️ Ins Expiry</th>
+                    <th className="px-3 py-4 text-left text-xs font-bold text-rose-700 uppercase tracking-wider sticky top-0 w-24">📊 Status</th>
+                  </>
+                )}
+                <th className="px-3 py-4 text-right text-xs font-bold text-rose-700 uppercase tracking-wider sticky top-0 w-20">⚙️</th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-100">
               {filteredMedicals.map((medical) => {
-                const status = getDocumentStatus(medical.expiryDate);
-                const daysRemaining = calculateDaysRemaining(medical.expiryDate);
+                const expiryDate = activeTab === 'medical' ? medical.expiryDate : medical.insuranceExpiryDate;
+                const status = getDocumentStatus(expiryDate);
+                const daysRemaining = calculateDaysRemaining(expiryDate);
                 
                 return (
                   <tr key={medical.id} className="hover:bg-rose-50/50 transition-colors">
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-bold text-gray-900">{getEmployeeInfo(medical.employeeId).name}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{formatDate(medical.testDate)}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm"><span className={daysRemaining <= 30 ? 'text-rose-600 font-bold' : 'text-gray-900 font-medium'}>{formatDate(medical.expiryDate)}</span></td>
-                    <td className="px-6 py-4 whitespace-nowrap"><span className={`px-3 py-1.5 inline-flex text-xs leading-5 font-bold rounded-full border ${medical.result === 'approved' ? 'bg-emerald-100 text-emerald-700 border-emerald-200' : medical.result === 'failed' ? 'bg-rose-100 text-rose-700 border-rose-200' : 'bg-amber-100 text-amber-700 border-amber-200'}`}>{medical.result === 'approved' ? '✅ Approved' : medical.result === 'failed' ? '❌ Failed' : '⏳ Pending'}</span></td>
-                    <td className="px-6 py-4 whitespace-nowrap"><span className={`px-3 py-1.5 inline-flex text-xs leading-5 font-bold rounded-full border ${status.color === 'green' ? 'bg-emerald-100 text-emerald-700 border-emerald-200' : status.color === 'yellow' ? 'bg-amber-100 text-amber-700 border-amber-200' : status.color === 'red' ? 'bg-rose-100 text-rose-700 border-rose-200' : 'bg-gray-100 text-gray-600 border-gray-200'}`}>{status.label}{daysRemaining !== null && daysRemaining > 0 && ` (${daysRemaining}d)`}</span></td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                    <td className="px-3 py-4 whitespace-nowrap text-sm font-bold text-gray-900 truncate max-w-[140px]" title={getEmployeeInfo(medical.employeeId).name}>{getEmployeeInfo(medical.employeeId).name}</td>
+                    <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-700">{getEmployeeInfo(medical.employeeId).empId}</td>
+                    <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-700 font-medium">{getEmployeeInfo(medical.employeeId).passportNumber}</td>
+                    <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-700">{medical.medicalFee ? `MVR ${medical.medicalFee}` : 'N/A'}</td>
+                    {activeTab === 'medical' ? (
+                      <>
+                        <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-500">{formatDate(medical.testDate)}</td>
+                        <td className="px-3 py-4 whitespace-nowrap text-sm"><span className={daysRemaining <= 30 ? 'text-rose-600 font-bold' : 'text-gray-900 font-medium'}>{formatDate(medical.expiryDate)}</span></td>
+                      </>
+                    ) : (
+                      <>
+                        <td className="px-3 py-4 whitespace-nowrap text-sm"><span className={daysRemaining <= 30 ? 'text-rose-600 font-bold' : 'text-gray-900 font-medium'}>{formatDate(medical.insuranceExpiryDate)}</span></td>
+                      </>
+                    )}
+                    <td className="px-3 py-4 whitespace-nowrap"><span className={`px-2 py-1 inline-flex text-xs leading-5 font-bold rounded-full border ${status.color === 'green' ? 'bg-emerald-100 text-emerald-700 border-emerald-200' : status.color === 'yellow' ? 'bg-amber-100 text-amber-700 border-amber-200' : status.color === 'red' ? 'bg-rose-100 text-rose-700 border-rose-200' : 'bg-gray-100 text-gray-600 border-gray-200'}`}>{status.label}{daysRemaining !== null && daysRemaining > 0 && ` (${daysRemaining}d)`}</span></td>
+                    <td className="px-3 py-4 whitespace-nowrap text-right text-sm font-medium">
                       <div className="flex justify-end space-x-2">
                         {medical.documentUrl && (<a href={medical.documentUrl} target="_blank" rel="noopener noreferrer" className="p-2 text-rose-600 hover:bg-rose-50 rounded-lg transition-colors"><Eye className="h-4 w-4" /></a>)}
                         {isHR?.() && (<><Link to={`/medical/${medical.id}/edit`} className="p-2 text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"><Edit2 className="h-4 w-4" /></Link><button onClick={() => {setSelectedMedical(medical); setShowDeleteModal(true);}} className="p-2 text-rose-600 hover:bg-rose-50 rounded-lg transition-colors"><Trash2 className="h-4 w-4" /></button></>)}
@@ -324,7 +385,7 @@ export default function Medicals() {
                   </tr>
                 );
               })}
-              {filteredMedicals.length === 0 && (<tr><td colSpan="6" className="px-6 py-12 text-center"><div className="text-5xl mb-3">🏥</div><p className="text-gray-500 font-medium">No medical records found</p><p className="text-sm text-gray-400 mt-2">Use Import CSV to add records</p></td></tr>)}
+              {filteredMedicals.length === 0 && (<tr><td colSpan={activeTab === 'medical' ? 8 : 7} className="px-6 py-12 text-center"><div className="text-5xl mb-3">🏥</div><p className="text-gray-500 font-medium">No records found</p><p className="text-sm text-gray-400 mt-2">Use Import CSV to add records</p></td></tr>)}
             </tbody>
           </table>
           </div>
