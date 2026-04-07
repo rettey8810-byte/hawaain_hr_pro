@@ -48,7 +48,8 @@ import {
   BedDouble,
   Wrench,
   DoorOpen,
-  FolderKanban
+  FolderKanban,
+  UserX
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useNotifications } from '../contexts/NotificationContext';
@@ -127,6 +128,7 @@ export default function Layout({ children }) {
         { name: 'Expense Claims', href: '/expense-claims', icon: Receipt, feature: 'employees', action: 'view' },
         { name: 'Promotions', href: '/promotions', icon: TrendingUp, feature: 'employees', action: 'view' },
         { name: 'Disciplinary', href: '/disciplinary', icon: AlertTriangle, feature: 'employees', action: 'view' },
+        { name: 'Terminations', href: '/terminations', icon: UserX, feature: 'employees', action: 'view' },
         { name: 'Recruitment Approval', href: '/recruitment/approval', icon: UserPlus, feature: 'recruitment', action: 'view' },
         { name: 'Form Templates', href: '/form-templates', icon: FileSpreadsheet, feature: 'settings', action: 'view' },
         { name: 'Position Quotas', href: '/position-quotas', icon: Users, feature: 'employees', action: 'view' },

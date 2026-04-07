@@ -75,6 +75,16 @@ export default function BudgetDashboard() {
     fetchData();
   }, [companyId]);
 
+  // Calculate actual totals from employees
+  const actualStats = useMemo(() => {
+    if (!employees.length) return { totalActual: 0, totalActualSalary: 0 };
+    
+    const totalActual = employees.length;
+    const totalActualSalary = employees.reduce((sum, emp) => sum + (emp.salary || 0), 0);
+    
+    return { totalActual, totalActualSalary };
+  }, [employees]);
+
   // Calculate budget statistics
   const budgetStats = useMemo(() => {
     if (!budgets.length) return null;
@@ -322,13 +332,13 @@ export default function BudgetDashboard() {
         </div>
       </div>
 
-      {/* Summary Cards */}
+      {/* Summary Cards - Budget */}
       {budgetStats && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl shadow-lg p-6 text-white">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-blue-100 text-sm font-medium">Total Monthly Budget</p>
+                <p className="text-blue-100 text-sm font-medium">Budget Monthly</p>
                 <p className="text-3xl font-bold mt-1">{formatCurrency(budgetStats.totalBudget)}</p>
               </div>
               <div className="p-3 bg-white/20 rounded-lg">
@@ -343,7 +353,7 @@ export default function BudgetDashboard() {
           <div className="bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-xl shadow-lg p-6 text-white">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-emerald-100 text-sm font-medium">Total Positions</p>
+                <p className="text-emerald-100 text-sm font-medium">Budget Positions</p>
                 <p className="text-3xl font-bold mt-1">{budgetStats.totalPositions}</p>
               </div>
               <div className="p-3 bg-white/20 rounded-lg">
@@ -386,6 +396,73 @@ export default function BudgetDashboard() {
           </div>
         </div>
       )}
+
+      {/* Summary Cards - Actual vs Budget */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mt-4">
+        <div className="bg-gradient-to-br from-rose-500 to-rose-600 rounded-xl shadow-lg p-6 text-white">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-rose-100 text-sm font-medium">Actual Monthly</p>
+              <p className="text-3xl font-bold mt-1">{formatCurrency(actualStats.totalActualSalary)}</p>
+            </div>
+            <div className="p-3 bg-white/20 rounded-lg">
+              <CreditCard className="h-6 w-6 text-white" />
+            </div>
+          </div>
+          <p className="text-rose-100 text-sm mt-2">
+            {actualStats.totalActual} active employees
+          </p>
+        </div>
+
+        <div className="bg-gradient-to-br from-cyan-500 to-cyan-600 rounded-xl shadow-lg p-6 text-white">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-cyan-100 text-sm font-medium">Actual Count</p>
+              <p className="text-3xl font-bold mt-1">{actualStats.totalActual}</p>
+            </div>
+            <div className="p-3 bg-white/20 rounded-lg">
+              <Users className="h-6 w-6 text-white" />
+            </div>
+          </div>
+          <p className="text-cyan-100 text-sm mt-2">
+            Active employees in system
+          </p>
+        </div>
+
+        <div className="bg-gradient-to-br from-indigo-500 to-indigo-600 rounded-xl shadow-lg p-6 text-white">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-indigo-100 text-sm font-medium">Variance</p>
+              <p className={`text-3xl font-bold mt-1 ${(actualStats.totalActualSalary - (budgetStats?.totalBudget || 0)) > 0 ? 'text-red-200' : 'text-green-200'}`}>
+                {formatCurrency(actualStats.totalActualSalary - (budgetStats?.totalBudget || 0))}
+              </p>
+            </div>
+            <div className="p-3 bg-white/20 rounded-lg">
+              <TrendingUp className="h-6 w-6 text-white" />
+            </div>
+          </div>
+          <p className="text-indigo-100 text-sm mt-2">
+            Actual vs Budget
+          </p>
+        </div>
+
+        <div className="bg-gradient-to-br from-teal-500 to-teal-600 rounded-xl shadow-lg p-6 text-white">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-teal-100 text-sm font-medium">Avg Actual Salary</p>
+              <p className="text-3xl font-bold mt-1">
+                {actualStats.totalActual > 0 ? formatCurrency(actualStats.totalActualSalary / actualStats.totalActual) : '$0'}
+              </p>
+            </div>
+            <div className="p-3 bg-white/20 rounded-lg">
+              <Calculator className="h-6 w-6 text-white" />
+            </div>
+          </div>
+          <p className="text-teal-100 text-sm mt-2">
+            Per active employee
+          </p>
+        </div>
+      </div>
 
       {/* Tabs */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-200">

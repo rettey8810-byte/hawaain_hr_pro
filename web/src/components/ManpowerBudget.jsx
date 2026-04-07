@@ -504,6 +504,29 @@ export default function ManpowerBudget() {
                           </td>
                         </tr>
                       ))}
+                      {/* Department Totals Row */}
+                      <tr className="bg-blue-50 font-semibold border-t-2 border-blue-200">
+                        <td className="px-3 py-3 text-blue-800" colSpan="2">{deptName} Totals</td>
+                        <td className="px-3 py-3 text-right text-emerald-700">
+                          ${deptBudgets.reduce((sum, b) => sum + (parseFloat(b.salary) || 0), 0).toLocaleString()}
+                        </td>
+                        <td className="px-3 py-3 text-center text-blue-700">
+                          {deptBudgets.reduce((sum, b) => sum + (parseInt(b.actual2026) || 0), 0)}
+                        </td>
+                        <td className="px-3 py-3 text-center bg-blue-100/50">
+                          {deptBudgets.reduce((sum, b) => sum + (parseInt(b.requiredManpower?.['100_80']) || 0), 0) || '-'}
+                        </td>
+                        <td className="px-3 py-3 text-center bg-green-100/50">
+                          {deptBudgets.reduce((sum, b) => sum + (parseInt(b.requiredManpower?.['80_65']) || 0), 0) || '-'}
+                        </td>
+                        <td className="px-3 py-3 text-center bg-yellow-100/50">
+                          {deptBudgets.reduce((sum, b) => sum + (parseInt(b.requiredManpower?.['65_50']) || 0), 0) || '-'}
+                        </td>
+                        <td className="px-3 py-3 text-center bg-red-100/50">
+                          {deptBudgets.reduce((sum, b) => sum + (parseInt(b.requiredManpower?.below50) || 0), 0) || '-'}
+                        </td>
+                        <td className="px-3 py-3 text-center text-gray-400">-</td>
+                      </tr>
                     </tbody>
                   </table>
                 </div>
@@ -585,7 +608,8 @@ export default function ManpowerBudget() {
                       );
                       if (matchingEmps.length > 0) {
                         const avgSalary = matchingEmps.reduce((sum, emp) => {
-                          const sal = parseFloat(emp['Basic(USD)'] || emp['Fixed(USD)'] || emp['TotalSalary(USD)'] || 0);
+                          // Priority: TotalSalary(USD) > Fixed(USD) > Basic(USD) > 0
+                          const sal = parseFloat(emp['TotalSalary(USD)'] || emp['Fixed(USD)'] || emp['Basic(USD)'] || 0);
                           return sum + sal;
                         }, 0) / matchingEmps.length;
                         if (avgSalary > 0) {

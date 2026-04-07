@@ -6,38 +6,38 @@ import { db } from '../firebase/config';
 import { collection, query, where, getDocs, addDoc, updateDoc, deleteDoc, doc } from 'firebase/firestore';
 import { formatDate, calculateDaysRemaining } from '../utils/helpers';
 
-// Default Maldives Public Holidays 2025
-const DEFAULT_MALDIVES_HOLIDAYS_2025 = [
-  { date: '2025-01-01', name: "New Year's Day", type: 'Public Holiday' },
-  { date: '2025-02-05', name: 'Majlis Presidential Address', type: 'Government Holiday' },
-  { date: '2025-02-18', name: 'Ramadan Start', type: 'Public Holiday' },
-  { date: '2025-03-09', name: 'Ramadan Holiday', type: 'Government Holiday' },
-  { date: '2025-03-10', name: 'Ramadan Holiday', type: 'Government Holiday' },
-  { date: '2025-03-11', name: 'Ramadan Holiday', type: 'Government Holiday' },
-  { date: '2025-03-12', name: 'Ramadan Holiday', type: 'Government Holiday' },
-  { date: '2025-03-13', name: 'Ramadan Holiday', type: 'Government Holiday' },
-  { date: '2025-03-14', name: 'Ramadan Holiday', type: 'Government Holiday' },
-  { date: '2025-03-15', name: 'Ramadan Holiday', type: 'Government Holiday' },
-  { date: '2025-03-16', name: 'Ramadan Holiday', type: 'Government Holiday' },
-  { date: '2025-03-17', name: 'Ramadan Holiday', type: 'Government Holiday' },
-  { date: '2025-03-18', name: 'Ramadan Holiday', type: 'Government Holiday' },
-  { date: '2025-03-20', name: 'Eid-ul-Fithr', type: 'Public Holiday' },
-  { date: '2025-03-21', name: 'Eid-ul-Fithr Holiday', type: 'Public Holiday' },
-  { date: '2025-03-22', name: 'Eid-ul-Fithr Holiday', type: 'Public Holiday' },
-  { date: '2025-05-01', name: 'Labor Day', type: 'Public Holiday' },
-  { date: '2025-05-26', name: 'Hajj Day', type: 'Public Holiday', note: 'Tentative Date' },
-  { date: '2025-05-27', name: "Eid-ul Al'haa", type: 'Public Holiday', note: 'Tentative Date' },
-  { date: '2025-05-28', name: "Eid-ul Al'haa Holiday", type: 'Bank and Government Holiday' },
-  { date: '2025-05-29', name: "Eid-ul Al'haa Holiday", type: 'Bank and Government Holiday' },
-  { date: '2025-05-30', name: "Eid-ul Al'haa Holiday", type: 'Bank and Government Holiday' },
-  { date: '2025-06-17', name: 'Muharram', type: 'Public Holiday', note: 'Tentative Date' },
-  { date: '2025-07-26', name: 'Independence Day', type: 'Public Holiday' },
-  { date: '2025-07-27', name: 'Independence Day Holiday', type: 'Public Holiday' },
-  { date: '2025-08-14', name: 'National Day', type: 'Public Holiday' },
-  { date: '2025-08-26', name: 'Milad un Nabi', type: 'Public Holiday', note: 'Tentative Date' },
-  { date: '2025-09-14', name: 'The Day Maldives Embraced Islam', type: 'Public Holiday', note: 'Tentative Date' },
-  { date: '2025-11-03', name: 'Victory Day', type: 'Public Holiday' },
-  { date: '2025-11-11', name: 'Republic Day', type: 'Public Holiday' },
+// Default Maldives Public Holidays 2026
+const DEFAULT_MALDIVES_HOLIDAYS_2026 = [
+  { date: '2026-01-01', name: "New Year's Day", type: 'Public Holiday' },
+  { date: '2026-02-05', name: 'Majlis Presidential Address', type: 'Government Holiday' },
+  { date: '2026-02-18', name: 'Ramadan Start', type: 'Public Holiday' },
+  { date: '2026-03-09', name: 'Ramadan Holiday', type: 'Government Holiday' },
+  { date: '2026-03-10', name: 'Ramadan Holiday', type: 'Government Holiday' },
+  { date: '2026-03-11', name: 'Ramadan Holiday', type: 'Government Holiday' },
+  { date: '2026-03-12', name: 'Ramadan Holiday', type: 'Government Holiday' },
+  { date: '2026-03-13', name: 'Ramadan Holiday', type: 'Government Holiday' },
+  { date: '2026-03-14', name: 'Ramadan Holiday', type: 'Government Holiday' },
+  { date: '2026-03-15', name: 'Ramadan Holiday', type: 'Government Holiday' },
+  { date: '2026-03-16', name: 'Ramadan Holiday', type: 'Government Holiday' },
+  { date: '2026-03-17', name: 'Ramadan Holiday', type: 'Government Holiday' },
+  { date: '2026-03-18', name: 'Ramadan Holiday', type: 'Government Holiday' },
+  { date: '2026-03-20', name: 'Eid-ul-Fithr', type: 'Public Holiday' },
+  { date: '2026-03-21', name: 'Eid-ul-Fithr Holiday', type: 'Public Holiday' },
+  { date: '2026-03-22', name: 'Eid-ul-Fithr Holiday', type: 'Public Holiday' },
+  { date: '2026-05-01', name: 'Labor Day', type: 'Public Holiday' },
+  { date: '2026-05-26', name: 'Hajj Day', type: 'Public Holiday', note: 'Tentative Date' },
+  { date: '2026-05-27', name: "Eid-ul Al'haa", type: 'Public Holiday', note: 'Tentative Date' },
+  { date: '2026-05-28', name: "Eid-ul Al'haa Holiday", type: 'Bank and Government Holiday' },
+  { date: '2026-05-29', name: "Eid-ul Al'haa Holiday", type: 'Bank and Government Holiday' },
+  { date: '2026-05-30', name: "Eid-ul Al'haa Holiday", type: 'Bank and Government Holiday' },
+  { date: '2026-06-17', name: 'Muharram', type: 'Public Holiday', note: 'Tentative Date' },
+  { date: '2026-07-26', name: 'Independence Day', type: 'Public Holiday' },
+  { date: '2026-07-27', name: 'Independence Day Holiday', type: 'Public Holiday' },
+  { date: '2026-08-14', name: 'National Day', type: 'Public Holiday' },
+  { date: '2026-08-26', name: 'Milad un Nabi', type: 'Public Holiday', note: 'Tentative Date' },
+  { date: '2026-09-14', name: 'The Day Maldives Embraced Islam', type: 'Public Holiday', note: 'Tentative Date' },
+  { date: '2026-11-03', name: 'Victory Day', type: 'Public Holiday' },
+  { date: '2026-11-11', name: 'Republic Day', type: 'Public Holiday' },
 ];
 
 export default function PublicHolidays() {
@@ -58,20 +58,20 @@ export default function PublicHolidays() {
         const q = query(
           collection(db, 'publicHolidays'),
           where('companyId', '==', companyId),
-          where('year', '==', 2025)
+          where('year', '==', 2026)
         );
         const snap = await getDocs(q);
         const holidayList = snap.docs.map(d => ({ id: d.id, ...d.data() }));
         
         // If no holidays found, use defaults
         if (holidayList.length === 0) {
-          setHolidays(DEFAULT_MALDIVES_HOLIDAYS_2025.map(h => ({ ...h, year: 2025 })));
+          setHolidays(DEFAULT_MALDIVES_HOLIDAYS_2026.map(h => ({ ...h, year: 2026 })));
         } else {
           setHolidays(holidayList);
         }
       } catch (err) {
         console.error('Error fetching holidays:', err);
-        setHolidays(DEFAULT_MALDIVES_HOLIDAYS_2025.map(h => ({ ...h, year: 2025 })));
+        setHolidays(DEFAULT_MALDIVES_HOLIDAYS_2026.map(h => ({ ...h, year: 2026 })));
       } finally {
         setLoading(false);
       }
@@ -86,7 +86,7 @@ export default function PublicHolidays() {
     try {
       const newHoliday = {
         ...formData,
-        year: 2025,
+        year: 2026,
         companyId,
         createdAt: new Date().toISOString()
       };
@@ -104,8 +104,21 @@ export default function PublicHolidays() {
     if (!editingHoliday) return;
     
     try {
-      await updateDoc(doc(db, 'publicHolidays', editingHoliday.id), editingHoliday);
-      setHolidays(holidays.map(h => h.id === editingHoliday.id ? editingHoliday : h));
+      // If holiday has no ID (default holiday), add it as new
+      if (!editingHoliday.id) {
+        const newHoliday = {
+          ...editingHoliday,
+          year: 2026,
+          companyId,
+          createdAt: new Date().toISOString()
+        };
+        const docRef = await addDoc(collection(db, 'publicHolidays'), newHoliday);
+        setHolidays([...holidays, { id: docRef.id, ...newHoliday }]);
+      } else {
+        // Update existing holiday
+        await updateDoc(doc(db, 'publicHolidays', editingHoliday.id), editingHoliday);
+        setHolidays(holidays.map(h => h.id === editingHoliday.id ? editingHoliday : h));
+      }
       setEditingHoliday(null);
     } catch (err) {
       console.error('Error updating holiday:', err);
@@ -145,7 +158,7 @@ export default function PublicHolidays() {
       {/* Header */}
       <div className="md:flex md:items-center md:justify-between bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500 rounded-2xl p-6 text-white shadow-xl relative overflow-hidden">
         <div className="min-w-0 flex-1 relative z-10">
-          <h2 className="text-3xl font-bold leading-7">📅 Public Holidays 2025</h2>
+          <h2 className="text-3xl font-bold leading-7">📅 Public Holidays 2026</h2>
           <p className="mt-1 text-sm text-white/80">Maldives Public Holidays and Special Days</p>
         </div>
         {isHR?.() && (

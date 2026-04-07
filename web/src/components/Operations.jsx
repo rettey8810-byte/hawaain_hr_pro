@@ -338,6 +338,204 @@ export default function Operations() {
           </div>
         ))}
       </div>
+
+      {/* Modals */}
+      <DisciplinaryModal 
+        isOpen={dModal} 
+        onClose={() => setDModal(false)} 
+        onSave={() => handleSave('disciplinary')}
+        employees={employees}
+        formData={dForm}
+        setFormData={setDForm}
+      />
+      <GrievanceModal 
+        isOpen={gModal} 
+        onClose={() => setGModal(false)} 
+        onSave={() => handleSave('grievance')}
+        formData={gForm}
+        setFormData={setGForm}
+      />
+      <ExitModal 
+        isOpen={eModal} 
+        onClose={() => setEModal(false)} 
+        onSave={() => handleSave('exit')}
+        employees={employees}
+        formData={eForm}
+        setFormData={setEForm}
+        voiceRecorder={voiceRecorder}
+      />
+
+      {/* Delete Confirmation Modal */}
+      {delModal.open && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl p-6 max-w-sm w-full">
+            <h3 className="text-lg font-bold mb-2">Confirm Delete</h3>
+            <p className="text-gray-600 mb-4">Are you sure you want to delete this record?</p>
+            <div className="flex justify-end gap-2">
+              <button onClick={() => setDelModal({ open: false, id: null, type: '' })} className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg">Cancel</button>
+              <button onClick={handleDelete} className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700">Delete</button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// Modal Components (exported for use)
+export function DisciplinaryModal({ isOpen, onClose, onSave, employees, formData, setFormData }) {
+  if (!isOpen) return null;
+  return (
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
+        <div className="flex justify-between items-center p-4 border-b">
+          <h3 className="text-lg font-bold flex items-center gap-2"><AlertTriangle className="w-5 h-5 text-red-600" /> Add Disciplinary Action</h3>
+          <button onClick={onClose} className="p-1 hover:bg-gray-100 rounded"><X className="w-5 h-5" /></button>
+        </div>
+        <div className="p-4 space-y-4">
+          <div>
+            <label className="block text-sm font-medium mb-1">Employee *</label>
+            <select value={formData.employeeId} onChange={(e) => setFormData({...formData, employeeId: e.target.value})} className="w-full px-3 py-2 border rounded-lg">
+              <option value="">Select Employee...</option>
+              {employees.map(e => <option key={e.id} value={e.id}>{e.name}</option>)}
+            </select>
+          </div>
+          <div>
+            <label className="block text-sm font-medium mb-1">Type *</label>
+            <select value={formData.type} onChange={(e) => setFormData({...formData, type: e.target.value})} className="w-full px-3 py-2 border rounded-lg">
+              <option value="">Select Type...</option>
+              {DISCIPLINARY_TYPES.map(t => <option key={t.id} value={t.id}>{t.label}</option>)}
+            </select>
+          </div>
+          <div>
+            <label className="block text-sm font-medium mb-1">Category</label>
+            <select value={formData.category} onChange={(e) => setFormData({...formData, category: e.target.value})} className="w-full px-3 py-2 border rounded-lg">
+              <option value="">Select Category...</option>
+              {INCIDENT_CATEGORIES.map(c => <option key={c.id} value={c.id}>{c.label}</option>)}
+            </select>
+          </div>
+          <div>
+            <label className="block text-sm font-medium mb-1">Incident Description</label>
+            <textarea value={formData.incident} onChange={(e) => setFormData({...formData, incident: e.target.value})} className="w-full px-3 py-2 border rounded-lg" rows="3" />
+          </div>
+          <div>
+            <label className="block text-sm font-medium mb-1">Date</label>
+            <input type="date" value={formData.date} onChange={(e) => setFormData({...formData, date: e.target.value})} className="w-full px-3 py-2 border rounded-lg" />
+          </div>
+        </div>
+        <div className="flex justify-end gap-2 p-4 border-t">
+          <button onClick={onClose} className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg">Cancel</button>
+          <button onClick={onSave} className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700">Save</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export function GrievanceModal({ isOpen, onClose, onSave, formData, setFormData }) {
+  if (!isOpen) return null;
+  return (
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
+        <div className="flex justify-between items-center p-4 border-b">
+          <h3 className="text-lg font-bold flex items-center gap-2"><FileWarning className="w-5 h-5 text-orange-600" /> Submit Grievance</h3>
+          <button onClick={onClose} className="p-1 hover:bg-gray-100 rounded"><X className="w-5 h-5" /></button>
+        </div>
+        <div className="p-4 space-y-4">
+          <div>
+            <label className="block text-sm font-medium mb-1">Type *</label>
+            <select value={formData.type} onChange={(e) => setFormData({...formData, type: e.target.value})} className="w-full px-3 py-2 border rounded-lg">
+              <option value="">Select Type...</option>
+              {GRIEVANCE_TYPES.map(t => <option key={t.id} value={t.id}>{t.label}</option>)}
+            </select>
+          </div>
+          <div>
+            <label className="block text-sm font-medium mb-1">Urgency</label>
+            <select value={formData.urgency} onChange={(e) => setFormData({...formData, urgency: e.target.value})} className="w-full px-3 py-2 border rounded-lg">
+              <option value="low">Low</option>
+              <option value="medium">Medium</option>
+              <option value="high">High</option>
+            </select>
+          </div>
+          <div>
+            <label className="block text-sm font-medium mb-1">Description *</label>
+            <textarea value={formData.description} onChange={(e) => setFormData({...formData, description: e.target.value})} className="w-full px-3 py-2 border rounded-lg" rows="4" />
+          </div>
+          <div>
+            <label className="block text-sm font-medium mb-1">Date</label>
+            <input type="date" value={formData.date} onChange={(e) => setFormData({...formData, date: e.target.value})} className="w-full px-3 py-2 border rounded-lg" />
+          </div>
+        </div>
+        <div className="flex justify-end gap-2 p-4 border-t">
+          <button onClick={onClose} className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg">Cancel</button>
+          <button onClick={onSave} className="px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700">Submit</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export function ExitModal({ isOpen, onClose, onSave, employees, formData, setFormData, voiceRecorder }) {
+  if (!isOpen) return null;
+  return (
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
+        <div className="flex justify-between items-center p-4 border-b">
+          <h3 className="text-lg font-bold flex items-center gap-2"><LogOut className="w-5 h-5 text-blue-600" /> Add Exit Record</h3>
+          <button onClick={onClose} className="p-1 hover:bg-gray-100 rounded"><X className="w-5 h-5" /></button>
+        </div>
+        <div className="p-4 space-y-4">
+          <div>
+            <label className="block text-sm font-medium mb-1">Employee *</label>
+            <select value={formData.employeeId} onChange={(e) => setFormData({...formData, employeeId: e.target.value})} className="w-full px-3 py-2 border rounded-lg">
+              <option value="">Select Employee...</option>
+              {employees.map(e => <option key={e.id} value={e.id}>{e.name}</option>)}
+            </select>
+          </div>
+          <div>
+            <label className="block text-sm font-medium mb-1">Reason *</label>
+            <select value={formData.reason} onChange={(e) => setFormData({...formData, reason: e.target.value})} className="w-full px-3 py-2 border rounded-lg">
+              <option value="">Select Reason...</option>
+              {EXIT_REASONS.map(r => <option key={r.id} value={r.id}>{r.label}</option>)}
+            </select>
+          </div>
+          <div>
+            <label className="block text-sm font-medium mb-1">Last Day *</label>
+            <input type="date" value={formData.lastDay} onChange={(e) => setFormData({...formData, lastDay: e.target.value})} className="w-full px-3 py-2 border rounded-lg" />
+          </div>
+          <div>
+            <label className="block text-sm font-medium mb-1">Notice Date</label>
+            <input type="date" value={formData.noticeDate} onChange={(e) => setFormData({...formData, noticeDate: e.target.value})} className="w-full px-3 py-2 border rounded-lg" />
+          </div>
+          <div>
+            <label className="block text-sm font-medium mb-1">Exit Interview Notes</label>
+            <textarea value={formData.interviewNotes} onChange={(e) => setFormData({...formData, interviewNotes: e.target.value})} className="w-full px-3 py-2 border rounded-lg" rows="3" />
+          </div>
+          {voiceRecorder && (
+            <div>
+              <label className="block text-sm font-medium mb-1">Voice Recording</label>
+              <div className="flex items-center gap-2">
+                {!voiceRecorder.isRecording ? (
+                  <button onClick={voiceRecorder.startRecording} className="px-4 py-2 bg-indigo-600 text-white rounded-lg flex items-center gap-2">
+                    <Mic className="w-4 h-4" /> Record
+                  </button>
+                ) : (
+                  <button onClick={voiceRecorder.stopRecording} className="px-4 py-2 bg-red-600 text-white rounded-lg flex items-center gap-2">
+                    <Square className="w-4 h-4" /> Stop ({Math.floor(voiceRecorder.recordingTime/60)}:{(voiceRecorder.recordingTime%60).toString().padStart(2,'0')})
+                  </button>
+                )}
+                {voiceRecorder.audioUrl && (
+                  <audio src={voiceRecorder.audioUrl} controls className="h-8" />
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+        <div className="flex justify-end gap-2 p-4 border-t">
+          <button onClick={onClose} className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg">Cancel</button>
+          <button onClick={onSave} className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">Save</button>
+        </div>
+      </div>
     </div>
   );
 }

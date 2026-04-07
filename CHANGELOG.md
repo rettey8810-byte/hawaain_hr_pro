@@ -5,6 +5,68 @@ All notable changes to Hawaain HR Pro will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.3.1] - 2026-04-07
+
+### 🚀 Added - Termination Management Module
+
+#### New Terminations Page (`/terminations`)
+- **Termination Types** - Voluntary Resignation, Involuntary Termination, End of Contract, Retirement, Mutual Agreement
+- **Status Tracking** - Pending, In Progress, Completed, Cancelled
+- **Exit Checklist** - 8-point checklist including: Notice Period, Work Handover, Assets Return, Clearance, Final Pay, Exit Interview, Benefits, Access Revocation
+- **Employee Details** - Track employee name, last working date, reason, notice period days, settlement amount
+- **Statistics Dashboard** - Total, Pending, In Progress, Completed, This Month counts
+- **CSV Export** - Export termination records to CSV
+- **Expandable Records** - Click to view full termination details and checklist status
+- **Navigation** - Added to HR Management menu with UserX icon
+
+### 🔧 Fixed
+
+#### Manpower Budget Salary Fetch
+- **Priority Fix** - Changed salary fetch priority to `TotalSalary(USD) > Fixed(USD) > Basic(USD)`
+- **Previously** was fetching `Basic(USD)` first which could be hourly rate instead of total salary
+
+#### Public Holidays 2026
+- **Year Update** - Updated all default holidays from 2025 to 2026
+- **Edit Fix** - Fixed "Cannot read properties of undefined (reading 'indexOf')" error when editing default holidays
+- **ID Handling** - Default holidays without IDs are now saved as new records when edited
+
+#### Document Pages - Clickable Stats with Filter & Export
+- **All Document Pages** - Passports, Visas, Work Permits, Medicals now have clickable stats cards
+- **Filter Functionality** - Click any stat to filter the list (Expired, <30 days, 30-60 days, 60-90 days)
+- **Export Filtered** - Export only the filtered data to CSV
+- **Filter Indicator** - Shows active filter with clear button and count
+- **Active State** - Stats cards highlight when active filter applied
+
+#### Operations Page
+- **Missing Modals** - Added DisciplinaryModal, GrievanceModal, ExitModal components
+- **Add Button** - Now properly opens the correct modal based on active tab
+- **Delete Confirmation** - Added confirmation modal for delete actions
+
+#### Manpower Budget - Department Totals
+- **Totals Row** - Added department totals row showing:
+  - Total Salary for department
+  - Total Actual 2026 count
+  - Total Required positions for each tier (100-80%, 80-65%, 65-50%, Below 50%)
+- **Visual Highlight** - Blue background with bold text for totals row
+
+#### Budget Dashboard - Actual vs Budget Stats
+- **New Stats Row** - Added second row of 4 cards showing:
+  - Actual Monthly Salary (total of all active employee salaries)
+  - Actual Employee Count
+  - Variance (Actual - Budget)
+  - Average Actual Salary per employee
+- **Color Coding** - Variance shows red for over budget, green for under
+
+### 📁 Files Changed
+- `ManpowerBudget.jsx` - Salary priority, department totals
+- `BudgetDashboard.jsx` - Actual stats, variance calculation
+- `PublicHolidays.jsx` - 2026 dates, edit fix
+- `Operations.jsx` - Added modals
+- `Passports.jsx`, `Visas.jsx`, `WorkPermits.jsx`, `Medicals.jsx` - Clickable stats
+- `Terminations.jsx` - New component
+- `Layout.jsx` - Added Terminations menu item
+- `App.jsx` - Added Terminations route and import
+
 ## [2.3.0] - 2026-04-06
 
 ### 🚀 Added - Manpower Budget with Salary
