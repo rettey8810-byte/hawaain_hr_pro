@@ -18,6 +18,11 @@ export default function Passports() {
   const { isHR, userData } = useAuth();
   const { companyId } = useCompany();
   
+  // Debug logging
+  console.log('[Passports] isHR:', isHR?.());
+  console.log('[Passports] userData:', userData);
+  console.log('[Passports] userData?.role:', userData?.role);
+  
   const [searchTerm, setSearchTerm] = useState('');
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [selectedPassport, setSelectedPassport] = useState(null);
@@ -187,6 +192,10 @@ export default function Passports() {
           </p>
         </div>
         <div className="mt-4 flex md:ml-4 md:mt-0 space-x-2">
+          {/* DEBUG: Role check status */}
+          <div className="bg-black/30 text-white px-3 py-2 rounded text-xs font-mono">
+            Role: {userData?.role || 'none'} | isHR: {isHR?.() ? 'YES' : 'NO'}
+          </div>
           {isHR?.() && (
             <>
               <input

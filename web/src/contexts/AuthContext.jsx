@@ -26,16 +26,33 @@ export function useAuth() {
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
-  const [userData, setUserData] = useState(null);
+  const [userData, setUserDataState] = useState(() => {
+    // Load from localStorage on init
+    const saved = localStorage.getItem('auth_userData');
+    return saved ? JSON.parse(saved) : null;
+  });
   const [loading, setLoading] = useState(true);
+
+  const setUserData = (data) => {
+    console.log('[Auth] Setting userData:', data);
+    setUserDataState(data);
+    if (data) {
+      localStorage.setItem('auth_userData', JSON.stringify(data));
+    } else {
+      localStorage.removeItem('auth_userData');
+    }
+  };
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      console.log('[Auth] User changed:', user?.uid, user?.email);
       setUser(user);
       if (user) {
         const userDoc = await getDoc(doc(db, 'users', user.uid));
+        console.log('[Auth] User doc exists:', userDoc.exists());
         if (userDoc.exists()) {
           let data = userDoc.data();
+          console.log('[Auth] User data from Firestore:', data);
           
           // If superadmin has no company, auto-assign to first company
           if (data.role === 'superadmin' && !data.companyId) {
@@ -119,17 +136,17 @@ export function AuthProvider({ children }) {
   const currentRole = userData?.role;
   
   // Legacy checks for backward compatibility
-  const isHR = () => ['hrm', 'hr', 'admin', 'superadmin'].includes(currentRole);
-  const isGM = () => ['gm', 'general_manager', 'admin', 'superadmin'].includes(currentRole);
+  const isHR = () => ['hrm', 'hr', 'admin', 'superadmin', 'gm'].includes(userData?.role);
+  const isGM = () => ['gm', 'general_manager', 'admin', 'superadmin'].includes(userData?.role);
   const isHRorGM = () => isHR() || isGM();
-  const isAdmin = () => ['admin', 'superadmin'].includes(currentRole);
-  const isSuperAdmin = () => currentRole === 'superadmin';
+  const isAdmin = () => ['admin', 'superadmin'].includes(userData?.role);
+  const isSuperAdmin = () => userData?.role === 'superadmin';
   
   // New hierarchical role checks
-  const isHRM = () => currentRole === 'hrm';
-  const isDeptHead = () => currentRole === 'dept_head';
-  const isSupervisor = () => currentRole === 'supervisor';
-  const isStaff = () => currentRole === 'staff';
+  const isHRM = () => userData?.role === 'hrm';
+  const isDeptHead = () => userData?.role === 'dept_head';
+  const isSupervisor = () => userData?.role === 'supervisor';
+  const isStaff = () => userData?.role === 'staff';
   
   // Permission checks - uses custom permissions if set, otherwise defaults
   const canCreateUserRole = (targetRole) => canCreateRole(currentRole, targetRole);
