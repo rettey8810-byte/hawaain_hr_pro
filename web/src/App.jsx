@@ -44,6 +44,7 @@ import TransportationBooking from './components/TransportationBooking';
 import LeaveDetail from './components/LeaveDetail';
 import LeaveReports from './components/LeaveReports';
 import LeavePolicySettings from './components/LeavePolicySettings';
+import PublicHolidays from './components/PublicHolidays';
 
 // New HR Modules
 import Recruitment from './components/Recruitment';
@@ -534,6 +535,11 @@ function App() {
               <Route path="/leave-planner" element={
                 <PrivateRoute>
                   <Layout><LeavePlanner /></Layout>
+                </PrivateRoute>
+              } />
+              <Route path="/leave-planner/public-holidays" element={
+                <PrivateRoute>
+                  <Layout><PublicHolidays /></Layout>
                 </PrivateRoute>
               } />
               <Route path="/leave-planner/apply" element={
