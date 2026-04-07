@@ -188,7 +188,7 @@ export default function WorkPermits() {
           </p>
         </div>
         <div className="mt-4 flex md:ml-4 md:mt-0 space-x-2">
-          {isHR() && (
+          {isHR?.() && (
             <>
               <input
                 type="file"
@@ -371,7 +371,7 @@ export default function WorkPermits() {
                             <Eye className="h-4 w-4" />
                           </a>
                         )}
-                        {isHR() && (
+                        {isHR?.() && (
                           <>
                             <Link
                               to={`/work-permits/${permit.id}/edit`}

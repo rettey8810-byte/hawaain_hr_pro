@@ -184,7 +184,7 @@ export default function Visas() {
           <p className="mt-1 text-sm text-white/80">Track employee visa status and expiry dates</p>
         </div>
         <div className="mt-4 flex md:ml-4 md:mt-0 space-x-2">
-          {isHR() && (
+          {isHR?.() && (
             <>
               <input
                 type="file"
@@ -282,7 +282,7 @@ export default function Visas() {
                     <td className="px-3 py-4 whitespace-nowrap text-right text-sm font-medium">
                       <div className="flex justify-end space-x-2">
                         {visa.documentUrl && (<a href={visa.documentUrl} target="_blank" rel="noopener noreferrer" className="p-2 text-purple-600 hover:bg-purple-50 rounded-lg transition-colors"><Eye className="h-4 w-4" /></a>)}
-                        {isHR() && (<><Link to={`/visas/${visa.id}/edit`} className="p-2 text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"><Edit2 className="h-4 w-4" /></Link><button onClick={() => {setSelectedVisa(visa); setShowDeleteModal(true);}} className="p-2 text-rose-600 hover:bg-rose-50 rounded-lg transition-colors"><Trash2 className="h-4 w-4" /></button></>)}
+                        {isHR?.() && (<><Link to={`/visas/${visa.id}/edit`} className="p-2 text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"><Edit2 className="h-4 w-4" /></Link><button onClick={() => {setSelectedVisa(visa); setShowDeleteModal(true);}} className="p-2 text-rose-600 hover:bg-rose-50 rounded-lg transition-colors"><Trash2 className="h-4 w-4" /></button></>)}
                       </div>
                     </td>
                   </tr>

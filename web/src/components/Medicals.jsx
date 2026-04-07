@@ -182,7 +182,7 @@ export default function Medicals() {
           </p>
         </div>
         <div className="mt-4 flex md:ml-4 md:mt-0 space-x-2">
-          {isHR() && (
+          {isHR?.() && (
             <>
               <input
                 type="file"
@@ -318,7 +318,7 @@ export default function Medicals() {
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                       <div className="flex justify-end space-x-2">
                         {medical.documentUrl && (<a href={medical.documentUrl} target="_blank" rel="noopener noreferrer" className="p-2 text-rose-600 hover:bg-rose-50 rounded-lg transition-colors"><Eye className="h-4 w-4" /></a>)}
-                        {isHR() && (<><Link to={`/medical/${medical.id}/edit`} className="p-2 text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"><Edit2 className="h-4 w-4" /></Link><button onClick={() => {setSelectedMedical(medical); setShowDeleteModal(true);}} className="p-2 text-rose-600 hover:bg-rose-50 rounded-lg transition-colors"><Trash2 className="h-4 w-4" /></button></>)}
+                        {isHR?.() && (<><Link to={`/medical/${medical.id}/edit`} className="p-2 text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"><Edit2 className="h-4 w-4" /></Link><button onClick={() => {setSelectedMedical(medical); setShowDeleteModal(true);}} className="p-2 text-rose-600 hover:bg-rose-50 rounded-lg transition-colors"><Trash2 className="h-4 w-4" /></button></>)}
                       </div>
                     </td>
                   </tr>
