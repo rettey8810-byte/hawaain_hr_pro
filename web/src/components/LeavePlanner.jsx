@@ -368,9 +368,11 @@ export default function LeavePlanner() {
 
   const stats = {
     total: filteredLeaves.length,
-    pending: filteredLeaves.filter(l => l.status === 'pending').length,
-    approved: filteredLeaves.filter(l => l.status === 'approved').length,
-    withTransport: filteredLeaves.filter(l => l.transportation?.required).length
+    annual: filteredLeaves.filter(l => l.leaveType === 'annual').length,
+    sick: filteredLeaves.filter(l => l.leaveType === 'sick').length,
+    unpaid: filteredLeaves.filter(l => l.leaveType === 'unpaid').length,
+    emergency: filteredLeaves.filter(l => l.leaveType === 'emergency').length,
+    other: filteredLeaves.filter(l => l.leaveType === 'other' || !l.leaveType).length
   };
 
   // Tab content based on active tab
@@ -769,7 +771,7 @@ export default function LeavePlanner() {
     <div className="space-y-6">
       {/* Header - Modern Gradient with Illustration */}
       <div className="md:flex md:items-center md:justify-between bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500 rounded-2xl p-6 text-white shadow-xl relative overflow-hidden">
-        <div className="absolute right-0 top-0 h-full w-1/3 opacity-20">
+        <div className="absolute right-0 top-0 h-full w-1/3 opacity-20 pointer-events-none">
           <img 
             src="/storyset/Palm tree-cuate.svg" 
             alt="Leave" 
@@ -803,7 +805,7 @@ export default function LeavePlanner() {
       </div>
 
       {/* Stats Summary - Colorful Cards - Mobile Responsive */}
-      <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4">
         <div className="bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl p-4 text-white shadow-lg transform hover:scale-105 transition-all">
           <div className="flex items-center">
             <div className="p-2 bg-white/20 rounded-lg mr-3">
@@ -815,36 +817,58 @@ export default function LeavePlanner() {
             </div>
           </div>
         </div>
-        <div className="bg-gradient-to-br from-amber-400 to-orange-500 rounded-2xl p-4 text-white shadow-lg transform hover:scale-105 transition-all">
+        <div className="bg-gradient-to-br from-emerald-400 to-green-500 rounded-2xl p-4 text-white shadow-lg transform hover:scale-105 transition-all">
           <div className="flex items-center">
             <div className="p-2 bg-white/20 rounded-lg mr-3">
-              <Clock className="h-5 w-5 text-white" />
+              <span className="text-lg">🏖️</span>
             </div>
             <div>
-              <p className="text-xs text-white/80 font-medium">Pending</p>
-              <p className="text-2xl font-bold">{stats.pending}</p>
+              <p className="text-xs text-white/80 font-medium">Annual</p>
+              <p className="text-2xl font-bold">{stats.annual}</p>
             </div>
           </div>
         </div>
-        <div className="bg-gradient-to-br from-emerald-400 to-teal-500 rounded-2xl p-4 text-white shadow-lg transform hover:scale-105 transition-all">
+        <div className="bg-gradient-to-br from-rose-400 to-red-500 rounded-2xl p-4 text-white shadow-lg transform hover:scale-105 transition-all">
           <div className="flex items-center">
             <div className="p-2 bg-white/20 rounded-lg mr-3">
-              <CheckCircle className="h-5 w-5 text-white" />
+              <span className="text-lg">🤒</span>
             </div>
             <div>
-              <p className="text-xs text-white/80 font-medium">Approved</p>
-              <p className="text-2xl font-bold">{stats.approved}</p>
+              <p className="text-xs text-white/80 font-medium">Sick</p>
+              <p className="text-2xl font-bold">{stats.sick}</p>
+            </div>
+          </div>
+        </div>
+        <div className="bg-gradient-to-br from-amber-400 to-orange-500 rounded-2xl p-4 text-white shadow-lg transform hover:scale-105 transition-all">
+          <div className="flex items-center">
+            <div className="p-2 bg-white/20 rounded-lg mr-3">
+              <span className="text-lg">💰</span>
+            </div>
+            <div>
+              <p className="text-xs text-white/80 font-medium">Unpaid</p>
+              <p className="text-2xl font-bold">{stats.unpaid}</p>
             </div>
           </div>
         </div>
         <div className="bg-gradient-to-br from-purple-500 to-violet-600 rounded-2xl p-4 text-white shadow-lg transform hover:scale-105 transition-all">
           <div className="flex items-center">
             <div className="p-2 bg-white/20 rounded-lg mr-3">
-              <Plane className="h-5 w-5 text-white" />
+              <span className="text-lg">🚨</span>
             </div>
             <div>
-              <p className="text-xs text-white/80 font-medium">With Transport</p>
-              <p className="text-2xl font-bold">{stats.withTransport}</p>
+              <p className="text-xs text-white/80 font-medium">Emergency</p>
+              <p className="text-2xl font-bold">{stats.emergency}</p>
+            </div>
+          </div>
+        </div>
+        <div className="bg-gradient-to-br from-cyan-400 to-blue-500 rounded-2xl p-4 text-white shadow-lg transform hover:scale-105 transition-all">
+          <div className="flex items-center">
+            <div className="p-2 bg-white/20 rounded-lg mr-3">
+              <span className="text-lg">📋</span>
+            </div>
+            <div>
+              <p className="text-xs text-white/80 font-medium">Other</p>
+              <p className="text-2xl font-bold">{stats.other}</p>
             </div>
           </div>
         </div>
