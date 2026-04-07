@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
-import { Plus, Search, Eye, Edit2, Trash2, AlertTriangle, Download, Upload } from 'lucide-react';
+import { Plus, Search, Eye, Edit2, Trash2, AlertTriangle, Download, Upload, X } from 'lucide-react';
 import { useFirestore } from '../hooks/useFirestore';
 import { useAuth } from '../contexts/AuthContext';
 import { useCompany } from '../contexts/CompanyContext';
@@ -23,6 +23,7 @@ export default function WorkPermits() {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [selectedPermit, setSelectedPermit] = useState(null);
   const [filteredPermits, setFilteredPermits] = useState([]);
+  const [activeFilter, setActiveFilter] = useState(null); // 'expired', '30days', '60days', '90days'
 
   // Fetch ALL employees and work permits for lookup
   const fetchAllData = useCallback(async () => {
@@ -62,6 +63,25 @@ export default function WorkPermits() {
       filtered = filtered.filter(p => p.employeeId === employeeId);
     }
     
+    // Apply active filter from stats click
+    if (activeFilter) {
+      filtered = filtered.filter(p => {
+        const days = calculateDaysRemaining(p.expiryDate);
+        switch (activeFilter) {
+          case 'expired':
+            return days <= 0;
+          case '30days':
+            return days > 0 && days <= 30;
+          case '60days':
+            return days > 30 && days <= 60;
+          case '90days':
+            return days > 60 && days <= 90;
+          default:
+            return true;
+        }
+      });
+    }
+    
     if (searchTerm) {
       filtered = filtered.filter(p => {
         const employee = employees.find(e => e.id === p.employeeId);
@@ -74,7 +94,7 @@ export default function WorkPermits() {
     }
     
     setFilteredPermits(filtered);
-  }, [allPermits, employeeId, searchTerm, employees]);
+  }, [allPermits, employeeId, searchTerm, employees, activeFilter]);
 
   const handleDelete = async () => {
     if (selectedPermit) {
@@ -128,6 +148,36 @@ export default function WorkPermits() {
     const a = document.createElement('a');
     a.href = url;
     a.download = `work_permits_${new Date().toISOString().split('T')[0]}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  // Export filtered to CSV
+  const exportFilteredToCSV = () => {
+    const headers = ['Employee Name', 'Employee ID', 'Permit Number', 'Job Position', 'Employer', 'Expiry Date', 'Status', 'Days Remaining'];
+    
+    const rows = filteredPermits.map(p => {
+      const empInfo = getEmployeeInfo(p.employeeId);
+      const days = calculateDaysRemaining(p.expiryDate);
+      return [
+        empInfo.name,
+        empInfo.empId,
+        p.permitNumber || '',
+        p.jobPosition || '',
+        p.employer || '',
+        formatDate(p.expiryDate),
+        days <= 0 ? 'Expired' : days <= 30 ? 'Expiring Soon' : days <= 60 ? 'Warning' : days <= 90 ? 'Attention' : 'Valid',
+        days !== null ? days : ''
+      ];
+    });
+
+    const csvContent = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    const filterLabel = activeFilter ? `_${activeFilter}` : '';
+    a.download = `work_permits${filterLabel}_${new Date().toISOString().split('T')[0]}.csv`;
     a.click();
     URL.revokeObjectURL(url);
   };
@@ -230,60 +280,100 @@ export default function WorkPermits() {
 
       {/* Alerts Summary - Colorful Cards - Mobile Responsive */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
-        <div className="bg-gradient-to-br from-rose-500 to-red-600 rounded-2xl p-4 text-white shadow-lg transform hover:scale-105 transition-all">
+        <button 
+          onClick={() => setActiveFilter(activeFilter === 'expired' ? null : 'expired')}
+          className={`bg-gradient-to-br from-rose-500 to-red-600 rounded-2xl p-4 text-white shadow-lg transform hover:scale-105 transition-all text-left ${activeFilter === 'expired' ? 'ring-4 ring-rose-300' : ''}`}
+        >
           <div className="flex items-center">
             <div className="p-2 bg-white/20 rounded-lg mr-3">
               <AlertTriangle className="h-5 w-5 text-white" />
             </div>
             <div>
               <p className="text-xs text-white/80 font-medium">Expired</p>
-              <p className="text-2xl font-bold">{filteredPermits.filter(p => calculateDaysRemaining(p.expiryDate) <= 0).length}</p>
+              <p className="text-2xl font-bold">{allPermits.filter(p => calculateDaysRemaining(p.expiryDate) <= 0).length}</p>
             </div>
           </div>
-        </div>
-        <div className="bg-gradient-to-br from-orange-400 to-amber-500 rounded-2xl p-4 text-white shadow-lg transform hover:scale-105 transition-all">
+        </button>
+        <button 
+          onClick={() => setActiveFilter(activeFilter === '30days' ? null : '30days')}
+          className={`bg-gradient-to-br from-orange-400 to-amber-500 rounded-2xl p-4 text-white shadow-lg transform hover:scale-105 transition-all text-left ${activeFilter === '30days' ? 'ring-4 ring-orange-300' : ''}`}
+        >
           <div className="flex items-center">
             <div className="p-2 bg-white/20 rounded-lg mr-3">
               <AlertTriangle className="h-5 w-5 text-white" />
             </div>
             <div>
               <p className="text-xs text-white/80 font-medium">&lt; 30 days</p>
-              <p className="text-2xl font-bold">{filteredPermits.filter(p => {
+              <p className="text-2xl font-bold">{allPermits.filter(p => {
                 const days = calculateDaysRemaining(p.expiryDate);
                 return days > 0 && days <= 30;
               }).length}</p>
             </div>
           </div>
-        </div>
-        <div className="bg-gradient-to-br from-yellow-400 to-amber-500 rounded-2xl p-4 text-white shadow-lg transform hover:scale-105 transition-all">
+        </button>
+        <button 
+          onClick={() => setActiveFilter(activeFilter === '60days' ? null : '60days')}
+          className={`bg-gradient-to-br from-yellow-400 to-amber-500 rounded-2xl p-4 text-white shadow-lg transform hover:scale-105 transition-all text-left ${activeFilter === '60days' ? 'ring-4 ring-yellow-300' : ''}`}
+        >
           <div className="flex items-center">
             <div className="p-2 bg-white/20 rounded-lg mr-3">
               <AlertTriangle className="h-5 w-5 text-white" />
             </div>
             <div>
               <p className="text-xs text-white/80 font-medium">30-60 days</p>
-              <p className="text-2xl font-bold">{filteredPermits.filter(p => {
+              <p className="text-2xl font-bold">{allPermits.filter(p => {
                 const days = calculateDaysRemaining(p.expiryDate);
                 return days > 30 && days <= 60;
               }).length}</p>
             </div>
           </div>
-        </div>
-        <div className="bg-gradient-to-br from-sky-400 to-blue-500 rounded-2xl p-4 text-white shadow-lg transform hover:scale-105 transition-all">
+        </button>
+        <button 
+          onClick={() => setActiveFilter(activeFilter === '90days' ? null : '90days')}
+          className={`bg-gradient-to-br from-sky-400 to-blue-500 rounded-2xl p-4 text-white shadow-lg transform hover:scale-105 transition-all text-left ${activeFilter === '90days' ? 'ring-4 ring-sky-300' : ''}`}
+        >
           <div className="flex items-center">
             <div className="p-2 bg-white/20 rounded-lg mr-3">
               <AlertTriangle className="h-5 w-5 text-white" />
             </div>
             <div>
               <p className="text-xs text-white/80 font-medium">60-90 days</p>
-              <p className="text-2xl font-bold">{filteredPermits.filter(p => {
+              <p className="text-2xl font-bold">{allPermits.filter(p => {
                 const days = calculateDaysRemaining(p.expiryDate);
                 return days > 60 && days <= 90;
               }).length}</p>
             </div>
           </div>
-        </div>
+        </button>
       </div>
+
+      {/* Filter Indicator */}
+      {activeFilter && (
+        <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-medium text-blue-800">
+              Filter: {activeFilter === 'expired' ? 'Expired Permits' : activeFilter === '30days' ? 'Expiring in < 30 days' : activeFilter === '60days' ? 'Expiring in 30-60 days' : 'Expiring in 60-90 days'}
+            </span>
+            <span className="text-sm text-blue-600">({filteredPermits.length} results)</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={exportFilteredToCSV}
+              className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm font-medium"
+            >
+              <Download className="h-4 w-4" />
+              Export Filtered
+            </button>
+            <button
+              onClick={() => setActiveFilter(null)}
+              className="p-2 text-blue-600 hover:bg-blue-100 rounded-lg"
+              title="Clear filter"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Search - Glass Card */}
       <div className="bg-white/80 backdrop-blur-md rounded-2xl shadow-lg p-5 border border-white/50">
