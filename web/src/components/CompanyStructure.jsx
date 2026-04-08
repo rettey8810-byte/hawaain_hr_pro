@@ -506,7 +506,7 @@ export default function CompanyStructure() {
   const [expandedDivisions, setExpandedDivisions] = useState([]);
 
   const { companyId } = useCompany();
-  const { user, userData } = useAuth();
+  const { user, userData, isHR } = useAuth();
   const isSuperAdmin = userData?.role === 'superadmin';
 
   const { documents: divisions, loading: divisionsLoading } = useFirestore('divisions');
@@ -806,12 +806,31 @@ export default function CompanyStructure() {
         <div className="absolute right-0 top-0 h-full w-1/3 opacity-20">
           <Building2 className="h-full w-full text-white" />
         </div>
-        <div className="relative z-10">
-          <h1 className="text-2xl font-bold text-white flex items-center gap-3">
-            <FolderKanban className="h-8 w-8" />
-            Company Structure
-          </h1>
-          <p className="text-indigo-100 mt-1">Manage divisions, departments, and designations</p>
+        <div className="relative z-10 flex justify-between items-start">
+          <div>
+            <h1 className="text-2xl font-bold text-white flex items-center gap-3">
+              <FolderKanban className="h-8 w-8" />
+              Company Structure
+            </h1>
+            <p className="text-indigo-100 mt-1">Manage divisions, departments, and designations</p>
+          </div>
+          {isSuperAdmin && (
+            <button
+              onClick={() => {
+                if (confirm('Are you sure you want to delete this company? This will also delete all associated data (divisions, designations, employees). This action cannot be undone.')) {
+                  deleteDoc(doc(db, 'companies', companyId)).then(() => {
+                    toast.success('Company deleted successfully');
+                  }).catch(err => {
+                    toast.error('Failed to delete company: ' + err.message);
+                  });
+                }
+              }}
+              className="flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+            >
+              <Trash2 className="h-4 w-4" />
+              Delete Company
+            </button>
+          )}
         </div>
       </div>
 
