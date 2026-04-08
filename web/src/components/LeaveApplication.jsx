@@ -241,8 +241,7 @@ export default function LeaveApplication() {
     if (new Date(formData.endDate) < new Date(formData.startDate)) {
       return 'End date must be after start date';
     }
-    if (!formData.destination.trim()) return 'Please enter destination';
-    if (!formData.reason.trim()) return 'Please enter reason for leave';
+    // Destination and Reason are now optional
     return null;
   };
 
@@ -565,7 +564,7 @@ export default function LeaveApplication() {
           {/* Destination */}
           <div className="mt-6">
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Destination <span className="text-red-500">*</span>
+              Destination <span className="text-gray-400 text-xs">(optional)</span>
             </label>
             <div className="relative">
               <MapPin className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
@@ -575,7 +574,6 @@ export default function LeaveApplication() {
                 onChange={(e) => handleInputChange('destination', e.target.value)}
                 placeholder="Enter destination city/country..."
                 className="block w-full rounded-xl border-gray-300 pl-12 pr-4 py-3 text-base focus:border-emerald-500 focus:ring-emerald-500 sm:text-sm border"
-                required
               />
             </div>
           </div>
@@ -583,7 +581,7 @@ export default function LeaveApplication() {
           {/* Reason */}
           <div className="mt-6">
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Reason for Leave <span className="text-red-500">*</span>
+              Reason for Leave <span className="text-gray-400 text-xs">(optional)</span>
             </label>
             <textarea
               value={formData.reason}
@@ -591,7 +589,6 @@ export default function LeaveApplication() {
               rows={3}
               placeholder="Please provide details about your leave request..."
               className="block w-full rounded-xl border-gray-300 pl-4 py-3 text-base focus:border-emerald-500 focus:ring-emerald-500 sm:text-sm border"
-              required
             />
           </div>
         </div>

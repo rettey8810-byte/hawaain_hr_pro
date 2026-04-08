@@ -153,6 +153,12 @@ export default function LeavePlanner() {
   useEffect(() => {
     let filtered = leaves;
     
+    // Only show active leaves (pending and approved) by default
+    // Filter out rejected and cancelled leaves unless explicitly viewing those statuses
+    if (statusFilter === 'all') {
+      filtered = filtered.filter(l => l.status === 'pending' || l.status === 'approved');
+    }
+    
     // Filter by search term
     if (searchTerm) {
       filtered = filtered.filter(l => {
