@@ -7,6 +7,7 @@ import { useCompany } from '../contexts/CompanyContext';
 import { formatDate, getDocumentStatus, calculateDaysRemaining } from '../utils/helpers';
 import { collection, query, where, getDocs } from 'firebase/firestore';
 import { db } from '../firebase/config';
+import FirebaseDataChecker from './FirebaseDataChecker';
 
 export default function Medicals() {
   const [searchParams] = useSearchParams();
@@ -244,6 +245,9 @@ export default function Medicals() {
 
   return (
     <div className="space-y-6">
+      {/* Firebase Data Checker - Debug */}
+      <FirebaseDataChecker />
+      
       {/* Header - Modern Gradient with Illustration */}
       <div className="md:flex md:items-center md:justify-between bg-gradient-to-r from-rose-500 via-pink-500 to-fuchsia-500 rounded-2xl p-6 text-white shadow-xl relative overflow-hidden">
         <div className="absolute right-0 top-0 h-full w-1/3 opacity-20">
