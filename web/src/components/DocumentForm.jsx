@@ -44,7 +44,16 @@ export default function DocumentForm({ type }) {
       case 'work-permit':
         return { ...base, permitNumber: '', jobPosition: '', employer: '' };
       case 'medical':
-        return { ...base, testDate: '', result: 'pending', testCenter: '' };
+        return { 
+          ...base, 
+          testDate: '', 
+          result: 'pending', 
+          testCenter: '',
+          medicalFee: '',
+          medicalFeeExpiry: '',
+          insuranceFeeExpiry: '',
+          visaFeeExpiry: ''
+        };
       default:
         return base;
     }
@@ -288,40 +297,90 @@ export default function DocumentForm({ type }) {
 
           {/* Medical Specific Fields */}
           {type === 'medical' && (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Test Date *</label>
-                <input
-                  type="date"
-                  name="testDate"
-                  required
-                  value={formData.testDate}
-                  onChange={handleChange}
-                  className="mt-1 block w-full rounded-md border-gray-300 border px-3 py-2 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                />
+            <div className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Test Date *</label>
+                  <input
+                    type="date"
+                    name="testDate"
+                    required
+                    value={formData.testDate}
+                    onChange={handleChange}
+                    className="mt-1 block w-full rounded-md border-gray-300 border px-3 py-2 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Test Center</label>
+                  <input
+                    type="text"
+                    name="testCenter"
+                    value={formData.testCenter}
+                    onChange={handleChange}
+                    className="mt-1 block w-full rounded-md border-gray-300 border px-3 py-2 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Result</label>
+                  <select
+                    name="result"
+                    value={formData.result}
+                    onChange={handleChange}
+                    className="mt-1 block w-full rounded-md border-gray-300 border px-3 py-2 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                  >
+                    <option value="pending">Pending</option>
+                    <option value="approved">Approved</option>
+                    <option value="failed">Failed</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Medical Fee (MVR)</label>
+                  <input
+                    type="number"
+                    name="medicalFee"
+                    value={formData.medicalFee}
+                    onChange={handleChange}
+                    className="mt-1 block w-full rounded-md border-gray-300 border px-3 py-2 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                    placeholder="Enter medical fee amount"
+                  />
+                </div>
               </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Test Center</label>
-                <input
-                  type="text"
-                  name="testCenter"
-                  value={formData.testCenter}
-                  onChange={handleChange}
-                  className="mt-1 block w-full rounded-md border-gray-300 border px-3 py-2 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Result</label>
-                <select
-                  name="result"
-                  value={formData.result}
-                  onChange={handleChange}
-                  className="mt-1 block w-full rounded-md border-gray-300 border px-3 py-2 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                >
-                  <option value="pending">Pending</option>
-                  <option value="approved">Approved</option>
-                  <option value="failed">Failed</option>
-                </select>
+
+              {/* Fee Expiry Dates */}
+              <div className="border-t pt-6">
+                <h3 className="text-sm font-medium text-gray-900 mb-4">Fee Expiry Dates</h3>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">Medical Fee Expiry</label>
+                    <input
+                      type="date"
+                      name="medicalFeeExpiry"
+                      value={formData.medicalFeeExpiry}
+                      onChange={handleChange}
+                      className="mt-1 block w-full rounded-md border-gray-300 border px-3 py-2 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">Insurance Fee Expiry</label>
+                    <input
+                      type="date"
+                      name="insuranceFeeExpiry"
+                      value={formData.insuranceFeeExpiry}
+                      onChange={handleChange}
+                      className="mt-1 block w-full rounded-md border-gray-300 border px-3 py-2 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">Visa Fee Expiry</label>
+                    <input
+                      type="date"
+                      name="visaFeeExpiry"
+                      value={formData.visaFeeExpiry}
+                      onChange={handleChange}
+                      className="mt-1 block w-full rounded-md border-gray-300 border px-3 py-2 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                    />
+                  </div>
+                </div>
               </div>
             </div>
           )}

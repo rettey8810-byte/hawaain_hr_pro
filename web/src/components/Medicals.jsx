@@ -439,6 +439,9 @@ export default function Medicals() {
                   <>
                     <th className="px-3 py-4 text-left text-xs font-bold text-rose-700 uppercase tracking-wider sticky top-0 w-28">📅 Test Date</th>
                     <th className="px-3 py-4 text-left text-xs font-bold text-rose-700 uppercase tracking-wider sticky top-0 w-28">⏰ Med Expiry</th>
+                    <th className="px-3 py-4 text-left text-xs font-bold text-rose-700 uppercase tracking-wider sticky top-0 w-28">💊 Med Fee Exp</th>
+                    <th className="px-3 py-4 text-left text-xs font-bold text-rose-700 uppercase tracking-wider sticky top-0 w-28">🛡️ Ins Fee Exp</th>
+                    <th className="px-3 py-4 text-left text-xs font-bold text-rose-700 uppercase tracking-wider sticky top-0 w-28">🌐 Visa Fee Exp</th>
                     <th className="px-3 py-4 text-left text-xs font-bold text-rose-700 uppercase tracking-wider sticky top-0 w-24">📊 Status</th>
                   </>
                 ) : (
@@ -466,6 +469,9 @@ export default function Medicals() {
                       <>
                         <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-500">{formatDate(medical.testDate)}</td>
                         <td className="px-3 py-4 whitespace-nowrap text-sm"><span className={daysRemaining <= 30 ? 'text-rose-600 font-bold' : 'text-gray-900 font-medium'}>{formatDate(medical.expiryDate)}</span></td>
+                        <td className="px-3 py-4 whitespace-nowrap text-sm">{formatDate(medical.medicalFeeExpiry)}</td>
+                        <td className="px-3 py-4 whitespace-nowrap text-sm">{formatDate(medical.insuranceFeeExpiry)}</td>
+                        <td className="px-3 py-4 whitespace-nowrap text-sm">{formatDate(medical.visaFeeExpiry)}</td>
                       </>
                     ) : (
                       <>
@@ -482,7 +488,7 @@ export default function Medicals() {
                   </tr>
                 );
               })}
-              {filteredMedicals.length === 0 && (<tr><td colSpan={activeTab === 'medical' ? 8 : 7} className="px-6 py-12 text-center"><div className="text-5xl mb-3">🏥</div><p className="text-gray-500 font-medium">No records found</p><p className="text-sm text-gray-400 mt-2">Use Import CSV to add records</p></td></tr>)}
+              {filteredMedicals.length === 0 && (<tr><td colSpan={activeTab === 'medical' ? 11 : 7} className="px-6 py-12 text-center"><div className="text-5xl mb-3">🏥</div><p className="text-gray-500 font-medium">No records found</p><p className="text-sm text-gray-400 mt-2">Use Import CSV to add records</p></td></tr>)}
             </tbody>
           </table>
           </div>
