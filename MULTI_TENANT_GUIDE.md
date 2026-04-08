@@ -38,8 +38,8 @@ Hawaain HR Pro uses a **multi-tenant architecture** where each company has compl
    - View sensitive financial data
    - Approve high-value leaves (Level 4 approver)
    - Same access as HR for salary-related functions
-   - **Switch between all companies** (like superadmin)
-   - View data from any company without logging out
+   - View all departments within their assigned company
+   - Cannot create companies
 
 5. **dept_head** (per company) - Department Head who can:
    - Manage department employees
@@ -206,6 +206,8 @@ The `useFirestore` hook automatically:
 1. Gets the current user's `companyId` from `CompanyContext`
 2. Adds a `where('companyId', '==', companyId)` filter to all queries
 3. Includes `companyId` in all new documents
+
+**Important:** The system must not fetch unscoped documents across companies. If a collection returns no documents for the current `companyId`, the correct behavior is to return an empty list (not to query the full collection).
 
 Example:
 ```javascript
@@ -619,6 +621,10 @@ Add `createdBy` and `updatedBy` fields to track who made changes:
 - Check user's `companyId` is set correctly
 - Verify documents have matching `companyId`
 - Check Firestore rules are deployed
+
+### Changes not reflected after deployment
+- If you still see old console logs or old behavior after pushing, your browser may be using cached assets
+- Do a hard refresh: `Ctrl+Shift+R`
 
 ### Cannot create documents
 - Ensure `companyId` is included in new documents

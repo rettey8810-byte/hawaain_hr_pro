@@ -396,6 +396,10 @@ A companion mobile app is available for:
 - Company context manages current company state
 - Automatic fallback to first company for superadmins
 
+### After Deploy / Cached Assets
+- If you still see old behavior after pushing to GitHub and deploying, your browser may be using cached assets
+- Do a hard refresh: `Ctrl+Shift+R`
+
 ---
 
 ## 📊 Database Collections

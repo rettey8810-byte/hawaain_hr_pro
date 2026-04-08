@@ -247,6 +247,20 @@ Go to **Company → Company Structure**
 - Filter by department, level, or search by name
 - Edit or delete designations (cannot delete if assigned to employees)
 
+### Leave Types Tab
+
+#### Overview
+Leave Types define the list of leave categories used in Leave Planner and Leave Policy (e.g., Annual, Sick, Unpaid).
+
+#### Access
+- Visible to **HR and GM roles**
+
+#### Managing Leave Types
+1. Go to **Company → Company Structure**
+2. Open the **Leave Types** tab
+3. Click **Add Leave Type** to create a new type
+4. Use the edit/delete buttons to update or remove existing leave types
+
 ### Using Dynamic Dropdowns
 Once divisions and designations are created, they automatically appear in:
 - **Add Employee** form (Division, Department, Section, Designation fields)

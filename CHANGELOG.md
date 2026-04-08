@@ -67,6 +67,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `Layout.jsx` - Added Terminations menu item
 - `App.jsx` - Added Terminations route and import
 
+## [2.3.2] - 2026-04-08
+
+### 🔧 Fixed
+
+#### Multi-Tenant Data Isolation
+- Removed fallback query behavior in `useFirestore` that could fetch **all documents** when no `companyId` matches were found
+- Ensures company switching always shows **only the selected company’s data** (prevents cross-company data leakage)
+
+### 🔧 Changed
+
+#### Company Structure - Leave Types Access
+- **Leave Types** tab is now visible to **HR and GM roles** (not just Superadmin)
+- Enables HR/GM to manage leave types used by Leave Planner and Leave Policy
+
+### 📁 Files Changed
+- `web/src/hooks/useFirestore.js`
+- `web/src/components/CompanyStructure.jsx`
+
 ## [2.3.0] - 2026-04-06
 
 ### 🚀 Added - Manpower Budget with Salary

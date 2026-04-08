@@ -243,6 +243,10 @@
 - **Calendar View**: Visual leave calendar
 - **Leave Balances**: Track available leave days
 
+#### Leave Types Management (HR/GM)
+- Leave Types are managed in **Company → Company Structure → Leave Types**
+- HR/GM can add, edit, and delete leave types used across Leave Planner and Leave Policy
+
 #### How to Use:
 1. Click "Apply for Leave"
 2. Select leave type
