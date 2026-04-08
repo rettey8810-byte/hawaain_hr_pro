@@ -29,16 +29,17 @@ export default function Medicals() {
 
   // Fetch ALL employees, passports, and medicals for lookup
   const fetchAllData = useCallback(async () => {
-    if (!companyId) return;
     setEmployeesLoading(true);
     try {
-      // Fetch employees
-      const empQuery = query(
-        collection(db, 'employees'),
-        where('companyId', '==', companyId)
-      );
-      const empSnap = await getDocs(empQuery);
-      setEmployees(empSnap.docs.map(d => ({ id: d.id, ...d.data() })));
+      // Fetch employees (only if companyId is set)
+      if (companyId) {
+        const empQuery = query(
+          collection(db, 'employees'),
+          where('companyId', '==', companyId)
+        );
+        const empSnap = await getDocs(empQuery);
+        setEmployees(empSnap.docs.map(d => ({ id: d.id, ...d.data() })));
+      }
       
       // Fetch passports (without company filter - same as Passports component)
       const passportSnap = await getDocs(collection(db, 'passports'));
@@ -46,7 +47,9 @@ export default function Medicals() {
       
       // Fetch ALL medicals (without company filter - medicals may not have companyId)
       const medicalsSnap = await getDocs(collection(db, 'medicals'));
-      setAllMedicals(medicalsSnap.docs.map(d => ({ id: d.id, ...d.data() })));
+      const medicalsData = medicalsSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+      console.log('Fetched medicals:', medicalsData.length, medicalsData);
+      setAllMedicals(medicalsData);
     } catch (err) {
       console.error('Error fetching data:', err);
     } finally {
@@ -63,8 +66,17 @@ export default function Medicals() {
     return () => unsub?.();
   }, [getAllDocuments]);
 
+  // Sync useFirestore medicals with allMedicals (for records without companyId)
   useEffect(() => {
-    let filtered = allMedicals;
+    if (medicals && medicals.length > 0 && allMedicals.length === 0) {
+      setAllMedicals(medicals);
+    }
+  }, [medicals, allMedicals.length]);
+
+  useEffect(() => {
+    // Use allMedicals if available, otherwise fall back to medicals from useFirestore
+    const sourceData = allMedicals.length > 0 ? allMedicals : (medicals || []);
+    let filtered = sourceData;
     
     if (employeeId) {
       filtered = filtered.filter(m => m.employeeId === employeeId);
@@ -98,7 +110,7 @@ export default function Medicals() {
     }
     
     setFilteredMedicals(filtered);
-  }, [allMedicals, employeeId, searchTerm, employees, activeFilter, activeTab]);
+  }, [allMedicals, medicals, employeeId, searchTerm, employees, activeFilter, activeTab]);
 
   const handleDelete = async () => {
     if (selectedMedical) {
