@@ -33,7 +33,7 @@ export default function Employees() {
 
   const PAGE_SIZE = 50;
 
-  // Fetch employees with pagination
+  // Fetch employees with pagination (excluding terminated)
   const fetchEmployees = useCallback(async (isInitial = false) => {
     if (!companyId) return;
     
@@ -44,12 +44,14 @@ export default function Employees() {
         q = query(
           collection(db, 'employees'),
           where('companyId', '==', companyId),
+          where('status', '!=', 'terminated'),
           limit(PAGE_SIZE)
         );
       } else if (lastDoc) {
         q = query(
           collection(db, 'employees'),
           where('companyId', '==', companyId),
+          where('status', '!=', 'terminated'),
           startAfter(lastDoc),
           limit(PAGE_SIZE)
         );
@@ -78,14 +80,15 @@ export default function Employees() {
     }
   }, [companyId, lastDoc]);
 
-  // Fetch ALL employees for stats ONLY when requested (to save reads)
+  // Fetch ALL employees for stats ONLY when requested (to save reads) - excluding terminated
   const fetchAllEmployeesForStats = useCallback(async () => {
     if (!companyId) return;
     
     try {
       const q = query(
         collection(db, 'employees'),
-        where('companyId', '==', companyId)
+        where('companyId', '==', companyId),
+        where('status', '!=', 'terminated')
       );
       const snapshot = await getDocs(q);
       const allDocs = snapshot.docs.map(d => {

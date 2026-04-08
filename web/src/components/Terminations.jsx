@@ -54,11 +54,16 @@ const EXIT_CHECKLIST = [
 export default function Terminations() {
   const { companyId } = useCompany();
   const { isHR } = useAuth();
-  const [activeTab, setActiveTab] = useState('active');
+  const [activeTab, setActiveTab] = useState('active'); // 'active', 'completed', 'past_staffs'
   const [searchTerm, setSearchTerm] = useState('');
   const [showModal, setShowModal] = useState(false);
   const [editingTermination, setEditingTermination] = useState(null);
   const [expandedId, setExpandedId] = useState(null);
+  
+  // Employee search dropdown state
+  const [employeeSearchTerm, setEmployeeSearchTerm] = useState('');
+  const [showEmployeeDropdown, setShowEmployeeDropdown] = useState(false);
+  const [selectedEmployee, setSelectedEmployee] = useState(null);
   
   const [formData, setFormData] = useState({
     employeeId: '',
@@ -77,7 +82,14 @@ export default function Terminations() {
 
   // Fetch terminations
   const { documents: terminations, loading, deleteDocument } = useFirestore('terminations');
-  const { documents: employees } = useFirestore('employees');
+  const { documents: allEmployees } = useFirestore('employees');
+  
+  // Filter employees by company and exclude already terminated
+  const employees = allEmployees.filter(e => {
+    const matchesCompany = !companyId || e.companyId === companyId;
+    const isNotTerminated = e.status !== 'terminated';
+    return matchesCompany && isNotTerminated;
+  });
 
   const filteredTerminations = terminations.filter(t => {
     const matchesSearch = 
@@ -88,9 +100,31 @@ export default function Terminations() {
       return matchesSearch && ['pending', 'in_progress'].includes(t.status);
     } else if (activeTab === 'completed') {
       return matchesSearch && t.status === 'completed';
+    } else if (activeTab === 'past_staffs') {
+      return matchesSearch && t.status === 'completed';
     }
     return matchesSearch;
   });
+  
+  // Filter employees for dropdown
+  const filteredEmployees = employees.filter(e => {
+    const search = employeeSearchTerm.toLowerCase();
+    const nameMatch = (e.name || e.Name || '').toLowerCase().includes(search);
+    const idMatch = (e.employeeId || e['Employee Id'] || e.id || '').toLowerCase().includes(search);
+    return nameMatch || idMatch;
+  });
+  
+  // Handle employee selection
+  const handleEmployeeSelect = (employee) => {
+    setSelectedEmployee(employee);
+    setFormData(prev => ({
+      ...prev,
+      employeeId: employee.id,
+      employeeName: employee.name || employee.Name || ''
+    }));
+    setEmployeeSearchTerm(employee.name || employee.Name || '');
+    setShowEmployeeDropdown(false);
+  };
 
   const stats = {
     total: terminations.length,
@@ -119,11 +153,39 @@ export default function Terminations() {
 
       if (editingTermination) {
         await updateDoc(doc(db, 'terminations', editingTermination.id), data);
+        
+        // If status changed to completed, mark employee as terminated
+        if (data.status === 'completed' && editingTermination.status !== 'completed') {
+          await updateDoc(doc(db, 'employees', formData.employeeId), {
+            status: 'terminated',
+            terminationDate: data.lastWorkingDate || new Date().toISOString(),
+            terminationReason: data.reason,
+            roomAssigned: null, // Remove room allocation
+            roomAssignedAt: null,
+            updatedAt: new Date().toISOString()
+          });
+          toast.success('Employee marked as terminated and room allocation cleared');
+        }
+        
         toast.success('Termination updated');
       } else {
         data.createdAt = new Date().toISOString();
         await addDoc(collection(db, 'terminations'), data);
-        toast.success('Termination record created');
+        
+        // If new termination is completed, mark employee as terminated
+        if (data.status === 'completed') {
+          await updateDoc(doc(db, 'employees', formData.employeeId), {
+            status: 'terminated',
+            terminationDate: data.lastWorkingDate || new Date().toISOString(),
+            terminationReason: data.reason,
+            roomAssigned: null, // Remove room allocation
+            roomAssignedAt: null,
+            updatedAt: new Date().toISOString()
+          });
+          toast.success('Termination record created and employee marked as terminated');
+        } else {
+          toast.success('Termination record created');
+        }
       }
 
       setShowModal(false);
@@ -178,6 +240,9 @@ export default function Terminations() {
       notes: '',
       documents: []
     });
+    setEmployeeSearchTerm('');
+    setSelectedEmployee(null);
+    setShowEmployeeDropdown(false);
   };
 
   const toggleChecklist = (itemId) => {
@@ -312,6 +377,12 @@ export default function Terminations() {
             className={`px-4 py-2 rounded-lg ${activeTab === 'completed' ? 'bg-red-600 text-white' : 'bg-gray-100'}`}
           >
             Completed
+          </button>
+          <button
+            onClick={() => setActiveTab('past_staffs')}
+            className={`px-4 py-2 rounded-lg ${activeTab === 'past_staffs' ? 'bg-red-600 text-white' : 'bg-gray-100'}`}
+          >
+            Past Staffs
           </button>
           <button
             onClick={() => setActiveTab('all')}
@@ -451,15 +522,48 @@ export default function Terminations() {
             </div>
             <div className="p-4 space-y-4">
               <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium mb-1">Employee Name *</label>
+                <div className="relative">
+                  <label className="block text-sm font-medium mb-1">Employee *</label>
                   <input
                     type="text"
-                    value={formData.employeeName}
-                    onChange={(e) => setFormData({...formData, employeeName: e.target.value})}
+                    value={employeeSearchTerm}
+                    onChange={(e) => {
+                      setEmployeeSearchTerm(e.target.value);
+                      setShowEmployeeDropdown(true);
+                    }}
+                    onFocus={() => setShowEmployeeDropdown(true)}
                     className="w-full px-3 py-2 border rounded-lg"
-                    placeholder="Enter employee name"
+                    placeholder="Search by name or employee number..."
+                    disabled={editingTermination} // Disable editing employee on edit
                   />
+                  {showEmployeeDropdown && !editingTermination && (
+                    <div className="absolute z-50 w-full mt-1 bg-white border rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                      {filteredEmployees.length === 0 ? (
+                        <div className="p-3 text-gray-500 text-sm">No employees found</div>
+                      ) : (
+                        filteredEmployees.map(emp => (
+                          <div
+                            key={emp.id}
+                            onClick={() => handleEmployeeSelect(emp)}
+                            className="p-3 hover:bg-gray-100 cursor-pointer border-b last:border-b-0"
+                          >
+                            <div className="font-medium">{emp.name || emp.Name}</div>
+                            <div className="text-sm text-gray-500">
+                              ID: {emp.employeeId || emp['Employee Id'] || emp.id} | 
+                              {emp.Designation || emp.designation || 'No designation'}
+                            </div>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  )}
+                  {selectedEmployee && (
+                    <div className="mt-2 p-2 bg-blue-50 rounded text-sm">
+                      <span className="font-medium">Selected:</span> {selectedEmployee.name || selectedEmployee.Name}
+                      <br/>
+                      <span className="text-gray-600">ID: {selectedEmployee.employeeId || selectedEmployee['Employee Id'] || selectedEmployee.id}</span>
+                    </div>
+                  )}
                 </div>
                 <div>
                   <label className="block text-sm font-medium mb-1">Termination Type</label>
