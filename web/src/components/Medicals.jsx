@@ -76,7 +76,7 @@ export default function Medicals() {
 
   useEffect(() => {
     // Use allMedicals if available, otherwise fall back to medicals from useFirestore
-    const sourceData = allMedicals.length > 0 ? allMedicals : (medicals || []);
+    const sourceData = allMedicals.length > 0 ? allMedicals : medicals;
     let filtered = sourceData;
     
     if (employeeId) {
@@ -104,9 +104,14 @@ export default function Medicals() {
     }
     
     if (searchTerm) {
+      const term = searchTerm.toLowerCase();
       filtered = filtered.filter(m => {
-        const employee = employees.find(e => e.id === m.employeeId);
-        return employee?.name?.toLowerCase().includes(searchTerm.toLowerCase());
+        const info = getEmployeeInfo(m);
+        return (
+          info.name?.toLowerCase().includes(term) ||
+          String(info.empId || '').toLowerCase().includes(term) ||
+          String(info.passportNumber || '').toLowerCase().includes(term)
+        );
       });
     }
     
@@ -121,13 +126,22 @@ export default function Medicals() {
     }
   };
 
-  const getEmployeeInfo = (id) => {
-    const emp = employees.find(e => e.id === id);
-    const passport = passports.find(p => p.employeeId === id);
+  const getEmployeeInfo = (medical) => {
+    const medicalEmployeeId = medical?.employeeId;
+    const medicalEmpId = medical?.empId ?? medical?.EmpID ?? medical?.staffId;
+
+    const empById = medicalEmployeeId ? employees.find(e => e.id === medicalEmployeeId) : null;
+    const empByEmpId = medicalEmpId
+      ? employees.find(e => String(e.EmpID ?? e.employeeId ?? '').trim() === String(medicalEmpId).trim())
+      : null;
+    const emp = empById || empByEmpId;
+
+    const passport = medicalEmployeeId ? passports.find(p => p.employeeId === medicalEmployeeId) : null;
+
     return {
-      name: emp?.FullName || emp?.name || 'Unknown',
-      empId: emp?.EmpID || emp?.employeeId || 'N/A',
-      passportNumber: passport?.passportNumber || 'N/A'
+      name: emp?.FullName || emp?.name || medical?.employeeName || 'Unknown',
+      empId: emp?.EmpID || emp?.employeeId || medicalEmpId || 'N/A',
+      passportNumber: passport?.passportNumber || medical?.passportNumber || 'N/A'
     };
   };
 
@@ -176,7 +190,7 @@ export default function Medicals() {
     const headers = ['Employee Name', 'Employee ID', 'Passport Number', 'Test Date', 'Expiry Date', 'Insurance Expiry', 'Status', 'Days Remaining'];
     
     const rows = filteredMedicals.map(m => {
-      const empInfo = getEmployeeInfo(m.employeeId);
+      const empInfo = getEmployeeInfo(m);
       const expiryDate = activeTab === 'medical' ? m.expiryDate : m.insuranceExpiryDate;
       const days = calculateDaysRemaining(expiryDate);
       return [
@@ -477,9 +491,9 @@ export default function Medicals() {
                 
                 return (
                   <tr key={medical.id} className="hover:bg-rose-50/50 transition-colors">
-                    <td className="px-3 py-4 whitespace-nowrap text-sm font-bold text-gray-900 truncate max-w-[140px]" title={getEmployeeInfo(medical.employeeId).name}>{getEmployeeInfo(medical.employeeId).name}</td>
-                    <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-700">{getEmployeeInfo(medical.employeeId).empId}</td>
-                    <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-700 font-medium">{getEmployeeInfo(medical.employeeId).passportNumber}</td>
+                    <td className="px-3 py-4 whitespace-nowrap text-sm font-bold text-gray-900 truncate max-w-[140px]" title={getEmployeeInfo(medical).name}>{getEmployeeInfo(medical).name}</td>
+                    <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-700">{getEmployeeInfo(medical).empId}</td>
+                    <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-700 font-medium">{getEmployeeInfo(medical).passportNumber}</td>
                     <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-700">{medical.medicalFee ? `MVR ${medical.medicalFee}` : 'N/A'}</td>
                     {activeTab === 'medical' ? (
                       <>
