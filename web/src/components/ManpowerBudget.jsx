@@ -16,7 +16,8 @@ import {
   X,
   Save,
   ArrowRight,
-  Edit2
+  Edit2,
+  Layers
 } from 'lucide-react';
 import { collection, addDoc, deleteDoc, doc, query, where, getDocs, updateDoc } from 'firebase/firestore';
 import { db } from '../firebase/config';
@@ -536,55 +537,101 @@ export default function ManpowerBudget() {
                       </tr>
                     </thead>
                     <tbody>
-                      {deptBudgets.map((budget) => (
-                        <tr key={budget.id} className="border-b hover:bg-gray-50">
-                          <td className="px-3 py-2">{budget.section}</td>
-                          <td className="px-3 py-2 font-medium">{budget.designation}</td>
-                          <td className="px-3 py-2 text-right font-medium text-emerald-700">
-                            {budget.salary !== undefined && budget.salary !== null && budget.salary !== '' && !isNaN(parseFloat(budget.salary)) ? `$${parseFloat(budget.salary).toLocaleString()}` : '$0'}
-                          </td>
-                          <td className="px-3 py-2 text-center font-medium text-blue-700">
-                            {budget.actual2026 !== undefined && budget.actual2026 !== null && budget.actual2026 !== '' ? budget.actual2026 : '0'}
-                          </td>
-                          <td className="px-3 py-2 text-center bg-blue-50/50">{budget.requiredManpower?.['100_80'] || '-'}</td>
-                          <td className="px-3 py-2 text-center bg-green-50/50">{budget.requiredManpower?.['80_65'] || '-'}</td>
-                          <td className="px-3 py-2 text-center bg-yellow-50/50">{budget.requiredManpower?.['65_50'] || '-'}</td>
-                          <td className="px-3 py-2 text-center bg-red-50/50">{budget.requiredManpower?.below50 || '-'}</td>
-                          <td className="px-3 py-2 text-center">
-                            <button
-                              onClick={() => handleEdit(budget)}
-                              className="p-1 text-blue-600 hover:bg-blue-100 rounded mr-2"
-                            >
-                              <Edit2 className="w-4 h-4" />
-                            </button>
-                            <button
-                              onClick={() => handleDelete(budget.id)}
-                              className="p-1 text-red-600 hover:bg-red-100 rounded"
-                            >
-                              <Trash2 className="w-4 h-4" />
-                            </button>
-                          </td>
-                        </tr>
+                      {/* Group by Section */}
+                      {Object.entries(deptBudgets.reduce((acc, budget) => {
+                        const section = budget.section || 'Unassigned';
+                        if (!acc[section]) acc[section] = [];
+                        acc[section].push(budget);
+                        return acc;
+                      }, {})).map(([sectionName, sectionBudgets]) => (
+                        <React.Fragment key={sectionName}>
+                          {/* Section Header */}
+                          <tr className="bg-gray-50 border-t-2 border-gray-200">
+                            <td className="px-3 py-2 font-semibold text-gray-700" colSpan="9">
+                              <span className="flex items-center gap-2">
+                                <Layers className="w-4 h-4 text-blue-500" />
+                                Section: {sectionName}
+                                <span className="text-xs text-gray-500">({sectionBudgets.length} designations)</span>
+                              </span>
+                            </td>
+                          </tr>
+                          {/* Designation Rows */}
+                          {sectionBudgets.map((budget) => (
+                            <tr key={budget.id} className="border-b hover:bg-gray-50">
+                              <td className="px-3 py-2 pl-8 text-gray-500">{budget.section}</td>
+                              <td className="px-3 py-2 font-medium">{budget.designation}</td>
+                              <td className="px-3 py-2 text-right font-medium text-emerald-700">
+                                {budget.salary !== undefined && budget.salary !== null && budget.salary !== '' && !isNaN(parseFloat(budget.salary)) ? `$${parseFloat(budget.salary).toLocaleString()}` : '$0'}
+                              </td>
+                              <td className="px-3 py-2 text-center font-medium text-blue-700">
+                                {budget.actual2026 !== undefined && budget.actual2026 !== null && budget.actual2026 !== '' ? budget.actual2026 : '0'}
+                              </td>
+                              <td className="px-3 py-2 text-center bg-blue-50/50">{budget.requiredManpower?.['100_80'] || '-'}</td>
+                              <td className="px-3 py-2 text-center bg-green-50/50">{budget.requiredManpower?.['80_65'] || '-'}</td>
+                              <td className="px-3 py-2 text-center bg-yellow-50/50">{budget.requiredManpower?.['65_50'] || '-'}</td>
+                              <td className="px-3 py-2 text-center bg-red-50/50">{budget.requiredManpower?.below50 || '-'}</td>
+                              <td className="px-3 py-2 text-center">
+                                <button
+                                  onClick={() => handleEdit(budget)}
+                                  className="p-1 text-blue-600 hover:bg-blue-100 rounded mr-2"
+                                >
+                                  <Edit2 className="w-4 h-4" />
+                                </button>
+                                <button
+                                  onClick={() => handleDelete(budget.id)}
+                                  className="p-1 text-red-600 hover:bg-red-100 rounded"
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </button>
+                              </td>
+                            </tr>
+                          ))}
+                          {/* Section Totals */}
+                          <tr className="bg-indigo-50 font-medium border-t border-indigo-200">
+                            <td className="px-3 py-2 pl-8 text-indigo-700" colSpan="2">
+                              {sectionName} Section Total
+                            </td>
+                            <td className="px-3 py-2 text-right text-indigo-700">
+                              ${sectionBudgets.reduce((sum, b) => sum + (parseFloat(b.salary) || 0), 0).toLocaleString()}
+                            </td>
+                            <td className="px-3 py-2 text-center text-indigo-700">
+                              {sectionBudgets.reduce((sum, b) => sum + (parseInt(b.actual2026) || 0), 0)}
+                            </td>
+                            <td className="px-3 py-2 text-center bg-indigo-100/50">
+                              {sectionBudgets.reduce((sum, b) => sum + (parseInt(b.requiredManpower?.['100_80']) || 0), 0) || '-'}
+                            </td>
+                            <td className="px-3 py-2 text-center bg-indigo-100/50">
+                              {sectionBudgets.reduce((sum, b) => sum + (parseInt(b.requiredManpower?.['80_65']) || 0), 0) || '-'}
+                            </td>
+                            <td className="px-3 py-2 text-center bg-indigo-100/50">
+                              {sectionBudgets.reduce((sum, b) => sum + (parseInt(b.requiredManpower?.['65_50']) || 0), 0) || '-'}
+                            </td>
+                            <td className="px-3 py-2 text-center bg-indigo-100/50">
+                              {sectionBudgets.reduce((sum, b) => sum + (parseInt(b.requiredManpower?.below50) || 0), 0) || '-'}
+                            </td>
+                            <td className="px-3 py-2 text-center text-gray-400">-</td>
+                          </tr>
+                        </React.Fragment>
                       ))}
-                      {/* Department Totals Row */}
-                      <tr className="bg-blue-50 font-semibold border-t-2 border-blue-200">
-                        <td className="px-3 py-3 text-blue-800" colSpan="2">{deptName} Totals</td>
+                      {/* Department Grand Totals */}
+                      <tr className="bg-blue-100 font-bold border-t-2 border-blue-300">
+                        <td className="px-3 py-3 text-blue-800" colSpan="2">{deptName} Department Total</td>
                         <td className="px-3 py-3 text-right text-emerald-700">
                           ${deptBudgets.reduce((sum, b) => sum + (parseFloat(b.salary) || 0), 0).toLocaleString()}
                         </td>
                         <td className="px-3 py-3 text-center text-blue-700">
                           {deptBudgets.reduce((sum, b) => sum + (parseInt(b.actual2026) || 0), 0)}
                         </td>
-                        <td className="px-3 py-3 text-center bg-blue-100/50">
+                        <td className="px-3 py-3 text-center bg-blue-200/50">
                           {deptBudgets.reduce((sum, b) => sum + (parseInt(b.requiredManpower?.['100_80']) || 0), 0) || '-'}
                         </td>
-                        <td className="px-3 py-3 text-center bg-green-100/50">
+                        <td className="px-3 py-3 text-center bg-blue-200/50">
                           {deptBudgets.reduce((sum, b) => sum + (parseInt(b.requiredManpower?.['80_65']) || 0), 0) || '-'}
                         </td>
-                        <td className="px-3 py-3 text-center bg-yellow-100/50">
+                        <td className="px-3 py-3 text-center bg-blue-200/50">
                           {deptBudgets.reduce((sum, b) => sum + (parseInt(b.requiredManpower?.['65_50']) || 0), 0) || '-'}
                         </td>
-                        <td className="px-3 py-3 text-center bg-red-100/50">
+                        <td className="px-3 py-3 text-center bg-blue-200/50">
                           {deptBudgets.reduce((sum, b) => sum + (parseInt(b.requiredManpower?.below50) || 0), 0) || '-'}
                         </td>
                         <td className="px-3 py-3 text-center text-gray-400">-</td>
