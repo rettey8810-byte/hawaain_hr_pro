@@ -479,7 +479,7 @@ export default function ManpowerBudget() {
                           <td className="px-3 py-2">{budget.section}</td>
                           <td className="px-3 py-2 font-medium">{budget.designation}</td>
                           <td className="px-3 py-2 text-right font-medium text-emerald-700">
-                            {parseFloat(budget.salary) > 0 ? `$${parseFloat(budget.salary).toLocaleString()}` : '-'}
+                            {budget.salary !== undefined && budget.salary !== null && budget.salary !== '' && !isNaN(parseFloat(budget.salary)) ? `$${parseFloat(budget.salary).toLocaleString()}` : '$0'}
                           </td>
                           <td className="px-3 py-2 text-center font-medium text-blue-700">
                             {budget.actual2026 !== undefined && budget.actual2026 !== null && budget.actual2026 !== '' ? budget.actual2026 : '0'}
