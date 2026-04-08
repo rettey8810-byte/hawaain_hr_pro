@@ -303,6 +303,60 @@ export default function ManpowerBudget() {
     });
   };
 
+  // Recalculate all salaries from employee data
+  const recalculateAllSalaries = async () => {
+    if (!budgets || budgets.length === 0) {
+      toast.error('No budget entries to update');
+      return;
+    }
+    if (!companyId) {
+      toast.error('No company selected');
+      return;
+    }
+
+    const confirmed = confirm(`Update salaries for ${budgets.length} budget entries from employee data?`);
+    if (!confirmed) return;
+
+    setSaving(true);
+    let updatedCount = 0;
+    let skippedCount = 0;
+
+    try {
+      for (const budget of budgets) {
+        // Find employees with matching designation
+        const matchingEmps = employeesData.filter(emp => 
+          (emp.Designation || emp.designation) === budget.designation
+        );
+
+        if (matchingEmps.length > 0) {
+          const avgSalary = matchingEmps.reduce((sum, emp) => {
+            const sal = parseFloat(emp['TotalSalary(USD)'] || emp['Fixed(USD)'] || emp['Basic(USD)'] || 0);
+            return sum + sal;
+          }, 0) / matchingEmps.length;
+
+          if (avgSalary > 0) {
+            await updateDoc(doc(db, 'manpowerBudgets', budget.id), {
+              salary: parseFloat(avgSalary.toFixed(2)),
+              updatedAt: new Date().toISOString()
+            });
+            updatedCount++;
+          } else {
+            skippedCount++;
+          }
+        } else {
+          skippedCount++;
+        }
+      }
+
+      toast.success(`Updated ${updatedCount} entries, skipped ${skippedCount} (no matching employees with salary data)`);
+    } catch (error) {
+      console.error('Error recalculating salaries:', error);
+      toast.error('Failed to update salaries: ' + error.message);
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const toggleDept = (dept) => {
     setExpandedDepts(prev => ({ ...prev, [dept]: !prev[dept] }));
   };
@@ -350,6 +404,14 @@ export default function ManpowerBudget() {
           <p className="text-gray-600 mt-1">Department → Section → Designation → Actual 2026 → Required Manpower</p>
         </div>
         <div className="flex gap-3">
+          <button
+            onClick={recalculateAllSalaries}
+            disabled={saving}
+            className="flex items-center gap-2 px-4 py-2 bg-orange-600 text-white rounded-lg hover:bg-orange-700 disabled:opacity-50"
+          >
+            <DollarSign className="w-4 h-4" />
+            {saving ? 'Updating...' : 'Recalc Salaries'}
+          </button>
           <button
             onClick={exportToCSV}
             className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
