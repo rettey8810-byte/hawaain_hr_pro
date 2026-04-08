@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
-import { Plus, Search, Eye, Edit2, Trash2, AlertTriangle, Download, Upload, Shield, X } from 'lucide-react';
+import { Plus, Search, Eye, Edit2, Trash2, AlertTriangle, Download, Upload, Shield, Globe, X } from 'lucide-react';
 import { useFirestore } from '../hooks/useFirestore';
 import { useAuth } from '../contexts/AuthContext';
 import { useCompany } from '../contexts/CompanyContext';
@@ -25,8 +25,15 @@ export default function Medicals() {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [selectedMedical, setSelectedMedical] = useState(null);
   const [filteredMedicals, setFilteredMedicals] = useState([]);
-  const [activeTab, setActiveTab] = useState('medical'); // 'medical' or 'insurance'
+  const [activeTab, setActiveTab] = useState('medical'); // 'medical' or 'insurance' or 'visa'
   const [activeFilter, setActiveFilter] = useState(null); // 'expired', '30days', '60days', '90days'
+
+  const getExpiryDateForTab = useCallback((record) => {
+    if (activeTab === 'medical') return record?.expiryDate;
+    if (activeTab === 'insurance') return record?.insuranceExpiryDate;
+    if (activeTab === 'visa') return record?.visaFeeExpiry;
+    return null;
+  }, [activeTab]);
 
   // Fetch ALL employees, passports, and medicals for lookup
   const fetchAllData = useCallback(async () => {
@@ -86,7 +93,7 @@ export default function Medicals() {
     // Apply active filter from stats click
     if (activeFilter) {
       filtered = filtered.filter(m => {
-        const expiryDate = activeTab === 'medical' ? m.expiryDate : m.insuranceExpiryDate;
+        const expiryDate = getExpiryDateForTab(m);
         const days = calculateDaysRemaining(expiryDate);
         switch (activeFilter) {
           case 'expired':
@@ -191,7 +198,7 @@ export default function Medicals() {
     
     const rows = filteredMedicals.map(m => {
       const empInfo = getEmployeeInfo(m);
-      const expiryDate = activeTab === 'medical' ? m.expiryDate : m.insuranceExpiryDate;
+      const expiryDate = getExpiryDateForTab(m);
       const days = calculateDaysRemaining(expiryDate);
       return [
         empInfo.name,
@@ -340,6 +347,17 @@ export default function Medicals() {
             <Shield className="h-4 w-4" />
             Insurance Expiry
           </button>
+          <button
+            onClick={() => setActiveTab('visa')}
+            className={`flex items-center gap-2 px-6 py-4 font-medium ${
+              activeTab === 'visa'
+                ? 'text-rose-600 border-b-2 border-rose-600'
+                : 'text-gray-600 hover:text-gray-900'
+            }`}
+          >
+            <Globe className="h-4 w-4" />
+            Visa Fee Expiry
+          </button>
         </div>
       </div>
 
@@ -355,7 +373,7 @@ export default function Medicals() {
             </div>
             <div>
               <p className="text-xs text-white/80 font-medium">Expired</p>
-              <p className="text-2xl font-bold">{allMedicals.filter(m => calculateDaysRemaining(activeTab === 'medical' ? m.expiryDate : m.insuranceExpiryDate) <= 0).length}</p>
+              <p className="text-2xl font-bold">{allMedicals.filter(m => calculateDaysRemaining(getExpiryDateForTab(m)) <= 0).length}</p>
             </div>
           </div>
         </button>
@@ -370,7 +388,7 @@ export default function Medicals() {
             <div>
               <p className="text-xs text-white/80 font-medium">&lt; 30 days</p>
               <p className="text-2xl font-bold">{allMedicals.filter(m => {
-                const days = calculateDaysRemaining(activeTab === 'medical' ? m.expiryDate : m.insuranceExpiryDate);
+                const days = calculateDaysRemaining(getExpiryDateForTab(m));
                 return days > 0 && days <= 30;
               }).length}</p>
             </div>
@@ -387,7 +405,7 @@ export default function Medicals() {
             <div>
               <p className="text-xs text-white/80 font-medium">30-60 days</p>
               <p className="text-2xl font-bold">{allMedicals.filter(m => {
-                const days = calculateDaysRemaining(activeTab === 'medical' ? m.expiryDate : m.insuranceExpiryDate);
+                const days = calculateDaysRemaining(getExpiryDateForTab(m));
                 return days > 30 && days <= 60;
               }).length}</p>
             </div>
@@ -404,7 +422,7 @@ export default function Medicals() {
             <div>
               <p className="text-xs text-white/80 font-medium">60-90 days</p>
               <p className="text-2xl font-bold">{allMedicals.filter(m => {
-                const days = calculateDaysRemaining(activeTab === 'medical' ? m.expiryDate : m.insuranceExpiryDate);
+                const days = calculateDaysRemaining(getExpiryDateForTab(m));
                 return days > 60 && days <= 90;
               }).length}</p>
             </div>
@@ -474,9 +492,14 @@ export default function Medicals() {
                     <th className="px-3 py-4 text-left text-xs font-bold text-rose-700 uppercase tracking-wider sticky top-0 w-28">🌐 Visa Fee Exp</th>
                     <th className="px-3 py-4 text-left text-xs font-bold text-rose-700 uppercase tracking-wider sticky top-0 w-24">📊 Status</th>
                   </>
-                ) : (
+                ) : activeTab === 'insurance' ? (
                   <>
                     <th className="px-3 py-4 text-left text-xs font-bold text-rose-700 uppercase tracking-wider sticky top-0 w-28">🛡️ Ins Expiry</th>
+                    <th className="px-3 py-4 text-left text-xs font-bold text-rose-700 uppercase tracking-wider sticky top-0 w-24">📊 Status</th>
+                  </>
+                ) : (
+                  <>
+                    <th className="px-3 py-4 text-left text-xs font-bold text-rose-700 uppercase tracking-wider sticky top-0 w-28">🌐 Visa Fee Exp</th>
                     <th className="px-3 py-4 text-left text-xs font-bold text-rose-700 uppercase tracking-wider sticky top-0 w-24">📊 Status</th>
                   </>
                 )}
@@ -485,7 +508,7 @@ export default function Medicals() {
             </thead>
             <tbody className="bg-white divide-y divide-gray-100">
               {filteredMedicals.map((medical) => {
-                const expiryDate = activeTab === 'medical' ? medical.expiryDate : medical.insuranceExpiryDate;
+                const expiryDate = getExpiryDateForTab(medical);
                 const status = getDocumentStatus(expiryDate);
                 const daysRemaining = calculateDaysRemaining(expiryDate);
                 
@@ -503,9 +526,13 @@ export default function Medicals() {
                         <td className="px-3 py-4 whitespace-nowrap text-sm">{formatDate(medical.insuranceFeeExpiry)}</td>
                         <td className="px-3 py-4 whitespace-nowrap text-sm">{formatDate(medical.visaFeeExpiry)}</td>
                       </>
-                    ) : (
+                    ) : activeTab === 'insurance' ? (
                       <>
                         <td className="px-3 py-4 whitespace-nowrap text-sm"><span className={daysRemaining <= 30 ? 'text-rose-600 font-bold' : 'text-gray-900 font-medium'}>{formatDate(medical.insuranceExpiryDate)}</span></td>
+                      </>
+                    ) : (
+                      <>
+                        <td className="px-3 py-4 whitespace-nowrap text-sm"><span className={daysRemaining <= 30 ? 'text-rose-600 font-bold' : 'text-gray-900 font-medium'}>{formatDate(medical.visaFeeExpiry)}</span></td>
                       </>
                     )}
                     <td className="px-3 py-4 whitespace-nowrap"><span className={`px-2 py-1 inline-flex text-xs leading-5 font-bold rounded-full border ${status.color === 'green' ? 'bg-emerald-100 text-emerald-700 border-emerald-200' : status.color === 'yellow' ? 'bg-amber-100 text-amber-700 border-amber-200' : status.color === 'red' ? 'bg-rose-100 text-rose-700 border-rose-200' : 'bg-gray-100 text-gray-600 border-gray-200'}`}>{status.label}{daysRemaining !== null && daysRemaining > 0 && ` (${daysRemaining}d)`}</span></td>
