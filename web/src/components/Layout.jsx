@@ -452,7 +452,7 @@ export default function Layout({ children }) {
               {/* Logo & Brand */}
               <div className="flex items-center gap-3">
                 <img src="/logo.png" alt="Logo" className="h-8 w-auto opacity-90" />
-                <div className="text-white/90 font-semibold">Hawaain HR Pro</div>
+                <div className="text-white/90 font-semibold">HR Factory</div>
               </div>
               
               {/* Developer Credit */}
@@ -461,7 +461,7 @@ export default function Layout({ children }) {
                   Developed by <span className="text-cyan-400 font-medium">RettsWebDev</span>
                 </p>
                 <p className="text-slate-500 text-xs mt-0.5">
-                  Since 2016 • Powered by <span className="text-emerald-400">Hawaain 4 Brothers</span>
+                  Since 2016 • Powered by <span className="text-teal-400">HR Factory Systems</span>
                 </p>
               </div>
               

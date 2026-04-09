@@ -30,7 +30,7 @@ export default function Login() {
   return (
     <div className="min-h-screen flex bg-gray-50">
       {/* Left side with illustration */}
-      <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-blue-600 to-indigo-700 items-center justify-center relative overflow-hidden">
+      <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-[#1A2B48] to-[#2DD4BF] items-center justify-center relative overflow-hidden">
         <div className="absolute inset-0 opacity-30">
           <img 
             src="/storyset/Company-amico (1).svg" 
@@ -39,9 +39,9 @@ export default function Login() {
           />
         </div>
         <div className="relative z-10 text-center text-white p-8">
-          <h1 className="text-4xl font-bold mb-4">Hawaain HR Pro</h1>
-          <p className="text-xl text-blue-100">Complete HR Management Solution</p>
-          <p className="mt-2 text-blue-200">Recruitment • Payroll • Attendance • Analytics</p>
+          <h1 className="text-4xl font-bold mb-4 font-['Plus_Jakarta_Sans']">HR Factory</h1>
+          <p className="text-xl text-teal-100">Complete HR Management Solution</p>
+          <p className="mt-2 text-teal-200">Recruitment • Payroll • Attendance • Analytics</p>
         </div>
       </div>
 

@@ -49,7 +49,7 @@ export default function Help() {
   ];
 
   const resources = [
-    { title: "Getting Started Guide", icon: Book, description: "Learn the basics of Hawaain HR Pro", link: "#" },
+    { title: "Getting Started Guide", icon: Book, description: "Learn the basics of HR Factory", link: "#" },
     { title: "Video Tutorials", icon: Video, description: "Watch step-by-step video guides", link: "#" },
     { title: "API Documentation", icon: FileText, description: "Technical documentation for developers", link: "#" },
     { title: "Contact Support", icon: Mail, description: "Get help from our support team", link: "#" },
@@ -141,23 +141,23 @@ export default function Help() {
       </div>
 
       {/* Contact Section */}
-      <div className="bg-gradient-to-r from-blue-500 to-blue-600 rounded-lg shadow p-6 text-white">
+      <div className="bg-gradient-to-r from-[#1A2B48] to-[#2DD4BF] rounded-lg shadow p-6 text-white">
         <div className="flex flex-col sm:flex-row items-center justify-between">
           <div>
             <h3 className="text-lg font-medium">Need more help?</h3>
-            <p className="text-blue-100 mt-1">Our support team is here to assist you</p>
+            <p className="text-teal-100 mt-1">Our support team is here to assist you</p>
           </div>
           <div className="mt-4 sm:mt-0 flex space-x-3">
             <a
-              href="mailto:support@hawaainhr.com"
-              className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-blue-600 bg-white hover:bg-blue-50"
+              href="mailto:support@hrfactory.com"
+              className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-[#1A2B48] bg-white hover:bg-gray-50"
             >
               <Mail className="h-4 w-4 mr-2" />
               Email Support
             </a>
             <a
               href="#"
-              className="inline-flex items-center px-4 py-2 border border-white text-sm font-medium rounded-md text-white hover:bg-blue-700"
+              className="inline-flex items-center px-4 py-2 border border-white text-sm font-medium rounded-md text-white hover:bg-[#1A2B48]/50"
             >
               <ExternalLink className="h-4 w-4 mr-2" />
               Live Chat
@@ -168,8 +168,8 @@ export default function Help() {
 
       {/* Version Info */}
       <div className="text-center text-sm text-gray-400">
-        <p>Hawaain HR Pro v1.0.0</p>
-        <p className="mt-1">© 2026 Hawaain HR Pro. All rights reserved.</p>
+        <p>HR Factory v1.0.0</p>
+        <p className="mt-1">© 2026 HR Factory. All rights reserved.</p>
       </div>
     </div>
   );

@@ -94,7 +94,7 @@ export default function Signup() {
             Create Account
           </h2>
           <p className="mt-2 text-sm text-gray-600">
-            Join Hawaain HR Pro
+            Join HR Factory
           </p>
         </div>
 
