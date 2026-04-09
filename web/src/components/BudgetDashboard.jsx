@@ -1261,4 +1261,6 @@ export default function BudgetDashboard() {
       </div>
     </div>
   );
+};
 
+export default BudgetDashboard;
