@@ -4,7 +4,12 @@ export const calculateDaysRemaining = (expiryDate) => {
   if (!expiryDate) return null;
   const expiry = typeof expiryDate === 'string' ? parseISO(expiryDate) : expiryDate;
   if (!isValid(expiry)) return null;
-  return differenceInDays(expiry, new Date());
+  // Compare dates at midnight to avoid time-of-day issues
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const expiryMidnight = new Date(expiry);
+  expiryMidnight.setHours(0, 0, 0, 0);
+  return differenceInDays(expiryMidnight, today);
 };
 
 export const getDocumentStatus = (expiryDate) => {
