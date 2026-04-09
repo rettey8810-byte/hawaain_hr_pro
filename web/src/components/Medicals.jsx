@@ -134,20 +134,29 @@ export default function Medicals() {
 
   const getEmployeeInfo = (medical) => {
     const medicalEmployeeId = medical?.employeeId;
-    const medicalEmpId = medical?.empId ?? medical?.EmpID ?? medical?.staffId;
+    const medicalEmpId = medical?.empId ?? medical?.EmpID ?? medical?.staffId ?? medical?.empID;
 
-    const empById = medicalEmployeeId ? employees.find(e => e.id === medicalEmployeeId) : null;
-    const empByEmpId = medicalEmpId
-      ? employees.find(e => String(e.EmpID ?? e.employeeId ?? '').trim() === String(medicalEmpId).trim())
-      : null;
-    const emp = empById || empByEmpId;
+    // Try to find employee by employeeId first
+    let emp = medicalEmployeeId ? employees.find(e => e.id === medicalEmployeeId) : null;
+    
+    // If not found, try to match by EmpID (handle both string and number types)
+    if (!emp && medicalEmpId) {
+      const searchId = String(medicalEmpId).trim();
+      emp = employees.find(e => {
+        const empId1 = e.EmpID !== undefined ? String(e.EmpID).trim() : null;
+        const empId2 = e.empId !== undefined ? String(e.empId).trim() : null;
+        const empId3 = e.empID !== undefined ? String(e.empID).trim() : null;
+        return empId1 === searchId || empId2 === searchId || empId3 === searchId;
+      });
+    }
 
+    // Get passport number from linked passport if available
     const passport = medicalEmployeeId ? passports.find(p => p.employeeId === medicalEmployeeId) : null;
 
     return {
-      name: emp?.FullName || emp?.name || medical?.employeeName || 'Unknown',
-      empId: emp?.EmpID || emp?.employeeId || medicalEmpId || 'N/A',
-      passportNumber: passport?.passportNumber || medical?.passportNumber || 'N/A'
+      name: emp?.FullName || emp?.name || medical?.employeeName || medical?.EmployeeName || 'Unknown',
+      empId: emp?.EmpID || emp?.empId || emp?.employeeId || medicalEmpId || 'N/A',
+      passportNumber: passport?.passportNumber || medical?.passportNumber || medical?.PPNo || 'N/A'
     };
   };
 
