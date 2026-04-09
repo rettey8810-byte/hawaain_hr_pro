@@ -312,6 +312,10 @@ export default function Employees() {
                 <p className="text-sm text-violet-100 font-medium">🌍 Countries</p>
                 <p className="text-3xl font-bold mt-1">{stats.countries}</p>
               </div>
+              <Link to="/terminations" className="bg-gradient-to-br from-red-500 to-red-600 rounded-2xl shadow-lg p-5 text-white transform hover:scale-105 transition-all cursor-pointer">
+                <p className="text-sm text-red-100 font-medium">🚪 Terminations</p>
+                <p className="text-3xl font-bold mt-1">View</p>
+              </Link>
             </>
           );
         })()}
