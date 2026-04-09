@@ -1,4 +1,4 @@
-# HR Modules Documentation
+# HR Factory - Modules Documentation
 
 ## Comprehensive Guide to All HR Modules
 
@@ -319,5 +319,14 @@ For technical issues, contact IT support or check browser console for errors.
 
 ---
 
-*Documentation Version: 1.1*
-*Last Updated: April 7, 2026*
+*Documentation Version: 1.2*
+*Last Updated: April 9, 2026*
+
+---
+
+## Rebranding Notice (April 2026)
+
+**Hawaain HR Pro** has been rebranded to **HR Factory** with a new modern design system:
+- New color palette: Navy (#1A2B48), Teal (#2DD4BF), Orange (#F59E0B)
+- Typography: Inter for body text, Plus Jakarta Sans for headings
+- Updated logo and branding across all platforms
