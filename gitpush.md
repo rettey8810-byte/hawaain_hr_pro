@@ -135,3 +135,36 @@ git restore .
 ```powershell
 git restore --staged path/to/file
 ```
+
+---
+
+## Latest Changes (Auto-deployed to Vercel)
+
+### 2025-01-XX Updates
+
+**Leave Application Form**
+- Reason and Destination fields are now optional (no longer required)
+- Removed validation checks for empty reason/destination
+- Updated labels to show "(optional)" indicator
+
+**Leave Planner**
+- Now shows only active leaves by default (pending and approved)
+- Rejected and cancelled leaves are filtered out unless specific status filter is selected
+- Status filter "all" now means "all active leaves"
+
+**Medicals Page**
+- Removed FirebaseDataChecker debug component
+- Cleaned up production code
+
+**How to Deploy**
+All changes are automatically deployed to Vercel when pushed to main branch.
+
+Quick deploy command:
+```powershell
+git add -A; git commit -m "your message"; git push origin main
+```
+
+If Vercel doesn't auto-deploy (no new commits):
+```powershell
+git commit --allow-empty -m "trigger: force vercel deploy"; git push origin main
+```
