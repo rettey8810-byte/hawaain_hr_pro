@@ -1,4 +1,4 @@
-# Hawaain HR Pro - User Manual
+# HR Factory - User Manual
 
 ## Table of Contents
 1. [Introduction](#introduction)
@@ -1793,6 +1793,16 @@ The system includes templates for common positions:
 ---
 
 ## Contact & Support
+
+For technical support or inquiries, please contact:
+
+**Hawaain Pvt Ltd**  
+📧 Email: retey.ay@hotmail.com  
+📱 Viber/WhatsApp: +960 9795572  
+
+---
+
+## Contact & Support (Legacy)
 
 ### Technical Support
 - Email: support@hawaainhr.com

@@ -1,4 +1,4 @@
-# Hawaain HR Pro
+# HR Factory
 
 ## Full-Stack HR & Expatriate Management System
 

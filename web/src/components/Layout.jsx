@@ -470,6 +470,9 @@ export default function Layout({ children }) {
                 <Link to="/help" className="text-slate-400 hover:text-white transition-colors">
                   Help
                 </Link>
+                <Link to="/contact" className="text-slate-400 hover:text-white transition-colors">
+                  Contact Us
+                </Link>
                 <Link to="/settings" className="text-slate-400 hover:text-white transition-colors">
                   Settings
                 </Link>

@@ -36,6 +36,7 @@ import UserManagement from './components/UserManagement';
 import GlobalSearch from './components/GlobalSearch';
 import AuditLog from './components/AuditLog';
 import Help from './components/Help';
+import ContactUs from './components/ContactUs';
 import Profile from './components/Profile';
 import LeavePlanner from './components/LeavePlanner';
 import LeaveApplication from './components/LeaveApplication';
@@ -425,7 +426,14 @@ function App() {
                   <Layout><Help /></Layout>
                 </PrivateRoute>
               } />
-              
+
+              {/* Contact Us */}
+              <Route path="/contact" element={
+                <PrivateRoute>
+                  <Layout><ContactUs /></Layout>
+                </PrivateRoute>
+              } />
+
               {/* Profile */}
               <Route path="/profile" element={
                 <PrivateRoute>
