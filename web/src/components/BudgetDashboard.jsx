@@ -15,8 +15,35 @@ import {
   Target,
   TrendingDown,
   AlertCircle,
-  CheckCircle
+  CheckCircle,
+  Activity,
+  Layers,
+  Briefcase,
+  MapPin,
+  Clock
 } from 'lucide-react';
+import { 
+  BarChart, 
+  Bar, 
+  XAxis, 
+  YAxis, 
+  CartesianGrid, 
+  Tooltip, 
+  Legend, 
+  ResponsiveContainer,
+  PieChart as RePieChart,
+  Pie,
+  Cell,
+  LineChart,
+  Line,
+  AreaChart,
+  Area,
+  RadarChart,
+  PolarGrid,
+  PolarAngleAxis,
+  PolarRadiusAxis,
+  Radar
+} from 'recharts';
 import { useFirestore } from '../hooks/useFirestore';
 import { useCompany } from '../contexts/CompanyContext';
 import { collection, query, where, getDocs } from 'firebase/firestore';
@@ -507,6 +534,17 @@ export default function BudgetDashboard() {
                 {varianceData.length}
               </span>
             </button>
+            <button
+              onClick={() => setActiveTab('analytics')}
+              className={`py-4 px-6 border-b-2 font-medium text-sm flex items-center ${
+                activeTab === 'analytics'
+                  ? 'border-blue-500 text-blue-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              <Activity className="h-5 w-5 mr-2" />
+              Analytics & Charts
+            </button>
           </nav>
         </div>
 
@@ -768,7 +806,237 @@ export default function BudgetDashboard() {
             </div>
           </div>
         )}
+
+        {/* Analytics & Charts Tab */}
+        {activeTab === 'analytics' && (
+          <div className="p-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-6 flex items-center">
+              <Activity className="h-5 w-5 mr-2 text-blue-500" />
+              Analytics & Visualizations
+            </h3>
+
+            {/* Chart Grid - Row 1 */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+              {/* Budget by Department - Bar Chart */}
+              <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+                <h4 className="text-md font-semibold text-gray-800 mb-4 flex items-center">
+                  <Building2 className="h-5 w-5 mr-2 text-blue-500" />
+                  Budget by Department
+                </h4>
+                <div className="h-64">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={departmentStats.slice(0, 10)} layout="vertical">
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis type="number" tickFormatter={(val) => `$${(val/1000).toFixed(0)}k`} />
+                      <YAxis type="category" dataKey="name" width={100} tick={{fontSize: 11}} />
+                      <Tooltip formatter={(val) => formatCurrency(val)} />
+                      <Bar dataKey="totalMonthly" fill="#3B82F6" name="Monthly Budget" radius={[0, 4, 4, 0]} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+
+              {/* Budget Distribution - Pie Chart */}
+              <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+                <h4 className="text-md font-semibold text-gray-800 mb-4 flex items-center">
+                  <PieChart className="h-5 w-5 mr-2 text-emerald-500" />
+                  Budget Distribution by Department
+                </h4>
+                <div className="h-64">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <RePieChart>
+                      <Pie
+                        data={departmentStats.slice(0, 8)}
+                        dataKey="totalMonthly"
+                        nameKey="name"
+                        cx="50%"
+                        cy="50%"
+                        innerRadius={60}
+                        outerRadius={80}
+                        paddingAngle={5}
+                        label={({name, percent}) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                        labelLine={false}
+                      >
+                        {departmentStats.slice(0, 8).map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899', '#06B6D4', '#84CC16'][index % 8]} />
+                        ))}
+                      </Pie>
+                      <Tooltip formatter={(val) => formatCurrency(val)} />
+                    </RePieChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+            </div>
+
+            {/* Chart Grid - Row 2: Section & Designation Analysis */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+              {/* Section-wise Budget */}
+              <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+                <h4 className="text-md font-semibold text-gray-800 mb-4 flex items-center">
+                  <Layers className="h-5 w-5 mr-2 text-purple-500" />
+                  Budget by Section
+                </h4>
+                <div className="h-64">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={(() => {
+                      const sectionMap = {};
+                      budgets.forEach(b => {
+                        const section = b.section || 'Unassigned';
+                        const salary = parseFloat(b.salary) || 0;
+                        const positions = Object.values(b.requiredManpower || {}).reduce((a, v) => a + (parseInt(v) || 0), 0);
+                        sectionMap[section] = (sectionMap[section] || 0) + (salary * positions);
+                      });
+                      return Object.entries(sectionMap)
+                        .map(([name, value]) => ({ name, value }))
+                        .sort((a, b) => b.value - a.value)
+                        .slice(0, 8);
+                    })()}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="name" tick={{fontSize: 10}} angle={-45} textAnchor="end" height={60} />
+                      <YAxis tickFormatter={(val) => `$${(val/1000).toFixed(0)}k`} />
+                      <Tooltip formatter={(val) => formatCurrency(val)} />
+                      <Bar dataKey="value" fill="#8B5CF6" name="Budget" radius={[4, 4, 0, 0]} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+
+              {/* Designation-wise Employee Count vs Budget Positions */}
+              <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+                <h4 className="text-md font-semibold text-gray-800 mb-4 flex items-center">
+                  <Briefcase className="h-5 w-5 mr-2 text-amber-500" />
+                  Positions by Designation (Top 10)
+                </h4>
+                <div className="h-64">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={budgetEntries.slice(0, 10)}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="designation" tick={{fontSize: 9}} angle={-45} textAnchor="end" height={70} />
+                      <YAxis />
+                      <Tooltip />
+                      <Legend />
+                      <Bar dataKey="totalPositions" fill="#F59E0B" name="Budgeted" radius={[4, 4, 0, 0]} />
+                      <Bar dataKey="actual2026" fill="#10B981" name="Actual 2026" radius={[4, 4, 0, 0]} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+            </div>
+
+            {/* Chart Grid - Row 3: Advanced Analytics */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+              {/* Salary Range Distribution */}
+              <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+                <h4 className="text-md font-semibold text-gray-800 mb-4 flex items-center">
+                  <DollarSign className="h-5 w-5 mr-2 text-rose-500" />
+                  Salary Range Distribution
+                </h4>
+                <div className="h-48">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={(() => {
+                      const ranges = {
+                        'Below $500': 0,
+                        '$500-$1000': 0,
+                        '$1000-$2000': 0,
+                        '$2000-$5000': 0,
+                        'Above $5000': 0
+                      };
+                      budgets.forEach(b => {
+                        const salary = parseFloat(b.salary) || 0;
+                        if (salary < 500) ranges['Below $500']++;
+                        else if (salary < 1000) ranges['$500-$1000']++;
+                        else if (salary < 2000) ranges['$1000-$2000']++;
+                        else if (salary < 5000) ranges['$2000-$5000']++;
+                        else ranges['Above $5000']++;
+                      });
+                      return Object.entries(ranges).map(([name, count]) => ({ name, count }));
+                    })()}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="name" tick={{fontSize: 9}} angle={-30} textAnchor="end" height={50} />
+                      <YAxis />
+                      <Tooltip />
+                      <Bar dataKey="count" fill="#EF4444" name="Designations" radius={[4, 4, 0, 0]} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+
+              {/* Top Spending Departments */}
+              <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200 lg:col-span-2">
+                <h4 className="text-md font-semibold text-gray-800 mb-4 flex items-center">
+                  <TrendingUp className="h-5 w-5 mr-2 text-cyan-500" />
+                  Monthly vs Annual Budget Trend (Top Departments)
+                </h4>
+                <div className="h-48">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <AreaChart data={departmentStats.slice(0, 6)}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="name" tick={{fontSize: 10}} />
+                      <YAxis tickFormatter={(val) => `$${(val/1000).toFixed(0)}k`} />
+                      <Tooltip formatter={(val) => formatCurrency(val)} />
+                      <Legend />
+                      <Area type="monotone" dataKey="totalMonthly" stackId="1" stroke="#06B6D4" fill="#06B6D4" fillOpacity={0.6} name="Monthly" />
+                      <Area type="monotone" dataKey="annualTotal" stackId="2" stroke="#8B5CF6" fill="#8B5CF6" fillOpacity={0.6} name="Annual" />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+            </div>
+
+            {/* Chart Grid - Row 4: Employee vs Budget Analysis */}
+            <div className="grid grid-cols-1 gap-6">
+              {/* Variance Analysis Chart */}
+              <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+                <h4 className="text-md font-semibold text-gray-800 mb-4 flex items-center">
+                  <AlertCircle className="h-5 w-5 mr-2 text-orange-500" />
+                  Budget Variance Analysis (Budget vs Actual)
+                </h4>
+                <div className="h-64">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={varianceData.slice(0, 15)} layout="vertical">
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis type="number" tickFormatter={(val) => `$${(val/1000).toFixed(0)}k`} />
+                      <YAxis type="category" dataKey="designation" width={120} tick={{fontSize: 10}} />
+                      <Tooltip formatter={(val, name) => [formatCurrency(val), name]} />
+                      <Legend />
+                      <Bar dataKey="budgetTotal" fill="#3B82F6" name="Budget" stackId="a" />
+                      <Bar dataKey="actualTotal" fill="#10B981" name="Actual" />
+                      <Bar dataKey="variance" fill="#EF4444" name="Variance" />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+            </div>
+
+            {/* Summary Stats Row */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6">
+              <div className="bg-gradient-to-br from-blue-50 to-blue-100 p-4 rounded-xl border border-blue-200">
+                <p className="text-sm text-blue-600 font-medium">Total Designations</p>
+                <p className="text-2xl font-bold text-blue-800 mt-1">{budgetEntries.length}</p>
+              </div>
+              <div className="bg-gradient-to-br from-emerald-50 to-emerald-100 p-4 rounded-xl border border-emerald-200">
+                <p className="text-sm text-emerald-600 font-medium">Total Sections</p>
+                <p className="text-2xl font-bold text-emerald-800 mt-1">
+                  {new Set(budgets.map(b => b.section || 'Unassigned')).size}
+                </p>
+              </div>
+              <div className="bg-gradient-to-br from-purple-50 to-purple-100 p-4 rounded-xl border border-purple-200">
+                <p className="text-sm text-purple-600 font-medium">Total Departments</p>
+                <p className="text-2xl font-bold text-purple-800 mt-1">{departmentStats.length}</p>
+              </div>
+              <div className="bg-gradient-to-br from-amber-50 to-amber-100 p-4 rounded-xl border border-amber-200">
+                <p className="text-sm text-amber-600 font-medium">Avg Budget/Dept</p>
+                <p className="text-2xl font-bold text-amber-800 mt-1">
+                  {departmentStats.length > 0 
+                    ? formatCurrency(departmentStats.reduce((a, b) => a + b.totalMonthly, 0) / departmentStats.length)
+                    : '$0'}
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
 }
+
