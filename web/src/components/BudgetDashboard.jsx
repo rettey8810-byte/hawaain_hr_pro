@@ -56,6 +56,7 @@ export default function BudgetDashboard() {
   const [employees, setEmployees] = useState([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('overview');
+  const [expandedBudgetDepts, setExpandedBudgetDepts] = useState({});
 
   // Fetch manpower budgets and employees
   useEffect(() => {
@@ -277,6 +278,59 @@ export default function BudgetDashboard() {
 
     return variance;
   }, [budgets, employees]);
+
+  // Toggle department expansion for Budget vs Actual view
+  const toggleBudgetDept = (dept) => {
+    setExpandedBudgetDepts(prev => ({ ...prev, [dept]: !prev[dept] }));
+  };
+
+  // Group variance data by department and section for hierarchical view
+  const groupedVarianceData = useMemo(() => {
+    if (!varianceData.length) return {};
+    
+    const grouped = {};
+    varianceData.forEach(item => {
+      const dept = item.department || 'Unassigned';
+      const section = item.division || item.section || 'General';
+      
+      if (!grouped[dept]) {
+        grouped[dept] = {
+          sections: {},
+          totalBudget: 0,
+          totalActual: 0,
+          totalVariance: 0,
+          totalBudgetPositions: 0,
+          totalActualEmployees: 0
+        };
+      }
+      
+      if (!grouped[dept].sections[section]) {
+        grouped[dept].sections[section] = {
+          designations: [],
+          sectionBudget: 0,
+          sectionActual: 0,
+          sectionVariance: 0,
+          sectionBudgetPositions: 0,
+          sectionActualEmployees: 0
+        };
+      }
+      
+      grouped[dept].sections[section].designations.push(item);
+      grouped[dept].sections[section].sectionBudget += item.budgetTotal;
+      grouped[dept].sections[section].sectionActual += item.actualTotal;
+      grouped[dept].sections[section].sectionVariance += item.variance;
+      grouped[dept].sections[section].sectionBudgetPositions += item.budgetPositions;
+      grouped[dept].sections[section].sectionActualEmployees += item.employeeCount;
+      
+      grouped[dept].totalBudget += item.budgetTotal;
+      grouped[dept].totalActual += item.actualTotal;
+      grouped[dept].totalVariance += item.variance;
+      grouped[dept].totalBudgetPositions += item.budgetPositions;
+      grouped[dept].totalActualEmployees += item.employeeCount;
+    });
+    
+    return grouped;
+  }, [varianceData]);
 
   // Export variance to CSV
   const exportVarianceToCSV = () => {
@@ -529,9 +583,23 @@ export default function BudgetDashboard() {
               }`}
             >
               <TrendingDown className="h-5 w-5 mr-2" />
-              Variance Budget vs Actuals
+              Variance Table
               <span className="ml-2 bg-gray-100 text-gray-700 px-2 py-0.5 rounded-full text-xs">
                 {varianceData.length}
+              </span>
+            </button>
+            <button
+              onClick={() => setActiveTab('budgetVsActual')}
+              className={`py-4 px-6 border-b-2 font-medium text-sm flex items-center ${
+                activeTab === 'budgetVsActual'
+                  ? 'border-blue-500 text-blue-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700'
+              }`}
+            >
+              <Layers className="h-5 w-5 mr-2" />
+              Budget vs Actual
+              <span className="ml-2 bg-gray-100 text-gray-700 px-2 py-0.5 rounded-full text-xs">
+                {Object.keys(groupedVarianceData).length}
               </span>
             </button>
             <button
@@ -823,9 +891,9 @@ export default function BudgetDashboard() {
                   <Building2 className="h-5 w-5 mr-2 text-blue-500" />
                   Budget by Department
                 </h4>
-                <div className="h-64">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={departmentStats.slice(0, 10)} layout="vertical">
+                <div className="h-64 min-h-[256px]">
+                  <ResponsiveContainer width="100%" height="100%" minHeight={250}>
+                    <BarChart data={departmentStats.slice(0, 10)} layout="vertical" margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
                       <CartesianGrid strokeDasharray="3 3" />
                       <XAxis type="number" tickFormatter={(val) => `$${(val/1000).toFixed(0)}k`} />
                       <YAxis type="category" dataKey="name" width={100} tick={{fontSize: 11}} />
@@ -842,8 +910,8 @@ export default function BudgetDashboard() {
                   <PieChart className="h-5 w-5 mr-2 text-emerald-500" />
                   Budget Distribution by Department
                 </h4>
-                <div className="h-64">
-                  <ResponsiveContainer width="100%" height="100%">
+                <div className="h-64 min-h-[256px]">
+                  <ResponsiveContainer width="100%" height="100%" minHeight={250}>
                     <RePieChart>
                       <Pie
                         data={departmentStats.slice(0, 8)}
@@ -876,8 +944,8 @@ export default function BudgetDashboard() {
                   <Layers className="h-5 w-5 mr-2 text-purple-500" />
                   Budget by Section
                 </h4>
-                <div className="h-64">
-                  <ResponsiveContainer width="100%" height="100%">
+                <div className="h-64 min-h-[256px]">
+                  <ResponsiveContainer width="100%" height="100%" minHeight={250}>
                     <BarChart data={(() => {
                       const sectionMap = {};
                       budgets.forEach(b => {
@@ -890,7 +958,7 @@ export default function BudgetDashboard() {
                         .map(([name, value]) => ({ name, value }))
                         .sort((a, b) => b.value - a.value)
                         .slice(0, 8);
-                    })()}>
+                    })()} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
                       <CartesianGrid strokeDasharray="3 3" />
                       <XAxis dataKey="name" tick={{fontSize: 10}} angle={-45} textAnchor="end" height={60} />
                       <YAxis tickFormatter={(val) => `$${(val/1000).toFixed(0)}k`} />
@@ -907,9 +975,9 @@ export default function BudgetDashboard() {
                   <Briefcase className="h-5 w-5 mr-2 text-amber-500" />
                   Positions by Designation (Top 10)
                 </h4>
-                <div className="h-64">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={budgetEntries.slice(0, 10)}>
+                <div className="h-64 min-h-[256px]">
+                  <ResponsiveContainer width="100%" height="100%" minHeight={250}>
+                    <BarChart data={budgetEntries.slice(0, 10)} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
                       <CartesianGrid strokeDasharray="3 3" />
                       <XAxis dataKey="designation" tick={{fontSize: 9}} angle={-45} textAnchor="end" height={70} />
                       <YAxis />
@@ -931,8 +999,8 @@ export default function BudgetDashboard() {
                   <DollarSign className="h-5 w-5 mr-2 text-rose-500" />
                   Salary Range Distribution
                 </h4>
-                <div className="h-48">
-                  <ResponsiveContainer width="100%" height="100%">
+                <div className="h-48 min-h-[192px]">
+                  <ResponsiveContainer width="100%" height="100%" minHeight={180}>
                     <BarChart data={(() => {
                       const ranges = {
                         'Below $500': 0,
@@ -950,7 +1018,7 @@ export default function BudgetDashboard() {
                         else ranges['Above $5000']++;
                       });
                       return Object.entries(ranges).map(([name, count]) => ({ name, count }));
-                    })()}>
+                    })()} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
                       <CartesianGrid strokeDasharray="3 3" />
                       <XAxis dataKey="name" tick={{fontSize: 9}} angle={-30} textAnchor="end" height={50} />
                       <YAxis />
@@ -967,9 +1035,9 @@ export default function BudgetDashboard() {
                   <TrendingUp className="h-5 w-5 mr-2 text-cyan-500" />
                   Monthly vs Annual Budget Trend (Top Departments)
                 </h4>
-                <div className="h-48">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <AreaChart data={departmentStats.slice(0, 6)}>
+                <div className="h-48 min-h-[192px]">
+                  <ResponsiveContainer width="100%" height="100%" minHeight={180}>
+                    <AreaChart data={departmentStats.slice(0, 6)} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
                       <CartesianGrid strokeDasharray="3 3" />
                       <XAxis dataKey="name" tick={{fontSize: 10}} />
                       <YAxis tickFormatter={(val) => `$${(val/1000).toFixed(0)}k`} />
@@ -991,9 +1059,9 @@ export default function BudgetDashboard() {
                   <AlertCircle className="h-5 w-5 mr-2 text-orange-500" />
                   Budget Variance Analysis (Budget vs Actual)
                 </h4>
-                <div className="h-64">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={varianceData.slice(0, 15)} layout="vertical">
+                <div className="h-64 min-h-[256px]">
+                  <ResponsiveContainer width="100%" height="100%" minHeight={250}>
+                    <BarChart data={varianceData.slice(0, 15)} layout="vertical" margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
                       <CartesianGrid strokeDasharray="3 3" />
                       <XAxis type="number" tickFormatter={(val) => `$${(val/1000).toFixed(0)}k`} />
                       <YAxis type="category" dataKey="designation" width={120} tick={{fontSize: 10}} />
@@ -1035,8 +1103,162 @@ export default function BudgetDashboard() {
             </div>
           </div>
         )}
+
+        {/* Budget vs Actual - Hierarchical View */}
+        {activeTab === 'budgetVsActual' && (
+          <div className="p-6">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-semibold text-gray-900 flex items-center">
+                <Layers className="h-5 w-5 mr-2 text-blue-500" />
+                Budget vs Actual - Hierarchical View
+              </h3>
+              <button
+                onClick={exportVarianceToCSV}
+                className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm"
+              >
+                <Download className="h-4 w-4 mr-2" />
+                Export CSV
+              </button>
+            </div>
+
+            {Object.keys(groupedVarianceData).length === 0 ? (
+              <div className="text-center py-12 text-gray-500">
+                <Layers className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+                <p>No budget vs actual data available</p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {Object.entries(groupedVarianceData).map(([deptName, deptData]) => (
+                  <div key={deptName} className="border border-gray-200 rounded-xl overflow-hidden shadow-sm">
+                    {/* Department Header - Collapsible */}
+                    <div 
+                      className="bg-gradient-to-r from-blue-50 to-blue-100 p-4 flex items-center justify-between cursor-pointer hover:from-blue-100 hover:to-blue-200 transition-colors"
+                      onClick={() => toggleBudgetDept(deptName)}
+                    >
+                      <div className="flex items-center gap-3">
+                        {expandedBudgetDepts[deptName] ? <ChevronDown className="w-5 h-5 text-blue-600" /> : <ChevronRight className="w-5 h-5 text-blue-600" />}
+                        <Building2 className="w-5 h-5 text-blue-600" />
+                        <span className="font-bold text-lg text-gray-900">{deptName}</span>
+                      </div>
+                      <div className="flex items-center gap-6 text-sm">
+                        <div className="text-center">
+                          <p className="text-gray-500 text-xs">Budget Pos</p>
+                          <p className="font-semibold text-blue-700">{deptData.totalBudgetPositions}</p>
+                        </div>
+                        <div className="text-center">
+                          <p className="text-gray-500 text-xs">Actual Emp</p>
+                          <p className="font-semibold text-emerald-700">{deptData.totalActualEmployees}</p>
+                        </div>
+                        <div className="text-center">
+                          <p className="text-gray-500 text-xs">Variance</p>
+                          <p className={`font-semibold ${deptData.totalVariance > 0 ? 'text-red-600' : deptData.totalVariance < 0 ? 'text-emerald-600' : 'text-gray-600'}`}>
+                            {deptData.totalVariance > 0 ? '+' : ''}{deptData.totalActualEmployees - deptData.totalBudgetPositions}
+                          </p>
+                        </div>
+                        <div className="text-center">
+                          <p className="text-gray-500 text-xs">Budget</p>
+                          <p className="font-semibold text-gray-800">{formatCurrency(deptData.totalBudget)}</p>
+                        </div>
+                        <div className="text-center">
+                          <p className="text-gray-500 text-xs">Actual</p>
+                          <p className="font-semibold text-gray-800">{formatCurrency(deptData.totalActual)}</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Department Content - Sections */}
+                    {expandedBudgetDepts[deptName] && (
+                      <div className="p-4 space-y-3 bg-white">
+                        {Object.entries(deptData.sections).map(([sectionName, sectionData]) => (
+                          <div key={sectionName} className="border border-gray-100 rounded-lg overflow-hidden">
+                            {/* Section Header */}
+                            <div className="bg-gray-50 p-3 flex items-center justify-between">
+                              <div className="flex items-center gap-2">
+                                <MapPin className="w-4 h-4 text-purple-500" />
+                                <span className="font-semibold text-gray-800">{sectionName}</span>
+                                <span className="text-xs text-gray-500">({sectionData.designations.length} designations)</span>
+                              </div>
+                              <div className="flex items-center gap-4 text-sm">
+                                <span className="text-blue-600">Budget: <strong>{sectionData.sectionBudgetPositions}</strong> pos | {formatCurrency(sectionData.sectionBudget)}</span>
+                                <span className="text-emerald-600">Actual: <strong>{sectionData.sectionActualEmployees}</strong> emp | {formatCurrency(sectionData.sectionActual)}</span>
+                                <span className={`${sectionData.sectionVariance > 0 ? 'text-red-600' : 'text-emerald-600'}`}>
+                                  Var: <strong>{sectionData.sectionVariance > 0 ? '+' : ''}{sectionData.sectionActualEmployees - sectionData.sectionBudgetPositions}</strong>
+                                </span>
+                              </div>
+                            </div>
+
+                            {/* Designations Table */}
+                            <table className="w-full text-sm">
+                              <thead className="bg-gray-100">
+                                <tr>
+                                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-500">Designation</th>
+                                  <th className="px-4 py-2 text-center text-xs font-medium text-gray-500">Budget Pos</th>
+                                  <th className="px-4 py-2 text-center text-xs font-medium text-gray-500">Actual Emp</th>
+                                  <th className="px-4 py-2 text-center text-xs font-medium text-gray-500">Variance</th>
+                                  <th className="px-4 py-2 text-right text-xs font-medium text-gray-500">Budget Amt</th>
+                                  <th className="px-4 py-2 text-right text-xs font-medium text-gray-500">Actual Amt</th>
+                                  <th className="px-4 py-2 text-right text-xs font-medium text-gray-500">Variance Amt</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {sectionData.designations.map((item, idx) => (
+                                  <tr key={idx} className="border-b border-gray-50 hover:bg-gray-50">
+                                    <td className="px-4 py-2 font-medium text-gray-900">{item.designation}</td>
+                                    <td className="px-4 py-2 text-center">
+                                      <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800">
+                                        {item.budgetPositions}
+                                      </span>
+                                    </td>
+                                    <td className="px-4 py-2 text-center">
+                                      <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${item.employeeCount > item.budgetPositions ? 'bg-emerald-100 text-emerald-800' : item.employeeCount < item.budgetPositions ? 'bg-amber-100 text-amber-800' : 'bg-gray-100 text-gray-800'}`}>
+                                        {item.employeeCount}
+                                      </span>
+                                    </td>
+                                    <td className="px-4 py-2 text-center">
+                                      <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${item.variance > 0 ? 'bg-red-100 text-red-800' : item.variance < 0 ? 'bg-emerald-100 text-emerald-800' : 'bg-gray-100 text-gray-800'}`}>
+                                        {item.variance > 0 ? '+' : ''}{item.employeeCount - item.budgetPositions}
+                                      </span>
+                                    </td>
+                                    <td className="px-4 py-2 text-right text-gray-700">{formatCurrency(item.budgetTotal)}</td>
+                                    <td className="px-4 py-2 text-right text-gray-700">{formatCurrency(item.actualTotal)}</td>
+                                    <td className="px-4 py-2 text-right">
+                                      <span className={`font-medium ${item.variance > 0 ? 'text-red-600' : item.variance < 0 ? 'text-emerald-600' : 'text-gray-600'}`}>
+                                        {item.variance > 0 ? '+' : ''}{formatCurrency(item.variance)}
+                                      </span>
+                                    </td>
+                                  </tr>
+                                ))}
+                                {/* Section Total Row */}
+                                <tr className="bg-purple-50 font-semibold">
+                                  <td className="px-4 py-2 text-purple-900">{sectionName} Total</td>
+                                  <td className="px-4 py-2 text-center text-blue-700">{sectionData.sectionBudgetPositions}</td>
+                                  <td className="px-4 py-2 text-center text-emerald-700">{sectionData.sectionActualEmployees}</td>
+                                  <td className="px-4 py-2 text-center">
+                                    <span className={sectionData.sectionActualEmployees - sectionData.sectionBudgetPositions > 0 ? 'text-red-600' : 'text-emerald-600'}>
+                                      {sectionData.sectionActualEmployees - sectionData.sectionBudgetPositions > 0 ? '+' : ''}{sectionData.sectionActualEmployees - sectionData.sectionBudgetPositions}
+                                    </span>
+                                  </td>
+                                  <td className="px-4 py-2 text-right text-gray-800">{formatCurrency(sectionData.sectionBudget)}</td>
+                                  <td className="px-4 py-2 text-right text-gray-800">{formatCurrency(sectionData.sectionActual)}</td>
+                                  <td className="px-4 py-2 text-right">
+                                    <span className={sectionData.sectionVariance > 0 ? 'text-red-600' : 'text-emerald-600'}>
+                                      {sectionData.sectionVariance > 0 ? '+' : ''}{formatCurrency(sectionData.sectionVariance)}
+                                    </span>
+                                  </td>
+                                </tr>
+                              </tbody>
+                            </table>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );
-}
 
