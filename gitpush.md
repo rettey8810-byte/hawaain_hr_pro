@@ -140,6 +140,82 @@ git restore --staged path/to/file
 
 ## Latest Changes (Auto-deployed to Vercel)
 
+### April 2026 Updates
+
+**Turnover Dashboard (New Module)**
+- New comprehensive Turnover Dashboard at `/turnover`
+- Located in HR Management navigation section
+- Features include:
+  - **Key Metrics**: Turnover rate, active employees, new hires, fill rate
+  - **Monthly Trend Chart**: Visual comparison of terminations vs hires over 12 months
+  - **Termination Types Pie Chart**: Breakdown by Resignation, Termination, Contract End, Retirement, Mutual Agreement
+  - **Hiring Reasons Bar Chart**: New positions, Replacements, Expansion
+  - **Net Workforce Change**: Month-by-month headcount delta visualization
+  - **Department Breakdown Table**: Per-department stats showing current employees, terminations, new hires, turnover rate %, and net change
+  - **Quick Links**: Direct navigation to Terminations, Recruitment Pipeline, and Hiring Requisitions
+  - **CSV Export**: Export department breakdown data for reporting
+- Data sources: Employees, Terminations, and Recruitment Approvals collections
+
+**Dashboard - Real-Time Updates**
+- Switched from `getDocs` to `onSnapshot` for live Firestore data updates
+- Dashboard stats now update automatically without page refresh
+- Termination stats card added showing:
+  - Total completed terminations count
+  - Active terminations in progress
+  - Click to navigate to Terminations page
+- Real-time synchronization for all collections (employees, terminations, documents)
+
+**Dashboard - Employee Count Fix**
+- Main Dashboard now excludes terminated employees from "Total Employees" count
+- Only active employees (status !== 'terminated') are displayed in the stats
+- Ensures terminated staff don't appear in headcount calculations
+
+**Recruitment - Enhanced Onboarding**
+- Completely redesigned Onboarding modal with comprehensive employee registration
+- New sections added:
+  - **Document Registration**: Passport number/expiry, Work permit number/expiry, Visa number/expiry, National ID, Medical insurance number
+  - **Emergency Contact**: Name, phone number, relationship (Spouse/Parent/Sibling/Child/Friend/Other)
+  - **Bank Details**: Bank name, account number for salary processing
+  - **Uniform & Medical**: Uniform size (XS-XXXL), allergies, dietary restrictions (Halal/Vegetarian/etc.)
+  - **Personal Info**: Date of birth, joining date
+- **Accommodation Integration**:
+  - Checkbox to "Arrange Accommodation" during onboarding
+  - Displays all available rooms from Accommodation module in a selectable grid
+  - Room cards show: Room number, Building/Floor, Room type, Bed count, Amenities
+  - Visual selection feedback with checkmark indicator
+  - On completion:
+    - Automatically creates `roomAssignments` record linking new hire to room
+    - Updates room status from `available` to `occupied`
+    - Sets check-in date as the joining date
+    - Shows success toast with assigned room number
+  - Warning displayed if no available rooms exist
+- Fixed missing `updateCandidate` helper function
+- Connected `addCandidate` from useFirestore hook properly
+- Access: Recruitment → Onboarding tab → "Start Onboarding" button
+
+**Terminations - Rehire Feature**
+- Added "Rehire" button for completed terminations
+- Allows reversing accidental terminations
+- Clicking rehire will:
+  - Change termination status to 'cancelled'
+  - Restore employee to 'active' status
+  - Clear termination date and reason
+  - Allow room allocation again
+
+**Budget Dashboard Enhancements**
+- Added new "Budget vs Actual" tab with hierarchical view
+- Shows data grouped by: Department > Section > Designation
+- Displays head counts and amounts with variance calculations
+- Added collapsible sections for easier navigation
+- Fixed chart container width/height warnings
+- Fixed missing ChevronRight/ChevronDown icon imports
+- Fixed CSV export to handle commas in designation names (prevents column shifts)
+
+**Date Comparison Fix**
+- Fixed bug where tomorrow's dates showed as "expired"
+- Now compares dates at midnight to avoid time-of-day issues
+- Affects medical records, passports, visas, and work permits expiry display
+
 ### 2025-01-XX Updates
 
 **Leave Application Form**
