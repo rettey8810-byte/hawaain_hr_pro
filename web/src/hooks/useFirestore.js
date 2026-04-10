@@ -8,7 +8,6 @@ import {
   query, 
   where, 
   onSnapshot,
-  getDocs,
   serverTimestamp,
   limit,
   startAfter,
@@ -38,8 +37,8 @@ export function useFirestore(collectionName, customConstraints = []) {
     const constraints = [where('companyId', '==', companyId), ...customConstraints];
     const q = query(collection(db, collectionName), ...constraints);
 
-    // Use one-time getDocs for faster initial load
-    getDocs(q).then((snapshot) => {
+    // Use onSnapshot for real-time updates
+    const unsubscribe = onSnapshot(q, (snapshot) => {
       let docs = snapshot.docs.map(doc => ({
         id: doc.id,
         ...doc.data()
@@ -49,7 +48,7 @@ export function useFirestore(collectionName, customConstraints = []) {
       // No fallback to prevent cross-company data leakage
       setDocuments(docs);
       setLoading(false);
-    }).catch((err) => {
+    }, (err) => {
       console.error(`Firestore error in ${collectionName}:`, err);
       // Check for quota exceeded error
       if (err.message?.includes('quota') || err.code === 'resource-exhausted') {
@@ -59,6 +58,9 @@ export function useFirestore(collectionName, customConstraints = []) {
       }
       setLoading(false);
     });
+    
+    // Cleanup subscription on unmount
+    return () => unsubscribe();
   }, [collectionName, companyId, JSON.stringify(customConstraints)]);
 
   const addDocument = async (data) => {

@@ -15,7 +15,8 @@ import {
   Minus,
   BarChart3,
   PieChart,
-  Activity
+  Activity,
+  UserX
 } from 'lucide-react';
 import { 
   BarChart, 
@@ -101,6 +102,7 @@ export default function Dashboard() {
   const { documents: workPermits } = useFirestore('workPermits');
   const { documents: medicals } = useFirestore('medicals');
   const { documents: leaves } = useFirestore('leaves');
+  const { documents: terminations } = useFirestore('terminations');
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -111,6 +113,11 @@ export default function Dashboard() {
   const companyEmployees = employees.filter(e => e.companyId === companyId && e.status !== 'terminated');
   const activeEmployeesCount = companyEmployees.length;
   const companyLeaves = leaves.filter(l => l.companyId === companyId);
+  
+  // Calculate termination stats for current company
+  const companyTerminations = terminations.filter(t => t.companyId === companyId);
+  const activeTerminations = companyTerminations.filter(t => ['pending', 'in_progress'].includes(t.status)).length;
+  const completedTerminations = companyTerminations.filter(t => t.status === 'completed').length;
 
   // Calculate department distribution
   const departmentData = companyEmployees.reduce((acc, emp) => {
@@ -278,6 +285,14 @@ export default function Dashboard() {
           gradient="red"
           subtitle={`${medicalAlerts.getTotalExpiring()} expiring`}
           href="/medical"
+        />
+        <StatCard
+          title="Terminations"
+          value={completedTerminations}
+          icon={UserX}
+          gradient="red"
+          subtitle={`${activeTerminations} in progress`}
+          href="/terminations"
         />
       </div>
 
