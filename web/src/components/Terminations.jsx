@@ -16,7 +16,8 @@ import {
   Edit2,
   Trash2,
   Save,
-  X
+  X,
+  UserPlus
 } from 'lucide-react';
 import { useFirestore } from '../hooks/useFirestore';
 import { useCompany } from '../contexts/CompanyContext';
@@ -203,6 +204,31 @@ export default function Terminations() {
       toast.success('Deleted');
     } catch (err) {
       toast.error('Error: ' + err.message);
+    }
+  };
+
+  const handleRehire = async (termination) => {
+    if (!confirm(`Rehire ${termination.employeeName}? This will:\n\n• Change termination status to 'cancelled'\n• Restore employee to active status\n• Allow them to be assigned to rooms again\n\nProceed?`)) return;
+    
+    try {
+      // Update termination status to cancelled
+      await updateDoc(doc(db, 'terminations', termination.id), {
+        status: 'cancelled',
+        rehiredAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      });
+      
+      // Restore employee to active status
+      await updateDoc(doc(db, 'employees', termination.employeeId), {
+        status: 'active',
+        terminationDate: null,
+        terminationReason: null,
+        updatedAt: new Date().toISOString()
+      });
+      
+      toast.success(`${termination.employeeName} has been rehired and is now active`);
+    } catch (err) {
+      toast.error('Error rehiring employee: ' + err.message);
     }
   };
 
@@ -438,6 +464,15 @@ export default function Terminations() {
                   </div>
                   {isHR?.() && (
                     <div className="flex gap-2">
+                      {termination.status === 'completed' && (
+                        <button
+                          onClick={(e) => { e.stopPropagation(); handleRehire(termination); }}
+                          className="p-2 text-green-600 hover:bg-green-100 rounded-lg"
+                          title="Rehire Employee"
+                        >
+                          <UserPlus className="h-4 w-4" />
+                        </button>
+                      )}
                       <button
                         onClick={(e) => { e.stopPropagation(); handleEdit(termination); }}
                         className="p-2 text-blue-600 hover:bg-blue-100 rounded-lg"

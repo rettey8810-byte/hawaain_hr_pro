@@ -107,8 +107,9 @@ export default function Dashboard() {
     setMounted(true);
   }, []);
 
-  // Filter by company
-  const companyEmployees = employees.filter(e => e.companyId === companyId);
+  // Filter by company and exclude terminated employees
+  const companyEmployees = employees.filter(e => e.companyId === companyId && e.status !== 'terminated');
+  const activeEmployeesCount = companyEmployees.length;
   const companyLeaves = leaves.filter(l => l.companyId === companyId);
 
   // Calculate department distribution
@@ -212,7 +213,7 @@ export default function Dashboard() {
       <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard
           title="Total Employees"
-          value={employees.length}
+          value={activeEmployeesCount}
           icon={Users}
           gradient="blue"
           subtitle="Active workforce"
