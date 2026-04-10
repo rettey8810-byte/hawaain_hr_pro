@@ -2,9 +2,11 @@ import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Shield, Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
+import { collection, query, where, getDocs } from 'firebase/firestore';
+import { db } from '../firebase/config';
 
 export default function Login() {
-  const [email, setEmail] = useState('');
+  const [emailOrUsername, setEmailOrUsername] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
@@ -18,6 +20,30 @@ export default function Login() {
     setLoading(true);
 
     try {
+      let email = emailOrUsername;
+
+      // If input is not an email, treat it as username and look up the email
+      if (!emailOrUsername.includes('@')) {
+        // Search for user by username
+        const usersQuery = query(
+          collection(db, 'users'),
+          where('username', '==', emailOrUsername)
+        );
+        const userSnapshot = await getDocs(usersQuery);
+
+        if (userSnapshot.empty) {
+          throw new Error('Username not found. Please check your username or use your email.');
+        }
+
+        // Get the email from the user document
+        const userData = userSnapshot.docs[0].data();
+        email = userData.email;
+
+        if (!email) {
+          throw new Error('User account has no email associated. Please contact admin.');
+        }
+      }
+
       await login(email, password);
       navigate('/');
     } catch (err) {
@@ -73,17 +99,17 @@ export default function Login() {
 
           <div className="rounded-md shadow-sm -space-y-px">
             <div>
-              <label htmlFor="email" className="sr-only">Email address</label>
+              <label htmlFor="emailOrUsername" className="sr-only">Email or Username</label>
               <input
-                id="email"
-                name="email"
-                type="email"
-                autoComplete="email"
+                id="emailOrUsername"
+                name="emailOrUsername"
+                type="text"
+                autoComplete="username"
                 required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                value={emailOrUsername}
+                onChange={(e) => setEmailOrUsername(e.target.value)}
                 className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
-                placeholder="Email address"
+                placeholder="Email or Username"
               />
             </div>
             <div className="relative">
