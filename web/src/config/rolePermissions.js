@@ -37,6 +37,12 @@ export const ROLE_HIERARCHY = {
     canCreate: [],
     label: 'Staff',
     description: 'Regular employee, cannot create users'
+  },
+  employee: {
+    level: 5,
+    canCreate: [],
+    label: 'Employee',
+    description: 'Regular employee with view-only access'
   }
 };
 
@@ -145,6 +151,25 @@ export const DEFAULT_FEATURE_PERMISSIONS = {
     payroll: { view: false, run: false },
     recruitment: { view: false, create: false, edit: false, delete: false },
     documents: { view: false, create: false, edit: false, delete: false },
+    leave: { view: true, apply: true, approve: false },
+    reports: { view: false, export: false },
+    settings: { view: false, edit: false },
+    users: { view: false, create: false, edit: false, delete: false },
+    // v2.0 New Features
+    timeAttendance: { view: true, clockIn: true, manage: false },
+    benefits: { view: true, create: false, edit: false, approve: false },
+    engagement: { view: true, create: true, manage: false },
+    compliance: { view: false, manage: false, process: false },
+    integrations: { view: false, configure: false, manage: false },
+    analytics: { view: false, create: false, export: false }
+  },
+  employee: {
+    companies: { view: false, create: false, edit: false, delete: false },
+    employees: { view: false, create: false, edit: false, delete: false },
+    salary: { view: true, edit: false },
+    payroll: { view: false, run: false },
+    recruitment: { view: false, create: false, edit: false, delete: false },
+    documents: { view: true, create: false, edit: false, delete: false },
     leave: { view: true, apply: true, approve: false },
     reports: { view: false, export: false },
     settings: { view: false, edit: false },
