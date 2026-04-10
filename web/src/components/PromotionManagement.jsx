@@ -137,6 +137,12 @@ export default function PromotionManagement() {
   const handleCreatePromotion = async (e) => {
     e.preventDefault();
     
+    // Validate userData is loaded
+    if (!userData?.uid) {
+      alert('Error: User data not loaded. Please refresh the page and try again.');
+      return;
+    }
+    
     const employee = employees.find(emp => emp.id === formData.employeeId);
     if (!employee) return;
 

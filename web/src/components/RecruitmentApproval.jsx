@@ -177,6 +177,12 @@ export default function RecruitmentApproval() {
   const handleCreateRequisition = async (e) => {
     e.preventDefault();
 
+    // Validate userData is loaded
+    if (!userData?.uid) {
+      alert('Error: User data not loaded. Please refresh the page and try again.');
+      return;
+    }
+
     const newRequisition = {
       department: formData.department,
       position: formData.position,
