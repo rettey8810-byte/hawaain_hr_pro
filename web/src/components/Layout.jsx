@@ -49,7 +49,8 @@ import {
   Wrench,
   DoorOpen,
   FolderKanban,
-  UserX
+  UserX,
+  RotateCcw
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useNotifications } from '../contexts/NotificationContext';
@@ -129,6 +130,7 @@ export default function Layout({ children }) {
         { name: 'Promotions', href: '/promotions', icon: TrendingUp, feature: 'employees', action: 'view' },
         { name: 'Disciplinary', href: '/disciplinary', icon: AlertTriangle, feature: 'employees', action: 'view' },
         { name: 'Terminations', href: '/terminations', icon: UserX, feature: 'employees', action: 'view' },
+        { name: 'Turnover Dashboard', href: '/turnover', icon: RotateCcw, feature: 'employees', action: 'view' },
         { name: 'Recruitment Approval', href: '/recruitment/approval', icon: UserPlus, feature: 'recruitment', action: 'view' },
         { name: 'Form Templates', href: '/form-templates', icon: FileSpreadsheet, feature: 'settings', action: 'view' },
         { name: 'Position Quotas', href: '/position-quotas', icon: Users, feature: 'employees', action: 'view' },

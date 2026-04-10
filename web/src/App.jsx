@@ -69,6 +69,7 @@ import PromotionManagement from './components/PromotionManagement';
 import DisciplinaryManagement from './components/DisciplinaryManagement';
 import RecruitmentApproval from './components/RecruitmentApproval';
 import Terminations from './components/Terminations';
+import Turnover from './components/Turnover';
 
 // New HR Modules
 import Companies from './components/Companies';
@@ -599,6 +600,13 @@ function App() {
                 <PrivateRoute>
                   <PermissionRoute feature="employees" action="view">
                     <Layout><Terminations /></Layout>
+                  </PermissionRoute>
+                </PrivateRoute>
+              } />
+              <Route path="/turnover" element={
+                <PrivateRoute>
+                  <PermissionRoute feature="employees" action="view">
+                    <Layout><Turnover /></Layout>
                   </PermissionRoute>
                 </PrivateRoute>
               } />
