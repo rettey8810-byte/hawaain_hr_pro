@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { 
   LayoutDashboard, 
@@ -203,6 +203,24 @@ export default function Layout({ children }) {
         : [...prev, categoryName]
     );
   };
+
+  // Auto-expand category based on current route
+  useEffect(() => {
+    const currentPath = location.pathname;
+    
+    // Find which category contains the current route
+    for (const category of navigationCategories) {
+      // Check if any item in this category matches the current path
+      const hasActiveItem = category.items.some(item => 
+        currentPath === item.href || currentPath.startsWith(item.href + '/')
+      );
+      
+      if (hasActiveItem && !expandedCategories.includes(category.name)) {
+        setExpandedCategories(prev => [...prev, category.name]);
+        break; // Only expand the first matching category
+      }
+    }
+  }, [location.pathname]);
 
   const isActive = (path) => location.pathname === path || location.pathname.startsWith(path + '/');
 
