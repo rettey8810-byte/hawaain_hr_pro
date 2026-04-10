@@ -376,7 +376,16 @@ export default function ManpowerBudget() {
       b.requiredManpower?.below50 || ''
     ]) || [];
     
-    const csv = [headers, ...rows].map(r => r.join(',')).join('\n');
+    // Helper to escape CSV fields (wrap in quotes if contains comma or quote)
+    const escapeCSV = (field) => {
+      const str = String(field);
+      if (str.includes(',') || str.includes('"') || str.includes('\n')) {
+        return `"${str.replace(/"/g, '""')}"`;
+      }
+      return str;
+    };
+    
+    const csv = [headers, ...rows].map(r => r.map(escapeCSV).join(',')).join('\n');
     const blob = new Blob([csv], { type: 'text/csv' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
