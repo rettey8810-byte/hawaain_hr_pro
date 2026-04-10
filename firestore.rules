@@ -1,10 +1,170 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // TEMPORARY: Open access for initial setup
-    // TODO: Replace with proper rules after setup
+
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return isAuthenticated() &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
+
+    function isCompanyAdmin() {
+      return isAuthenticated() &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'company_admin';
+    }
+
+    function isHR() {
+      return isAuthenticated() &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'hr';
+    }
+
+    function isManager() {
+      return isAuthenticated() &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'manager';
+    }
+
+    function isEmployee() {
+      return isAuthenticated() &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'employee';
+    }
+
+    function getUserData() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    }
+
+    function canAccessEmployee(employeeId) {
+      let userData = getUserData();
+      // Admin can access all
+      if (userData.role == 'admin' || userData.role == 'company_admin' || userData.role == 'hr') {
+        return true;
+      }
+      // Manager can access their department
+      if (userData.role == 'manager' && employeeId in userData.accessibleEmployeeIds) {
+        return true;
+      }
+      // Employee can only access their own data
+      return employeeId in userData.accessibleEmployeeIds;
+    }
+
+    // USERS collection - User profile access
+    match /users/{userId} {
+      // Users can read their own profile, admins can read/write all
+      allow read: if isAuthenticated() &&
+        (request.auth.uid == userId || isAdmin() || isCompanyAdmin() || isHR());
+      allow write: if isAuthenticated() &&
+        (request.auth.uid == userId || isAdmin() || isCompanyAdmin());
+    }
+
+    // EMPLOYEES collection - Employee data access
+    match /employees/{employeeId} {
+      // Read: Employees can view their own data only
+      // Admins/HR/Company Admins can view all
+      allow read: if isAuthenticated() && canAccessEmployee(employeeId);
+
+      // Write: Only admins can create/update employee records
+      allow create, update, delete: if isAuthenticated() &&
+        (isAdmin() || isCompanyAdmin() || isHR());
+    }
+
+    // PASSPORTS collection - Document access
+    match /passports/{passportId} {
+      allow read: if isAuthenticated() &&
+        canAccessEmployee(get(/databases/$(database)/documents/passports/$(passportId)).data.employeeId);
+      allow write: if isAuthenticated() &&
+        (isAdmin() || isCompanyAdmin() || isHR());
+    }
+
+    // VISAS collection
+    match /visas/{visaId} {
+      allow read: if isAuthenticated() &&
+        canAccessEmployee(get(/databases/$(database)/documents/visas/$(visaId)).data.employeeId);
+      allow write: if isAuthenticated() &&
+        (isAdmin() || isCompanyAdmin() || isHR());
+    }
+
+    // WORK PERMITS collection
+    match /workPermits/{permitId} {
+      allow read: if isAuthenticated() &&
+        canAccessEmployee(get(/databases/$(database)/documents/workPermits/$(permitId)).data.employeeId);
+      allow write: if isAuthenticated() &&
+        (isAdmin() || isCompanyAdmin() || isHR());
+    }
+
+    // MEDICALS collection
+    match /medicals/{medicalId} {
+      allow read: if isAuthenticated() &&
+        canAccessEmployee(get(/databases/$(database)/documents/medicals/$(medicalId)).data.employeeId);
+      allow write: if isAuthenticated() &&
+        (isAdmin() || isCompanyAdmin() || isHR());
+    }
+
+    // ROOM ASSIGNMENTS collection
+    match /roomAssignments/{assignmentId} {
+      allow read: if isAuthenticated() &&
+        canAccessEmployee(get(/databases/$(database)/documents/roomAssignments/$(assignmentId)).data.employeeId);
+      allow write: if isAuthenticated() &&
+        (isAdmin() || isCompanyAdmin() || isHR());
+    }
+
+    // LEAVES collection - Employees can view their own leave records
+    match /leaves/{leaveId} {
+      allow read: if isAuthenticated() &&
+        (canAccessEmployee(get(/databases/$(database)/documents/leaves/$(leaveId)).data.employeeId) ||
+         isAdmin() || isCompanyAdmin() || isHR());
+      allow create: if isAuthenticated() &&
+        (canAccessEmployee(get(/databases/$(database)/documents/leaves/$(leaveId)).data.employeeId) ||
+         isAdmin() || isCompanyAdmin() || isHR());
+      allow update, delete: if isAuthenticated() &&
+        (isAdmin() || isCompanyAdmin() || isHR());
+    }
+
+    // COMPANIES collection - Admin only
+    match /companies/{companyId} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated() && (isAdmin() || isCompanyAdmin());
+    }
+
+    // RECRUITMENT APPROVALS - Admin only
+    match /recruitmentApprovals/{docId} {
+      allow read, write: if isAuthenticated() &&
+        (isAdmin() || isCompanyAdmin() || isHR() || isManager());
+    }
+
+    // DISCIPLINARY - Admin only
+    match /disciplinaryActions/{docId} {
+      allow read, write: if isAuthenticated() &&
+        (isAdmin() || isCompanyAdmin() || isHR() || isManager());
+    }
+
+    // PAYROLL - Admin only
+    match /payroll/{docId} {
+      allow read: if isAuthenticated() &&
+        (canAccessEmployee(resource.data.employeeId) || isAdmin() || isCompanyAdmin() || isHR());
+      allow write: if isAuthenticated() &&
+        (isAdmin() || isCompanyAdmin() || isHR());
+    }
+
+    // PROMOTIONS - Admin only
+    match /promotions/{docId} {
+      allow read, write: if isAuthenticated() &&
+        (isAdmin() || isCompanyAdmin() || isHR());
+    }
+
+    // ATTENDANCE - Employees can view their own attendance
+    match /attendance/{attendanceId} {
+      allow read: if isAuthenticated() &&
+        canAccessEmployee(get(/databases/$(database)/documents/attendance/$(attendanceId)).data.employeeId);
+      allow write: if isAuthenticated() &&
+        (isAdmin() || isCompanyAdmin() || isHR());
+    }
+
+    // Default deny all
     match /{document=**} {
-      allow read, write: if request.auth != null;
+      allow read, write: if false;
     }
   }
 }

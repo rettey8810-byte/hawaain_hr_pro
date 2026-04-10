@@ -803,6 +803,15 @@ function App() {
                   </PermissionRoute>
                 </PrivateRoute>
               } />
+              
+              {/* User Management - Admin Only */}
+              <Route path="/user-management" element={
+                <PrivateRoute>
+                  <HRAuthRoute>
+                    <Layout><UserManagement /></Layout>
+                  </HRAuthRoute>
+                </PrivateRoute>
+              } />
               </Routes>
             </Router>
           </IntegrationsProvider>

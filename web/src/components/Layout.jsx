@@ -171,7 +171,7 @@ export default function Layout({ children }) {
       items: [
         { name: 'Company Structure', href: '/company-structure', icon: FolderKanban, feature: 'settings', action: 'view' },
         { name: 'Companies', href: '/companies', icon: Building2, feature: 'companies', action: 'view' },
-        { name: 'User Management', href: '/users', icon: UserCog, feature: 'users', action: 'view' },
+        { name: 'User Management', href: '/user-management', icon: UserCog, feature: 'employees', action: 'view' },
         { name: 'Audit Log', href: '/audit-log', icon: ClipboardList, feature: 'reports', action: 'view' },
       ]
     },
