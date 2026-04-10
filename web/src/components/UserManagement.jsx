@@ -17,9 +17,14 @@ export default function UserManagement() {
   const [message, setMessage] = useState('');
   const [expandedRoles, setExpandedRoles] = useState({});
 
-  // Filter users based on company and hierarchy
+  // Filter users - Admins see all users in their company
+  // For superadmin, show all users across all companies
   const users = allUsers.filter(user => {
     if (isSuperAdmin()) return true;
+    // For company admin/HR/GM, show users from their company + users with matching companyId
+    if (userData?.role === 'company_admin' || userData?.role === 'hr' || userData?.role === 'gm' || userData?.role === 'hrm') {
+      return user.companyId === companyId || user.companyId === 'villa-park' || !user.companyId;
+    }
     return user.companyId === companyId;
   });
 
@@ -162,6 +167,9 @@ export default function UserManagement() {
               ? ' Superadmin can create all roles and companies.' 
               : ` You can create: ${creatableRoles.map(r => r.label).join(', ') || 'None'}`
             }
+            <span className="ml-2 text-blue-600 font-medium">
+              ({users.length} users loaded)
+            </span>
           </p>
         </div>
         {canCreateAnyUser && (

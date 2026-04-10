@@ -7,39 +7,38 @@ service cloud.firestore {
       return request.auth != null;
     }
 
+    function getUserData() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    }
+
     function isAdmin() {
       return isAuthenticated() &&
-        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+        (request.auth.token.role == 'admin' || 
+         resource.data.role == 'admin');
     }
 
     function isCompanyAdmin() {
       return isAuthenticated() &&
-        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'company_admin';
+        (request.auth.token.role == 'company_admin' || 
+         resource.data.role == 'company_admin');
     }
 
     function isHR() {
       return isAuthenticated() &&
-        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'hr';
+        (request.auth.token.role == 'hr' || 
+         resource.data.role == 'hr');
     }
 
     function isManager() {
       return isAuthenticated() &&
-        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'manager';
-    }
-
-    function isEmployee() {
-      return isAuthenticated() &&
-        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'employee';
-    }
-
-    function getUserData() {
-      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+        (request.auth.token.role == 'manager' || 
+         resource.data.role == 'manager');
     }
 
     function canAccessEmployee(employeeId) {
       let userData = getUserData();
       // Admin can access all
-      if (userData.role == 'admin' || userData.role == 'company_admin' || userData.role == 'hr') {
+      if (userData.role == 'admin' || userData.role == 'company_admin' || userData.role == 'hr' || userData.role == 'gm' || userData.role == 'hrm') {
         return true;
       }
       // Manager can access their department
