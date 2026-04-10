@@ -99,8 +99,27 @@ export default function Recruitment() {
     transportArranged: false,
     transportDetails: '',
     accommodationArranged: false,
+    selectedRoomId: '',
     joiningDate: '',
-    orientationScheduled: false
+    orientationScheduled: false,
+    // Additional Registration Fields
+    passportNumber: '',
+    passportExpiry: '',
+    workPermitNumber: '',
+    workPermitExpiry: '',
+    visaNumber: '',
+    visaExpiry: '',
+    nationalId: '',
+    dateOfBirth: '',
+    emergencyContactName: '',
+    emergencyContactPhone: '',
+    emergencyContactRelation: '',
+    bankAccountNumber: '',
+    bankName: '',
+    medicalInsuranceNumber: '',
+    uniformSize: '',
+    allergies: '',
+    dietaryRestrictions: ''
   });
 
   const [expatForm, setExpatForm] = useState({
@@ -116,9 +135,25 @@ export default function Recruitment() {
 
   const { documents: jobPostings, loading: jobsLoading, addDocument: addJob } = useFirestore('jobPostings');
 
-  const { documents: candidates, loading: candidatesLoading } = useFirestore('candidates');
+  const { documents: candidates, loading: candidatesLoading, addDocument: addCandidate } = useFirestore('candidates');
 
   const { documents: employees } = useFirestore('employees');
+
+  const { documents: rooms } = useFirestore('rooms');
+
+  // Helper to update candidate
+  const updateCandidate = async (id, data) => {
+    try {
+      await updateDoc(doc(db, 'candidates', id), {
+        ...data,
+        updatedAt: new Date().toISOString()
+      });
+      toast.success('Candidate updated successfully');
+    } catch (err) {
+      toast.error('Error updating candidate: ' + err.message);
+      throw err;
+    }
+  };
 
 
 
@@ -1072,60 +1107,361 @@ export default function Recruitment() {
       {/* Onboarding Modal */}
       {showOnboardingModal && selectedCandidate && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl p-6 max-w-lg w-full">
+          <div className="bg-white rounded-xl p-6 max-w-4xl w-full max-h-[90vh] overflow-y-auto">
             <div className="flex justify-between items-center mb-4">
-              <h2 className="text-xl font-bold">Onboarding</h2>
+              <h2 className="text-xl font-bold flex items-center gap-2">
+                <UserCheck className="h-6 w-6 text-cyan-600" />
+                Complete Onboarding
+              </h2>
               <button onClick={() => setShowOnboardingModal(false)}><X className="h-5 w-5" /></button>
             </div>
             <div className="mb-4 p-3 bg-cyan-50 rounded-lg">
               <p className="font-medium">{selectedCandidate.name}</p>
               <p className="text-sm text-gray-600">
-                {selectedCandidate.maldivian ? 'Maldivian - Will complete onboarding directly' : 'Expat - Will go to visa processing'}
+                {selectedCandidate.maldivian ? 'Maldivian - Will complete onboarding directly' : 'Expat - Will go to visa processing after onboarding'}
               </p>
             </div>
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Joining Date</label>
-                <input
-                  type="date"
-                  value={onboardingForm.joiningDate}
-                  onChange={(e) => setOnboardingForm({ ...onboardingForm, joiningDate: e.target.value })}
-                  className="w-full px-3 py-2 border rounded-lg"
-                />
-              </div>
-              <div className="flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  id="transport"
-                  checked={onboardingForm.transportArranged}
-                  onChange={(e) => setOnboardingForm({ ...onboardingForm, transportArranged: e.target.checked })}
-                  className="rounded"
-                />
-                <label htmlFor="transport" className="text-sm font-medium text-gray-700">Transport Arranged</label>
-              </div>
-              {onboardingForm.transportArranged && (
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Transport Details</label>
-                  <textarea
-                    value={onboardingForm.transportDetails}
-                    onChange={(e) => setOnboardingForm({ ...onboardingForm, transportDetails: e.target.value })}
-                    className="w-full px-3 py-2 border rounded-lg"
-                    rows={2}
-                    placeholder="Flight details, pickup arrangement, etc."
-                  />
+
+            <div className="space-y-6">
+              {/* Joining Date */}
+              <div className="border rounded-lg p-4">
+                <h3 className="font-medium mb-3 flex items-center gap-2">
+                  <Calendar className="h-5 w-5 text-cyan-600" />
+                  Joining Information
+                </h3>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Joining Date *</label>
+                    <input
+                      type="date"
+                      value={onboardingForm.joiningDate}
+                      onChange={(e) => setOnboardingForm({ ...onboardingForm, joiningDate: e.target.value })}
+                      className="w-full px-3 py-2 border rounded-lg"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Date of Birth</label>
+                    <input
+                      type="date"
+                      value={onboardingForm.dateOfBirth}
+                      onChange={(e) => setOnboardingForm({ ...onboardingForm, dateOfBirth: e.target.value })}
+                      className="w-full px-3 py-2 border rounded-lg"
+                    />
+                  </div>
                 </div>
-              )}
-              <div className="flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  id="accommodation"
-                  checked={onboardingForm.accommodationArranged}
-                  onChange={(e) => setOnboardingForm({ ...onboardingForm, accommodationArranged: e.target.checked })}
-                  className="rounded"
-                />
-                <label htmlFor="accommodation" className="text-sm font-medium text-gray-700">Accommodation Arranged</label>
               </div>
-              <div className="flex items-center gap-2">
+
+              {/* Document Registration */}
+              <div className="border rounded-lg p-4">
+                <h3 className="font-medium mb-3 flex items-center gap-2">
+                  <FileText className="h-5 w-5 text-blue-600" />
+                  Document Registration
+                </h3>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Passport Number</label>
+                    <input
+                      type="text"
+                      value={onboardingForm.passportNumber}
+                      onChange={(e) => setOnboardingForm({ ...onboardingForm, passportNumber: e.target.value })}
+                      className="w-full px-3 py-2 border rounded-lg"
+                      placeholder="e.g., A12345678"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Passport Expiry</label>
+                    <input
+                      type="date"
+                      value={onboardingForm.passportExpiry}
+                      onChange={(e) => setOnboardingForm({ ...onboardingForm, passportExpiry: e.target.value })}
+                      className="w-full px-3 py-2 border rounded-lg"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Work Permit Number</label>
+                    <input
+                      type="text"
+                      value={onboardingForm.workPermitNumber}
+                      onChange={(e) => setOnboardingForm({ ...onboardingForm, workPermitNumber: e.target.value })}
+                      className="w-full px-3 py-2 border rounded-lg"
+                      placeholder="e.g., WP123456"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Work Permit Expiry</label>
+                    <input
+                      type="date"
+                      value={onboardingForm.workPermitExpiry}
+                      onChange={(e) => setOnboardingForm({ ...onboardingForm, workPermitExpiry: e.target.value })}
+                      className="w-full px-3 py-2 border rounded-lg"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Visa Number</label>
+                    <input
+                      type="text"
+                      value={onboardingForm.visaNumber}
+                      onChange={(e) => setOnboardingForm({ ...onboardingForm, visaNumber: e.target.value })}
+                      className="w-full px-3 py-2 border rounded-lg"
+                      placeholder="e.g., V123456"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Visa Expiry</label>
+                    <input
+                      type="date"
+                      value={onboardingForm.visaExpiry}
+                      onChange={(e) => setOnboardingForm({ ...onboardingForm, visaExpiry: e.target.value })}
+                      className="w-full px-3 py-2 border rounded-lg"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">National ID / I-Card</label>
+                    <input
+                      type="text"
+                      value={onboardingForm.nationalId}
+                      onChange={(e) => setOnboardingForm({ ...onboardingForm, nationalId: e.target.value })}
+                      className="w-full px-3 py-2 border rounded-lg"
+                      placeholder="e.g., A123456"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Medical Insurance Number</label>
+                    <input
+                      type="text"
+                      value={onboardingForm.medicalInsuranceNumber}
+                      onChange={(e) => setOnboardingForm({ ...onboardingForm, medicalInsuranceNumber: e.target.value })}
+                      className="w-full px-3 py-2 border rounded-lg"
+                      placeholder="Insurance policy number"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Emergency Contact */}
+              <div className="border rounded-lg p-4">
+                <h3 className="font-medium mb-3 flex items-center gap-2">
+                  <Phone className="h-5 w-5 text-red-600" />
+                  Emergency Contact
+                </h3>
+                <div className="grid grid-cols-3 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Contact Name</label>
+                    <input
+                      type="text"
+                      value={onboardingForm.emergencyContactName}
+                      onChange={(e) => setOnboardingForm({ ...onboardingForm, emergencyContactName: e.target.value })}
+                      className="w-full px-3 py-2 border rounded-lg"
+                      placeholder="Full name"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Phone Number</label>
+                    <input
+                      type="tel"
+                      value={onboardingForm.emergencyContactPhone}
+                      onChange={(e) => setOnboardingForm({ ...onboardingForm, emergencyContactPhone: e.target.value })}
+                      className="w-full px-3 py-2 border rounded-lg"
+                      placeholder="+960 xxx xxxx"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Relationship</label>
+                    <select
+                      value={onboardingForm.emergencyContactRelation}
+                      onChange={(e) => setOnboardingForm({ ...onboardingForm, emergencyContactRelation: e.target.value })}
+                      className="w-full px-3 py-2 border rounded-lg"
+                    >
+                      <option value="">Select...</option>
+                      <option value="spouse">Spouse</option>
+                      <option value="parent">Parent</option>
+                      <option value="sibling">Sibling</option>
+                      <option value="child">Child</option>
+                      <option value="friend">Friend</option>
+                      <option value="other">Other</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              {/* Bank Details */}
+              <div className="border rounded-lg p-4">
+                <h3 className="font-medium mb-3 flex items-center gap-2">
+                  <DollarSign className="h-5 w-5 text-green-600" />
+                  Bank Details
+                </h3>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Bank Name</label>
+                    <input
+                      type="text"
+                      value={onboardingForm.bankName}
+                      onChange={(e) => setOnboardingForm({ ...onboardingForm, bankName: e.target.value })}
+                      className="w-full px-3 py-2 border rounded-lg"
+                      placeholder="e.g., Bank of Maldives"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Account Number</label>
+                    <input
+                      type="text"
+                      value={onboardingForm.bankAccountNumber}
+                      onChange={(e) => setOnboardingForm({ ...onboardingForm, bankAccountNumber: e.target.value })}
+                      className="w-full px-3 py-2 border rounded-lg"
+                      placeholder="Bank account number"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Uniform & Medical */}
+              <div className="border rounded-lg p-4">
+                <h3 className="font-medium mb-3 flex items-center gap-2">
+                  <UserCheck className="h-5 w-5 text-purple-600" />
+                  Uniform & Medical Info
+                </h3>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Uniform Size</label>
+                    <select
+                      value={onboardingForm.uniformSize}
+                      onChange={(e) => setOnboardingForm({ ...onboardingForm, uniformSize: e.target.value })}
+                      className="w-full px-3 py-2 border rounded-lg"
+                    >
+                      <option value="">Select size...</option>
+                      <option value="XS">XS</option>
+                      <option value="S">S</option>
+                      <option value="M">M</option>
+                      <option value="L">L</option>
+                      <option value="XL">XL</option>
+                      <option value="XXL">XXL</option>
+                      <option value="XXXL">XXXL</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Allergies (if any)</label>
+                    <input
+                      type="text"
+                      value={onboardingForm.allergies}
+                      onChange={(e) => setOnboardingForm({ ...onboardingForm, allergies: e.target.value })}
+                      className="w-full px-3 py-2 border rounded-lg"
+                      placeholder="List allergies or 'None'"
+                    />
+                  </div>
+                  <div className="col-span-2">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Dietary Restrictions</label>
+                    <input
+                      type="text"
+                      value={onboardingForm.dietaryRestrictions}
+                      onChange={(e) => setOnboardingForm({ ...onboardingForm, dietaryRestrictions: e.target.value })}
+                      className="w-full px-3 py-2 border rounded-lg"
+                      placeholder="e.g., Halal, Vegetarian, No seafood, etc."
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Transport */}
+              <div className="border rounded-lg p-4">
+                <h3 className="font-medium mb-3 flex items-center gap-2">
+                  <Plane className="h-5 w-5 text-orange-600" />
+                  Transport Arrangement
+                </h3>
+                <div className="flex items-center gap-2 mb-3">
+                  <input
+                    type="checkbox"
+                    id="transport"
+                    checked={onboardingForm.transportArranged}
+                    onChange={(e) => setOnboardingForm({ ...onboardingForm, transportArranged: e.target.checked })}
+                    className="rounded"
+                  />
+                  <label htmlFor="transport" className="text-sm font-medium text-gray-700">Transport Arranged</label>
+                </div>
+                {onboardingForm.transportArranged && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Transport Details</label>
+                    <textarea
+                      value={onboardingForm.transportDetails}
+                      onChange={(e) => setOnboardingForm({ ...onboardingForm, transportDetails: e.target.value })}
+                      className="w-full px-3 py-2 border rounded-lg"
+                      rows={2}
+                      placeholder="Flight details, pickup arrangement, ferry schedule, etc."
+                    />
+                  </div>
+                )}
+              </div>
+
+              {/* Accommodation Selection */}
+              <div className="border rounded-lg p-4">
+                <h3 className="font-medium mb-3 flex items-center gap-2">
+                  <Building2 className="h-5 w-5 text-indigo-600" />
+                  Accommodation Assignment
+                </h3>
+                <div className="flex items-center gap-2 mb-3">
+                  <input
+                    type="checkbox"
+                    id="accommodation"
+                    checked={onboardingForm.accommodationArranged}
+                    onChange={(e) => setOnboardingForm({ ...onboardingForm, accommodationArranged: e.target.checked, selectedRoomId: '' })}
+                    className="rounded"
+                  />
+                  <label htmlFor="accommodation" className="text-sm font-medium text-gray-700">Arrange Accommodation</label>
+                </div>
+
+                {onboardingForm.accommodationArranged && (
+                  <div className="space-y-3">
+                    <label className="block text-sm font-medium text-gray-700">Select Available Room *</label>
+                    {rooms.filter(r => r.companyId === companyId && r.status === 'available').length === 0 ? (
+                      <div className="p-4 bg-red-50 rounded-lg text-red-700 text-sm">
+                        No available rooms found. Please add rooms in the Accommodation section first.
+                      </div>
+                    ) : (
+                      <div className="grid grid-cols-2 gap-3 max-h-60 overflow-y-auto">
+                        {rooms
+                          .filter(r => r.companyId === companyId && r.status === 'available')
+                          .map(room => (
+                            <div
+                              key={room.id}
+                              onClick={() => setOnboardingForm({ ...onboardingForm, selectedRoomId: room.id })}
+                              className={`p-3 rounded-lg border cursor-pointer transition-all ${
+                                onboardingForm.selectedRoomId === room.id
+                                  ? 'border-indigo-500 bg-indigo-50'
+                                  : 'border-gray-200 hover:border-indigo-300'
+                              }`}
+                            >
+                              <div className="flex items-center justify-between">
+                                <span className="font-medium">Room {room.roomNumber}</span>
+                                {onboardingForm.selectedRoomId === room.id && (
+                                  <CheckCircle className="h-4 w-4 text-indigo-600" />
+                                )}
+                              </div>
+                              <p className="text-xs text-gray-500">{room.building}, Floor {room.floor}</p>
+                              <div className="flex items-center gap-2 mt-1 text-xs text-gray-600">
+                                <span className="bg-gray-100 px-2 py-0.5 rounded">{room.roomType}</span>
+                                <span className="bg-gray-100 px-2 py-0.5 rounded">{room.beds} beds</span>
+                              </div>
+                              {room.amenities?.length > 0 && (
+                                <p className="text-xs text-gray-500 mt-1">
+                                  {room.amenities.slice(0, 3).join(', ')}{room.amenities.length > 3 ? '...' : ''}
+                                </p>
+                              )}
+                            </div>
+                          ))}
+                      </div>
+                    )}
+                    {onboardingForm.selectedRoomId && (
+                      <p className="text-sm text-green-600 flex items-center gap-1">
+                        <CheckCircle className="h-4 w-4" />
+                        Room selected: Room {rooms.find(r => r.id === onboardingForm.selectedRoomId)?.roomNumber}
+                      </p>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              {/* Orientation */}
+              <div className="flex items-center gap-2 border rounded-lg p-4">
                 <input
                   type="checkbox"
                   id="orientation"
@@ -1135,7 +1471,9 @@ export default function Recruitment() {
                 />
                 <label htmlFor="orientation" className="text-sm font-medium text-gray-700">Orientation Scheduled</label>
               </div>
-              <div className="flex justify-end gap-2">
+
+              {/* Actions */}
+              <div className="flex justify-end gap-2 pt-4 border-t">
                 <button
                   onClick={() => setShowOnboardingModal(false)}
                   className="px-4 py-2 border rounded-lg hover:bg-gray-50"
@@ -1145,20 +1483,50 @@ export default function Recruitment() {
                 <button
                   onClick={async () => {
                     try {
+                      if (!onboardingForm.joiningDate) {
+                        toast.error('Please select a joining date');
+                        return;
+                      }
+
+                      // If accommodation is arranged and room selected, assign it
+                      if (onboardingForm.accommodationArranged && onboardingForm.selectedRoomId) {
+                        const room = rooms.find(r => r.id === onboardingForm.selectedRoomId);
+                        if (room) {
+                          // Create room assignment
+                          await addDoc(collection(db, 'roomAssignments'), {
+                            roomId: room.id,
+                            employeeId: selectedCandidate.id,
+                            employeeName: selectedCandidate.name,
+                            checkInDate: onboardingForm.joiningDate,
+                            notes: `Auto-assigned during recruitment onboarding for ${selectedCandidate.name}`,
+                            companyId: companyId,
+                            status: 'active',
+                            createdAt: new Date().toISOString(),
+                            updatedAt: new Date().toISOString()
+                          });
+                          // Update room status to occupied
+                          await updateDoc(doc(db, 'rooms', room.id), {
+                            status: 'occupied',
+                            updatedAt: new Date().toISOString()
+                          });
+                          toast.success(`Room ${room.roomNumber} assigned successfully`);
+                        }
+                      }
+
                       await updateCandidate(selectedCandidate.id, {
                         stage: selectedCandidate.maldivian ? 'hired' : 'expat_processing',
                         onboardingDetails: onboardingForm,
                         updatedAt: new Date().toISOString()
                       });
-                      toast.success('Onboarding completed');
+                      toast.success('Onboarding completed successfully');
                       setShowOnboardingModal(false);
                     } catch (err) {
                       toast.error('Error completing onboarding: ' + err.message);
                     }
                   }}
-                  className="px-4 py-2 bg-cyan-600 text-white rounded-lg hover:bg-cyan-700"
+                  className="px-4 py-2 bg-cyan-600 text-white rounded-lg hover:bg-cyan-700 flex items-center gap-2"
                 >
-                  <CheckCircle className="h-4 w-4 inline mr-1" />
+                  <CheckCircle className="h-4 w-4" />
                   Complete Onboarding
                 </button>
               </div>
