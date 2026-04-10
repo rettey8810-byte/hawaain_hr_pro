@@ -104,6 +104,8 @@ export default function Dashboard() {
   const { documents: medicals } = useFirestore('medicals');
   const { documents: leaves } = useFirestore('leaves');
   const { documents: terminations } = useFirestore('terminations');
+  const { documents: roomAssignments } = useFirestore('roomAssignments');
+  const { documents: rooms } = useFirestore('rooms');
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -173,14 +175,31 @@ export default function Dashboard() {
   const leaveTrend = currentMonthLeaves > lastMonthLeaves ? 'up' : currentMonthLeaves < lastMonthLeaves ? 'down' : 'same';
   const leaveTrendValue = lastMonthLeaves > 0 ? Math.round(((currentMonthLeaves - lastMonthLeaves) / lastMonthLeaves) * 100) : 0;
 
-  // CSV Export function for all staff details
+  // CSV Export function for all staff details - COMPREHENSIVE
   const exportStaffToCSV = () => {
     const headers = [
-      'Employee ID', 'Full Name', 'Department', 'Designation', 'Section',
-      'Email', 'Phone', 'Status', 'Join Date', 'Nationality',
-      'Passport Number', 'Passport Expiry', 'Work Permit Number', 'Work Permit Expiry',
-      'Visa Number', 'Visa Expiry', 'Medical Insurance', 'Emergency Contact',
-      'Bank Name', 'Account Number', 'Basic Salary', 'Total Salary'
+      // Employee Basic Info
+      'Employee ID', 'Full Name', 'Department', 'Designation', 'Section', 'Employee Code',
+      'Email', 'Phone', 'Mobile', 'Status', 'Hire Date', 'Join Date', 'Nationality',
+      'Date of Birth', 'Gender', 'Address', 'Emergency Contact Name', 'Emergency Contact Phone',
+      // Passport Details
+      'Passport Number', 'Passport Issue Date', 'Passport Expiry Date', 'Passport Days Remaining',
+      'Passport Country', 'Passport Status',
+      // Visa Details
+      'Visa Number', 'Visa Type', 'Visa Entry Type', 'Visa Issue Date', 'Visa Expiry Date',
+      'Visa Days Remaining', 'Visa Status', 'Sponsor',
+      // Work Permit Details
+      'Work Permit Number', 'Work Permit Issue Date', 'Work Permit Expiry Date',
+      'Work Permit Days Remaining', 'Permit Employer', 'Permit Position', 'Work Permit Status',
+      // Medical Details
+      'Medical Test Date', 'Medical Result', 'Medical Expiry Date', 'Medical Days Remaining',
+      'Medical Insurance Number', 'Blood Group', 'Allergies', 'Dietary Restrictions',
+      // Bank & Salary
+      'Bank Name', 'Account Number', 'IBAN', 'Branch',
+      'Basic Salary', 'Housing Allowance', 'Transport Allowance', 'Other Allowances', 'Total Salary',
+      // Accommodation
+      'Room Number', 'Building', 'Floor', 'Room Type', 'Bed Count', 'Check In Date',
+      'Room Status', 'Room Amenities'
     ];
     
     const escapeCSV = (field) => {
@@ -191,35 +210,119 @@ export default function Dashboard() {
       return str;
     };
     
+    // Helper to calculate days remaining
+    const calculateDaysRemaining = (expiryDate) => {
+      if (!expiryDate) return '';
+      const expiry = new Date(expiryDate);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      expiry.setHours(0, 0, 0, 0);
+      const diffTime = expiry - today;
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+      return diffDays;
+    };
+    
     const rows = companyEmployees.map(emp => {
       // Find related documents
       const passport = passports.find(p => p.employeeId === emp.id);
       const permit = workPermits.find(w => w.employeeId === emp.id);
       const visa = visas.find(v => v.employeeId === emp.id);
+      const medical = medicals.find(m => m.employeeId === emp.id);
+      
+      // Find accommodation
+      const assignment = roomAssignments.find(a => a.employeeId === emp.id && !a.checkOutDate);
+      const room = assignment ? rooms.find(r => r.id === assignment.roomId) : null;
+      
+      // Passport fields
+      const passportExpiry = passport?.DateofExpiry || passport?.expiryDate || '';
+      const passportDays = calculateDaysRemaining(passportExpiry);
+      
+      // Visa fields
+      const visaExpiry = visa?.DateofExpiry || visa?.expiryDate || '';
+      const visaDays = calculateDaysRemaining(visaExpiry);
+      
+      // Work Permit fields
+      const permitExpiry = permit?.ExpiryDate || permit?.expiryDate || '';
+      const permitDays = calculateDaysRemaining(permitExpiry);
+      
+      // Medical fields
+      const medicalExpiry = medical?.expiryDate || medical?.medicalExpiry || '';
+      const medicalDays = calculateDaysRemaining(medicalExpiry);
       
       return [
+        // Employee Basic Info
         emp.id,
         emp.FullName || emp.name || '',
         emp.Department || emp.department || 'Unassigned',
         emp.Designation || emp.designation || '',
         emp.Section || emp.section || '',
+        emp.EmpID || emp.employeeCode || '',
         emp.Email || emp.email || '',
         emp.Phone || emp.phone || '',
+        emp.Mobile || emp.mobile || '',
         emp.status || 'active',
+        emp.HireDate || emp.hireDate || emp.JoinDate || emp.joinDate || '',
         emp.JoinDate || emp.joinDate || '',
         emp.Nationality || emp.nationality || '',
+        emp.DateOfBirth || emp.dateOfBirth || emp.DOB || '',
+        emp.Gender || emp.gender || '',
+        emp.Address || emp.address || '',
+        emp.EmergencyContactName || emp.emergencyContactName || '',
+        emp.EmergencyContactPhone || emp.emergencyContactPhone || '',
+        // Passport
         passport?.Passportno || passport?.passportNo || '',
-        passport?.DateofExpiry || passport?.expiryDate || '',
-        permit?.WorkPermitNumber || permit?.permitNumber || '',
-        permit?.ExpiryDate || permit?.expiryDate || '',
+        passport?.DateofIssue || passport?.issueDate || '',
+        passportExpiry,
+        passportDays,
+        passport?.Country || passport?.country || '',
+        passportDays === '' ? '' : passportDays < 0 ? 'Expired' : passportDays <= 30 ? 'Expiring Soon' : 'Valid',
+        // Visa
         visa?.VisaNumber || visa?.visaNumber || '',
-        visa?.DateofExpiry || visa?.expiryDate || '',
-        emp.MedicalInsurance || emp.medicalInsurance || '',
-        emp.EmergencyContact || emp.emergencyContact || '',
+        visa?.VisaType || visa?.visaType || '',
+        visa?.EntryType || visa?.entryType || '',
+        visa?.DateofIssue || visa?.issueDate || '',
+        visaExpiry,
+        visaDays,
+        visaDays === '' ? '' : visaDays < 0 ? 'Expired' : visaDays <= 30 ? 'Expiring Soon' : 'Valid',
+        visa?.Sponsor || visa?.sponsor || '',
+        // Work Permit
+        permit?.WorkPermitNumber || permit?.permitNumber || '',
+        permit?.DateofIssue || permit?.issueDate || '',
+        permitExpiry,
+        permitDays,
+        permitDays === '' ? '' : permitDays < 0 ? 'Expired' : permitDays <= 30 ? 'Expiring Soon' : 'Valid',
+        permit?.Employer || permit?.employer || '',
+        permit?.Position || permit?.position || permit?.designation || '',
+        permit?.Status || permit?.status || '',
+        // Medical
+        medical?.medicalTestDate || medical?.testDate || '',
+        medical?.medicalResult || medical?.result || '',
+        medicalExpiry,
+        medicalDays,
+        medicalDays === '' ? '' : medicalDays < 0 ? 'Expired' : medicalDays <= 30 ? 'Expiring Soon' : 'Valid',
+        emp.MedicalInsurance || emp.medicalInsurance || medical?.insuranceNumber || '',
+        emp.BloodGroup || emp.bloodGroup || medical?.bloodGroup || '',
+        emp.Allergies || emp.allergies || '',
+        emp.DietaryRestrictions || emp.dietaryRestrictions || '',
+        // Bank & Salary
         emp.BankName || emp.bankName || '',
         emp.AccountNumber || emp.accountNumber || '',
-        emp.BasicUSD || emp.basicSalary || '',
-        emp.TotalSalaryUSD || emp.totalSalary || emp.BasicUSD || ''
+        emp.IBAN || emp.iban || '',
+        emp.Branch || emp.branch || '',
+        emp.BasicUSD || emp.basicSalary || emp.salary?.basic || '',
+        emp.HousingUSD || emp.housingAllowance || emp.salary?.housing || '',
+        emp.TransportUSD || emp.transportAllowance || emp.salary?.transport || '',
+        emp.OtherAllowances || emp.otherAllowances || emp.salary?.other || '',
+        emp.TotalSalaryUSD || emp.totalSalary || emp.salary?.total || '',
+        // Accommodation
+        room?.roomNumber || '',
+        room?.building || '',
+        room?.floor || '',
+        room?.roomType || '',
+        room?.beds || room?.capacity || '',
+        assignment?.checkInDate || '',
+        assignment ? 'Occupied' : 'No Room',
+        room?.amenities ? room.amenities.join('; ') : ''
       ].map(escapeCSV);
     });
     
@@ -227,7 +330,7 @@ export default function Dashboard() {
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');
     link.href = URL.createObjectURL(blob);
-    link.download = `staff_details_${companyId}_${new Date().toISOString().split('T')[0]}.csv`;
+    link.download = `staff_complete_details_${companyId}_${new Date().toISOString().split('T')[0]}.csv`;
     link.click();
   };
 
