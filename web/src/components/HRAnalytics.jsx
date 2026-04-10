@@ -105,7 +105,7 @@ export default function HRAnalytics() {
       // Department statistics
       const departmentStats = {};
       activeEmployees.forEach(e => {
-        const dept = e.department || 'Unassigned';
+        const dept = e.Department || e.department || 'Unassigned';
         if (!departmentStats[dept]) {
           departmentStats[dept] = { count: 0, salary: 0 };
         }
