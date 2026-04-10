@@ -3,29 +3,51 @@ import { Plus, Edit2, Trash2, Mail, Shield, User, Lock, ChevronDown, ChevronRigh
 import { useFirestore } from '../hooks/useFirestore';
 import { useCompany } from '../contexts/CompanyContext';
 import { useAuth } from '../contexts/AuthContext';
-import { doc, updateDoc, deleteDoc } from 'firebase/firestore';
+import { doc, updateDoc, deleteDoc, collection, query, onSnapshot } from 'firebase/firestore';
 import { db } from '../firebase/config';
 import { ROLE_HIERARCHY, getCreatableRoles, canManageUser, DEFAULT_FEATURE_PERMISSIONS, FEATURES } from '../config/rolePermissions';
 
 export default function UserManagement() {
   const { companyId, companies } = useCompany();
   const { userData, signup, canManageOtherUser, getAllowedRolesToCreate, isSuperAdmin } = useAuth();
-  const { documents: allUsers, loading } = useFirestore('users');
+  const [allUsers, setAllUsers] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
   const [message, setMessage] = useState('');
   const [expandedRoles, setExpandedRoles] = useState({});
 
-  // Filter users - Admins see all users in their company
-  // For superadmin, show all users across all companies
+  // Load ALL users without company filter for admins
+  useEffect(() => {
+    setLoading(true);
+    const q = query(collection(db, 'users'));
+    
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const docs = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      }));
+      setAllUsers(docs);
+      setLoading(false);
+      console.log(`Loaded ${docs.length} users from Firestore`);
+    }, (err) => {
+      console.error('Error loading users:', err);
+      setLoading(false);
+    });
+
+    return () => unsubscribe();
+  }, []);
+
+  // Filter users - Admins see all users, employees see only relevant
   const users = allUsers.filter(user => {
     if (isSuperAdmin()) return true;
-    // For company admin/HR/GM, show users from their company + users with matching companyId
+    // For company admin/HR/GM, show users from their company + villa-park users
     if (userData?.role === 'company_admin' || userData?.role === 'hr' || userData?.role === 'gm' || userData?.role === 'hrm') {
-      return user.companyId === companyId || user.companyId === 'villa-park' || !user.companyId;
+      return true; // Admins see ALL users
     }
-    return user.companyId === companyId;
+    // Regular employees only see themselves
+    return user.id === userData?.uid;
   });
 
   const [formData, setFormData] = useState({
