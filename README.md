@@ -171,6 +171,24 @@ A comprehensive HR management system with expatriate compliance tracking, docume
 - **Room Status Dashboard**: Visual stats (total, available, occupied, maintenance)
 - **Amenities Management**: Track room features (AC, WiFi, TV, Kitchen, etc.)
 - **Building/Wing Support**: Organize rooms by building and wing/block
+- **Recruitment Integration**: Auto-assign rooms during employee onboarding
+
+### 📊 Turnover Dashboard (NEW v2.4)
+- **Turnover Rate Calculation**: Percentage based on terminations vs active employees
+- **Monthly Trend Charts**: 12-month comparison of terminations vs hires
+- **Termination Types Analysis**: Pie chart breakdown by type (Resignation, Termination, Contract End, Retirement, Mutual)
+- **Hiring Reasons Analytics**: Bar chart showing new positions vs replacements vs expansion
+- **Net Workforce Change**: Visual delta tracking month-by-month
+- **Department Breakdown**: Per-department stats with turnover rates
+- **Quick Navigation**: Direct links to Terminations, Recruitment, Hiring Requisitions
+- **CSV Export**: Export department analytics for reporting
+- **Real-time Data**: Live updates via Firestore onSnapshot
+
+### 🔄 Real-Time Dashboard (Enhanced v2.4)
+- **Live Statistics**: Automatic refresh without page reload using onSnapshot
+- **Termination Stats Card**: Completed and in-progress termination counts
+- **Employee Count Accuracy**: Excludes terminated employees from totals
+- **Instant Updates**: All major collections sync in real-time
 
 ### 🏢 HR Operations
 - **Disciplinary Actions** - Warning letters, incident tracking

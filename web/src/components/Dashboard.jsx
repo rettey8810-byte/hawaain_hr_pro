@@ -16,7 +16,8 @@ import {
   BarChart3,
   PieChart,
   Activity,
-  UserX
+  UserX,
+  Download
 } from 'lucide-react';
 import { 
   BarChart, 
@@ -172,6 +173,64 @@ export default function Dashboard() {
   const leaveTrend = currentMonthLeaves > lastMonthLeaves ? 'up' : currentMonthLeaves < lastMonthLeaves ? 'down' : 'same';
   const leaveTrendValue = lastMonthLeaves > 0 ? Math.round(((currentMonthLeaves - lastMonthLeaves) / lastMonthLeaves) * 100) : 0;
 
+  // CSV Export function for all staff details
+  const exportStaffToCSV = () => {
+    const headers = [
+      'Employee ID', 'Full Name', 'Department', 'Designation', 'Section',
+      'Email', 'Phone', 'Status', 'Join Date', 'Nationality',
+      'Passport Number', 'Passport Expiry', 'Work Permit Number', 'Work Permit Expiry',
+      'Visa Number', 'Visa Expiry', 'Medical Insurance', 'Emergency Contact',
+      'Bank Name', 'Account Number', 'Basic Salary', 'Total Salary'
+    ];
+    
+    const escapeCSV = (field) => {
+      const str = String(field || '');
+      if (str.includes(',') || str.includes('"') || str.includes('\n')) {
+        return `"${str.replace(/"/g, '""')}"`;
+      }
+      return str;
+    };
+    
+    const rows = companyEmployees.map(emp => {
+      // Find related documents
+      const passport = passports.find(p => p.employeeId === emp.id);
+      const permit = workPermits.find(w => w.employeeId === emp.id);
+      const visa = visas.find(v => v.employeeId === emp.id);
+      
+      return [
+        emp.id,
+        emp.FullName || emp.name || '',
+        emp.Department || emp.department || 'Unassigned',
+        emp.Designation || emp.designation || '',
+        emp.Section || emp.section || '',
+        emp.Email || emp.email || '',
+        emp.Phone || emp.phone || '',
+        emp.status || 'active',
+        emp.JoinDate || emp.joinDate || '',
+        emp.Nationality || emp.nationality || '',
+        passport?.Passportno || passport?.passportNo || '',
+        passport?.DateofExpiry || passport?.expiryDate || '',
+        permit?.WorkPermitNumber || permit?.permitNumber || '',
+        permit?.ExpiryDate || permit?.expiryDate || '',
+        visa?.VisaNumber || visa?.visaNumber || '',
+        visa?.DateofExpiry || visa?.expiryDate || '',
+        emp.MedicalInsurance || emp.medicalInsurance || '',
+        emp.EmergencyContact || emp.emergencyContact || '',
+        emp.BankName || emp.bankName || '',
+        emp.AccountNumber || emp.accountNumber || '',
+        emp.BasicUSD || emp.basicSalary || '',
+        emp.TotalSalaryUSD || emp.totalSalary || emp.BasicUSD || ''
+      ].map(escapeCSV);
+    });
+    
+    const csv = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = `staff_details_${companyId}_${new Date().toISOString().split('T')[0]}.csv`;
+    link.click();
+  };
+
   const passportAlerts = useExpiryAlerts(passports);
   const visaAlerts = useExpiryAlerts(visas);
   const permitAlerts = useExpiryAlerts(workPermits);
@@ -214,6 +273,17 @@ export default function Dashboard() {
             Overview of your HR and expatriate management system
           </p>
         </div>
+      </div>
+
+      {/* Export Button */}
+      <div className="flex justify-end mb-4">
+        <button
+          onClick={exportStaffToCSV}
+          className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors shadow-md"
+        >
+          <Download className="h-4 w-4" />
+          Export All Staff (CSV)
+        </button>
       </div>
 
       {/* Stats Grid */}

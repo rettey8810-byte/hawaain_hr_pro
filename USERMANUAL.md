@@ -16,16 +16,17 @@
 13. [Leave Policy Settings](#leave-policy-settings)
 14. [Document Management](#document-management)
 15. [Accommodation](#accommodation)
-16. [Promotions](#promotions)
-17. [Employee Engagement](#employee-engagement)
-18. [HR Operations](#hr-operations)
-19. [Notifications & Alerts](#notifications--alerts)
-20. [Settings](#settings)
-21. [Troubleshooting](#troubleshooting)
-22. [Tips & Best Practices](#tips--best-practices)
-23. [Keyboard Shortcuts](#keyboard-shortcuts)
-24. [Contact & Support](#contact--support)
-25. [FAQ](#faq)
+16. [Turnover Dashboard](#turnover-dashboard)
+17. [Promotions](#promotions)
+18. [Employee Engagement](#employee-engagement)
+19. [HR Operations](#hr-operations)
+20. [Notifications & Alerts](#notifications--alerts)
+21. [Settings](#settings)
+22. [Troubleshooting](#troubleshooting)
+23. [Tips & Best Practices](#tips--best-practices)
+24. [Keyboard Shortcuts](#keyboard-shortcuts)
+25. [Contact & Support](#contact--support)
+26. [FAQ](#faq)
 
 ---
 
@@ -404,6 +405,66 @@ At the top of the candidates view, see counts for each stage:
 Quick action buttons for each candidate:
 - **Email**: Click mail icon to send email
 - **Phone**: Click phone icon to call
+
+### Onboarding Process (Enhanced v2.4)
+
+When a candidate reaches "Offer" or "Notice Period" stage:
+
+1. Click "Start Onboarding" button
+2. Complete the comprehensive onboarding form:
+
+#### Joining Information
+- **Joining Date** (Required): Employee start date
+- **Date of Birth**: Employee birth date
+
+#### Document Registration
+- **Passport Number**: Passport document number
+- **Passport Expiry**: Passport expiration date
+- **Work Permit Number**: Work permit document number
+- **Work Permit Expiry**: Work permit expiration date
+- **Visa Number**: Visa document number
+- **Visa Expiry**: Visa expiration date
+- **National ID / I-Card**: National identification number
+- **Medical Insurance Number**: Insurance policy number
+
+#### Emergency Contact
+- **Contact Name**: Full name of emergency contact
+- **Phone Number**: Emergency contact phone (+960 xxx xxxx)
+- **Relationship**: Select from Spouse, Parent, Sibling, Child, Friend, Other
+
+#### Bank Details
+- **Bank Name**: Employee's bank (e.g., Bank of Maldives)
+- **Account Number**: Bank account for salary deposit
+
+#### Uniform & Medical
+- **Uniform Size**: Select XS, S, M, L, XL, XXL, or XXXL
+- **Allergies**: Any medical allergies or conditions
+- **Dietary Restrictions**: Halal, Vegetarian, No seafood, etc.
+
+#### Transport Arrangement
+- Check "Transport Arranged" if needed
+- Enter flight details, pickup arrangement, or ferry schedule
+
+#### Accommodation Assignment
+- Check "Arrange Accommodation" to assign a room
+- Available rooms are displayed in a grid
+- Each room card shows:
+  - Room number
+  - Building and floor
+  - Room type (standard, deluxe, etc.)
+  - Bed count
+  - Amenities (AC, WiFi, TV, etc.)
+- Click a room to select it (blue border + checkmark appears)
+- Selected room will be auto-assigned when onboarding completes
+- Room status changes from "available" to "occupied"
+- Check-in date is set to joining date
+
+#### Orientation
+- Check "Orientation Scheduled" when orientation is arranged
+
+3. Click "Complete Onboarding"
+4. For Maldivian candidates: Status changes to "Hired"
+5. For Expat candidates: Status changes to "Expat Processing"
 
 ---
 
@@ -1279,6 +1340,119 @@ Bulk import rooms and assignments from JSON:
 - Room status automatically set to "Maintenance" when request created
 - Mark requests as completed when done
 - Room status returns to previous state when maintenance completed
+
+---
+
+## Turnover Dashboard
+
+### Overview (HR/GM Only)
+
+The Turnover Dashboard provides comprehensive analytics on employee turnover, hiring trends, and workforce changes. It combines data from employees, terminations, and recruitment to give a complete picture of workforce dynamics.
+
+**Access**: Go to **HR Management** → **Turnover Dashboard**
+
+### Key Metrics (Top Cards)
+
+Four gradient stat cards display at the top:
+
+1. **Turnover Rate** (Red gradient)
+   - Percentage of employees who left vs total active
+   - Shows: [Rate]% - [Terminations] terminations / [Active] active
+
+2. **Active Employees** (Blue gradient)
+   - Current workforce count (excludes terminated)
+   - Shows total active employees
+
+3. **New Hires** (Green gradient)
+   - Total filled positions from recruitment
+   - Shows: [Filled] with subtitle "[Open] positions open"
+
+4. **Fill Rate** (Purple gradient)
+   - Percentage of requisitions successfully filled
+   - Shows: [Rate]% - [Filled]/[Total] requisitions
+
+### Monthly Trend Chart
+
+**Turnover vs Hiring Trend** (Area Chart)
+- **X-axis**: Months (Jan-Dec)
+- **Y-axis**: Count of employees
+- **Red area**: Terminations per month
+- **Green area**: New hires per month
+- **Legend**: Toggle terminations/hires visibility
+- **Hover**: Shows exact counts for each month
+
+### Termination Types Pie Chart
+
+Visual breakdown of why employees left:
+- **Resignation** (Blue) - Voluntary departures
+- **Termination** (Red) - Involuntary dismissals
+- **Contract End** (Amber) - Fixed-term contract completion
+- **Retirement** (Green) - Retired employees
+- **Mutual Agreement** (Purple) - Negotiated departures
+
+Shows percentages and counts on hover.
+
+### Hiring Reasons Bar Chart
+
+Why new positions were opened:
+- **New Position** (Blue) - Brand new roles
+- **Replacement** (Red) - Backfilling departed employees
+- **Expansion** (Green) - Business growth hiring
+
+### Net Workforce Change Chart
+
+Bar chart showing month-by-month headcount delta:
+- **Green bars**: Positive growth (more hires than terminations)
+- **Red bars**: Negative growth (more terminations than hires)
+- **X-axis**: Months
+- **Y-axis**: Net change count
+
+### Department Breakdown Table
+
+Comprehensive table showing per-department statistics:
+
+| Column | Description |
+|--------|-------------|
+| Department | Department name |
+| Current | Active employee count |
+| Terminations | Employees who left |
+| New Hires | Employees joined |
+| Turnover Rate | Percentage (color-coded: green <10%, yellow 10-20%, red >20%) |
+| Net Change | Hires minus terminations (green positive, red negative) |
+
+**Sorting**: Sorted by terminations (highest first)
+
+### Quick Navigation Links
+
+Three action cards at the bottom:
+1. **Manage Terminations** - Link to Terminations page
+2. **Recruitment Pipeline** - Link to Recruitment
+3. **Hiring Requisitions** - Link to Recruitment Approval
+
+### CSV Export
+
+**Export Turnover Report** button:
+- Downloads CSV file with department breakdown data
+- Filename: `turnover_report_YYYY-MM-DD.csv`
+- Columns: Department, Current, Terminations, New Hires, Turnover Rate %
+- Useful for executive reporting and presentations
+
+### Date Range Filter
+
+Top-right dropdown options:
+- **This Year** - Full year data (default)
+- **This Quarter** - Current quarter only
+- **This Month** - Current month only
+
+### Real-Time Updates
+
+All data updates automatically:
+- Uses Firestore onSnapshot for live sync
+- No page refresh needed
+- Changes appear instantly when:
+  - Employee is terminated
+  - New hire is added
+  - Department changes occur
 
 ---
 

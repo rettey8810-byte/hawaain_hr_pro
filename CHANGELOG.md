@@ -5,6 +5,124 @@ All notable changes to HR Factory will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.4.0] - 2026-04-10
+
+### 🚀 Added - Turnover Dashboard Module
+
+#### New Turnover Dashboard (`/turnover`)
+- **Location**: HR Management → Turnover Dashboard
+- **Turnover Rate Calculation** - Percentage based on terminations vs active employees
+- **Key Metrics Cards**: Active employees, new hires, fill rate, total terminations
+- **Monthly Trend Chart** - 12-month comparison of terminations vs hires using AreaChart
+- **Termination Types Pie Chart** - Breakdown by Resignation, Termination, Contract End, Retirement, Mutual Agreement
+- **Hiring Reasons Bar Chart** - New positions, Replacements, Expansion visualization
+- **Net Workforce Change Chart** - Month-by-month headcount delta (green for positive, red for negative)
+- **Department Breakdown Table** - Per-department analytics:
+  - Current employee count
+  - Terminations count
+  - New hires count
+  - Turnover rate percentage
+  - Net change calculation
+- **Quick Navigation Links**: Direct access to Terminations, Recruitment Pipeline, Hiring Requisitions
+- **CSV Export**: Export department breakdown data for external reporting
+- **Data Sources**: Employees, Terminations, Recruitment Approvals collections
+- **Real-time Updates**: Uses onSnapshot for live data synchronization
+
+### 🚀 Added - Dashboard Real-Time Statistics
+
+#### Live Data Updates
+- **Firestore onSnapshot Integration** - Replaced `getDocs` with `onSnapshot` in useFirestore hook
+- **Automatic Updates** - Dashboard stats refresh without page reload
+- **Termination Stats Card** - Added to main Dashboard:
+  - Completed terminations count
+  - In-progress terminations count
+  - Click navigates to Terminations page
+  - Red gradient design with UserX icon
+- **Employee Count Fix** - Terminated employees excluded from "Total Employees" count
+- **Performance** - Real-time listeners for all major collections
+
+### 🚀 Enhanced - Recruitment Onboarding System
+
+#### Comprehensive Onboarding Modal
+- **Complete Redesign** - Expanded modal with 6 sections (previously basic form)
+- **Document Registration Section**:
+  - Passport number and expiry date
+  - Work permit number and expiry
+  - Visa number and expiry
+  - National ID / I-Card number
+  - Medical insurance policy number
+- **Emergency Contact Section**:
+  - Contact person full name
+  - Phone number with country code
+  - Relationship dropdown (Spouse, Parent, Sibling, Child, Friend, Other)
+- **Bank Details Section**:
+  - Bank name
+  - Account number for salary processing
+- **Uniform & Medical Section**:
+  - Uniform size dropdown (XS, S, M, L, XL, XXL, XXXL)
+  - Allergies/medical conditions field
+  - Dietary restrictions (Halal, Vegetarian, etc.)
+- **Personal Information**:
+  - Date of birth
+  - Joining date (required field)
+
+#### Accommodation Integration
+- **Checkbox Toggle** - "Arrange Accommodation" option
+- **Available Rooms Display** - Grid showing all rooms with `status: 'available'`
+- **Room Card Details**:
+  - Room number (prominent)
+  - Building and floor location
+  - Room type (standard, deluxe, etc.)
+  - Bed count
+  - Amenities list (AC, WiFi, TV, etc.)
+- **Visual Selection** - Click to select, blue border + checkmark feedback
+- **Auto-Assignment on Completion**:
+  - Creates `roomAssignments` record linking candidate to room
+  - Updates room status to `occupied`
+  - Sets check-in date as joining date
+  - Success notification with room number
+- **Warning System** - Alerts if no available rooms exist
+- **Data Integration** - Pulls from `rooms` and `roomAssignments` collections
+
+### 🔧 Fixed - Budget Dashboard Issues
+
+#### ReferenceError Fix
+- **Missing Icon Imports** - Added `ChevronRight`, `ChevronDown`, `ChevronUp` from lucide-react
+- **Budget vs Actual Tab** - Previously crashed due to undefined icons
+
+#### CSV Export Enhancement
+- **Comma Handling** - Fields with commas now properly quoted in CSV export
+- **Designation Names** - Fixes column shift when designation contains commas (e.g., "CAPTAIN, BIG GAME FISHING")
+- **Helper Function** - Added `escapeCSV` function for proper field formatting
+
+#### Charts & UI
+- **Chart Container Warnings** - Added minWidth and margin props to Recharts components
+- **Container Sizing** - Fixed responsive container height/width issues
+
+### 🔧 Fixed - Date Comparison Bug
+
+#### Expiry Date Logic
+- **Midnight Comparison** - All date comparisons now use `.setHours(0,0,0,0)`
+- **Tomorrow No Longer Expired** - Fixed false "expired" status for future dates
+- **Affected Modules**:
+  - Medical records expiry
+  - Passport expiry
+  - Visa expiry
+  - Work permit expiry
+  - Document renewals
+
+### 📁 Files Changed
+- `Turnover.jsx` - New component (584 lines)
+- `Dashboard.jsx` - Added termination stats, real-time data
+- `useFirestore.js` - Switched to onSnapshot
+- `Recruitment.jsx` - Enhanced onboarding modal, accommodation integration
+- `BudgetDashboard.jsx` - Fixed imports, CSV export, charts
+- `helpers.js` - Fixed date comparison logic
+- `Layout.jsx` - Added Turnover Dashboard navigation
+- `App.jsx` - Added Turnover route and import
+
+---
+
 ## [2.3.1] - 2026-04-07
 
 ### 🚀 Added - Termination Management Module
