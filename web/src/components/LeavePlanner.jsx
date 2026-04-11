@@ -518,7 +518,7 @@ export default function LeavePlanner() {
                             </div>
                             <div className="ml-3">
                               <p className="text-sm font-bold text-gray-900">{emp.FullName || emp.name}</p>
-                              <p className="text-xs text-gray-500">{emp.EmpID || emp.id} • {yearsOfService}y {monthsOfService % 12}m</p>
+                              <p className="text-xs text-gray-500">{emp.EmpID || emp.id} • {yearsOfService}y {monthsOfService % 12}m • Joined: {formatDate(hireDate)}</p>
                             </div>
                           </div>
                         </td>
