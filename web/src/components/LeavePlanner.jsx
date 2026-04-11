@@ -92,7 +92,6 @@ export default function LeavePlanner() {
   const [printLeave, setPrintLeave] = useState(null);
   const [activeTab, setActiveTab] = useState('list');
   const [leaveBalances, setLeaveBalances] = useState({});
-  const [publicHolidays, setPublicHolidays] = useState([]);
   
   // Edit Balance Modal State
   const [showEditBalanceModal, setShowEditBalanceModal] = useState(false);
@@ -107,26 +106,6 @@ export default function LeavePlanner() {
     reason: ''
   });
 
-  // Fetch Public Holidays
-  useEffect(() => {
-    const fetchPublicHolidays = async () => {
-      if (!companyId) return;
-      try {
-        const q = query(
-          collection(db, 'publicHolidays'),
-          where('companyId', '==', companyId),
-          where('year', '==', 2026)
-        );
-        const snap = await getDocs(q);
-        const holidays = snap.docs.map(d => d.data());
-        setPublicHolidays(holidays);
-      } catch (err) {
-        console.error('Error fetching public holidays:', err);
-      }
-    };
-    fetchPublicHolidays();
-  }, [companyId]);
-
   // Fetch ALL employees for name lookup
   const fetchAllEmployees = useCallback(async () => {
     if (!companyId) return;
@@ -138,11 +117,6 @@ export default function LeavePlanner() {
       );
       const snap = await getDocs(q);
       const empList = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-      // Debug: Log first employee to check all available fields
-      if (empList.length > 0) {
-        console.log('First employee all fields:', Object.keys(empList[0]));
-        console.log('First employee data:', empList[0]);
-      }
       empList.sort((a, b) => (a.FullName || a.name || '').localeCompare(b.FullName || b.name || ''));
       setEmployees(empList);
     } catch (err) {
@@ -487,53 +461,32 @@ export default function LeavePlanner() {
   const renderTabContent = () => {
     switch (activeTab) {
       case 'balances':
-        const totalPublicHolidays = publicHolidays.length;
         return (
           <div className="bg-white rounded-2xl shadow-lg p-6">
             <div className="flex items-center justify-between mb-6">
               <h3 className="text-xl font-bold text-gray-900">Leave Balances</h3>
-              <div className="flex flex-wrap gap-2">
+              <div className="flex gap-2">
                 <span className="px-3 py-1 bg-emerald-100 text-emerald-700 rounded-full text-xs font-bold">Annual: 30/yr</span>
                 <span className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-xs font-bold">Off Days: 4/mo</span>
                 <span className="px-3 py-1 bg-rose-100 text-rose-700 rounded-full text-xs font-bold">Medical: 10/yr</span>
                 <span className="px-3 py-1 bg-amber-100 text-amber-700 rounded-full text-xs font-bold">Family: 10/yr</span>
-                <span className="px-3 py-1 bg-purple-100 text-purple-700 rounded-full text-xs font-bold">Sick: 15/yr</span>
-                <span className="px-3 py-1 bg-indigo-100 text-indigo-700 rounded-full text-xs font-bold">PH: {totalPublicHolidays}/yr</span>
               </div>
             </div>
-            <div className="overflow-y-auto" style={{ maxHeight: '70vh' }}>
-              <table className="w-full divide-y divide-gray-200" style={{ fontSize: '11px' }}>
-                <thead className="bg-gray-50 sticky top-0 z-10">
+            <div className="overflow-x-auto">
+              <table className="w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
                   <tr>
-                    <th className="px-2 py-2 text-left font-bold text-gray-600 uppercase sticky left-0 bg-gray-50 z-20" style={{ fontSize: '10px', width: '180px' }}>Employee</th>
-                    <th className="px-1 py-2 text-center font-bold text-emerald-600 uppercase" style={{ fontSize: '10px', width: '70px' }}>Annual<br/><span className="text-gray-400 font-normal">Left/Ent/Used</span></th>
-                    <th className="px-1 py-2 text-center font-bold text-blue-600 uppercase" style={{ fontSize: '10px', width: '70px' }}>Off<br/><span className="text-gray-400 font-normal">Left/Ent/Used</span></th>
-                    <th className="px-1 py-2 text-center font-bold text-rose-600 uppercase" style={{ fontSize: '10px', width: '70px' }}>Med<br/><span className="text-gray-400 font-normal">Left/Ent/Used</span></th>
-                    <th className="px-1 py-2 text-center font-bold text-amber-600 uppercase" style={{ fontSize: '10px', width: '70px' }}>Fam<br/><span className="text-gray-400 font-normal">Left/Ent/Used</span></th>
-                    <th className="px-1 py-2 text-center font-bold text-purple-600 uppercase" style={{ fontSize: '10px', width: '70px' }}>Sick<br/><span className="text-gray-400 font-normal">Left/Ent/Used</span></th>
-                    <th className="px-1 py-2 text-center font-bold text-pink-600 uppercase" style={{ fontSize: '10px', width: '60px' }}>Emerg</th>
-                    <th className="px-1 py-2 text-center font-bold text-cyan-600 uppercase" style={{ fontSize: '10px', width: '60px' }}>Unpaid</th>
-                    <th className="px-1 py-2 text-center font-bold text-indigo-600 uppercase" style={{ fontSize: '10px', width: '60px' }}>PH</th>
-                    <th className="px-1 py-2 text-center font-bold text-gray-600 uppercase" style={{ fontSize: '10px', width: '70px' }}>Action</th>
+                    <th className="px-4 py-3 text-left text-xs font-bold text-gray-600 uppercase">Employee</th>
+                    <th className="px-4 py-3 text-center text-xs font-bold text-emerald-600 uppercase">Annual<br/><span className="text-gray-400 font-normal">Entitled/Used/Left</span></th>
+                    <th className="px-4 py-3 text-center text-xs font-bold text-blue-600 uppercase">Off Days<br/><span className="text-gray-400 font-normal">Entitled/Used/Left</span></th>
+                    <th className="px-4 py-3 text-center text-xs font-bold text-rose-600 uppercase">Medical<br/><span className="text-gray-400 font-normal">Entitled/Used/Left</span></th>
+                    <th className="px-4 py-3 text-center text-xs font-bold text-amber-600 uppercase">Family<br/><span className="text-gray-400 font-normal">Entitled/Used/Left</span></th>
+                    <th className="px-4 py-3 text-center text-xs font-bold text-gray-600 uppercase">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">
                   {employees.map(emp => {
-                    // Check all possible date field names (including 'Date of Join' with spaces)
-                    const dateStr = emp['Date of Join'] || emp.JoinDate || emp.joinDate || emp.HireDate || emp.hireDate || emp.dateOfJoining || emp.DateOfJoining || emp.DOJ || emp.startDate || emp.StartDate;
-                    let hireDate;
-                    
-                    if (dateStr && dateStr !== 'null' && dateStr !== 'undefined') {
-                      // Try to parse the date
-                      hireDate = new Date(dateStr);
-                      // Check if valid date
-                      if (isNaN(hireDate.getTime())) {
-                        hireDate = new Date('2025-01-01');
-                      }
-                    } else {
-                      hireDate = new Date('2025-01-01');
-                    }
-                    
+                    const hireDate = new Date(emp.JoinDate || emp.joinDate || emp.HireDate || emp.hireDate || '2025-01-01');
                     const now = new Date();
                     const yearsOfService = Math.floor((now - hireDate) / (1000 * 60 * 60 * 24 * 365.25));
                     const monthsOfService = Math.floor((now - hireDate) / (1000 * 60 * 60 * 24 * 30.44));
@@ -544,84 +497,53 @@ export default function LeavePlanner() {
                       l.status === 'approved'
                     );
                     
-                    // Calculate used leaves for ALL types
+                    // Calculate used leaves
                     const annualUsed = empLeaves.filter(l => l.leaveType === 'annual').reduce((sum, l) => sum + (parseInt(l.days) || 0), 0);
                     const offDayUsed = empLeaves.filter(l => l.leaveType === 'off_day').reduce((sum, l) => sum + (parseInt(l.days) || 0), 0);
                     const medicalUsed = empLeaves.filter(l => l.leaveType === 'medical').reduce((sum, l) => sum + (parseInt(l.days) || 0), 0);
                     const familyUsed = empLeaves.filter(l => l.leaveType === 'family_responsibility').reduce((sum, l) => sum + (parseInt(l.days) || 0), 0);
-                    const sickUsed = empLeaves.filter(l => l.leaveType === 'sick').reduce((sum, l) => sum + (parseInt(l.days) || 0), 0);
-                    const emergencyUsed = empLeaves.filter(l => l.leaveType === 'emergency').reduce((sum, l) => sum + (parseInt(l.days) || 0), 0);
-                    const unpaidUsed = empLeaves.filter(l => l.leaveType === 'unpaid').reduce((sum, l) => sum + (parseInt(l.days) || 0), 0);
-                    const phUsed = empLeaves.filter(l => l.leaveType === 'ph').reduce((sum, l) => sum + (parseInt(l.days) || 0), 0);
-                    const specialUsed = empLeaves.filter(l => l.leaveType === 'special').reduce((sum, l) => sum + (parseInt(l.days) || 0), 0);
-                    const hajjuUsed = empLeaves.filter(l => l.leaveType === 'hajju').reduce((sum, l) => sum + (parseInt(l.days) || 0), 0);
                     
                     // Simple fixed entitlements
                     const annualEntitled = yearsOfService >= 1 ? 30 : 0;
                     const offDayEntitled = Math.min(48, monthsOfService * 4);
                     const medicalEntitled = 10;
                     const familyEntitled = 10;
-                    const sickEntitled = 15;
-                    
-                    // Leave Balance Cell Component - Compact
-                    const BalanceCell = ({ left, total, used, color }) => {
-                      const colorClasses = {
-                        emerald: 'text-emerald-600',
-                        blue: 'text-blue-600',
-                        rose: 'text-rose-600',
-                        amber: 'text-amber-600',
-                        purple: 'text-purple-600'
-                      };
-                      return (
-                        <td className="px-1 py-2 text-center" style={{ fontSize: '11px' }}>
-                          <span className={'font-bold ' + (colorClasses[color] || 'text-gray-600')}>{Math.max(0, left)}</span>
-                          <span className="text-gray-400 block" style={{ fontSize: '9px' }}>{total}/{used}</span>
-                        </td>
-                      );
-                    };
-                    
-                    // Used Only Cell Component - Compact
-                    const UsedCell = ({ used, color }) => {
-                      const colorClasses = {
-                        pink: 'text-pink-600',
-                        cyan: 'text-cyan-600',
-                        indigo: 'text-indigo-600'
-                      };
-                      return (
-                        <td className="px-1 py-2 text-center" style={{ fontSize: '11px' }}>
-                          <span className={'font-bold ' + (colorClasses[color] || 'text-gray-600')}>{used}</span>
-                        </td>
-                      );
-                    };
                     
                     return (
                       <tr key={emp.id} className="hover:bg-gray-50">
-                        <td className="px-2 py-2 sticky left-0 bg-white" style={{ width: '180px' }}>
+                        <td className="px-4 py-3">
                           <div className="flex items-center">
-                            <div className="h-8 w-8 rounded-full bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center text-white font-bold text-xs">
+                            <div className="h-10 w-10 rounded-full bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center text-white font-bold">
                               {(emp.FullName || emp.name || 'U').charAt(0)}
                             </div>
-                            <div className="ml-2 min-w-0">
-                              <p className="font-bold text-gray-900 truncate" style={{ fontSize: '11px' }}>{emp.FullName || emp.name}</p>
-                              <p className="text-gray-500" style={{ fontSize: '9px' }}>{emp.EmpID || emp.id} • {yearsOfService}y {monthsOfService % 12}m</p>
+                            <div className="ml-3">
+                              <p className="text-sm font-bold text-gray-900">{emp.FullName || emp.name}</p>
+                              <p className="text-xs text-gray-500">{emp.EmpID || emp.id} • {yearsOfService}y {monthsOfService % 12}m</p>
                             </div>
                           </div>
                         </td>
-                        <BalanceCell left={annualEntitled - annualUsed} total={annualEntitled} used={annualUsed} color="emerald" />
-                        <BalanceCell left={offDayEntitled - offDayUsed} total={offDayEntitled} used={offDayUsed} color="blue" />
-                        <BalanceCell left={medicalEntitled - medicalUsed} total={medicalEntitled} used={medicalUsed} color="rose" />
-                        <BalanceCell left={familyEntitled - familyUsed} total={familyEntitled} used={familyUsed} color="amber" />
-                        <BalanceCell left={sickEntitled - sickUsed} total={sickEntitled} used={sickUsed} color="purple" />
-                        <UsedCell used={emergencyUsed} color="pink" />
-                        <UsedCell used={unpaidUsed} color="cyan" />
-                        <UsedCell used={phUsed} color="indigo" />
-                        <td className="px-1 py-2 text-center" style={{ width: '70px' }}>
+                        <td className="px-4 py-3 text-center">
+                          <span className="text-sm font-bold text-emerald-600">{Math.max(0, annualEntitled - annualUsed)}</span>
+                          <span className="text-xs text-gray-400 block">{annualEntitled}/{annualUsed}</span>
+                        </td>
+                        <td className="px-4 py-3 text-center">
+                          <span className="text-sm font-bold text-blue-600">{Math.max(0, offDayEntitled - offDayUsed)}</span>
+                          <span className="text-xs text-gray-400 block">{offDayEntitled}/{offDayUsed}</span>
+                        </td>
+                        <td className="px-4 py-3 text-center">
+                          <span className="text-sm font-bold text-rose-600">{Math.max(0, medicalEntitled - medicalUsed)}</span>
+                          <span className="text-xs text-gray-400 block">{medicalEntitled}/{medicalUsed}</span>
+                        </td>
+                        <td className="px-4 py-3 text-center">
+                          <span className="text-sm font-bold text-amber-600">{Math.max(0, familyEntitled - familyUsed)}</span>
+                          <span className="text-xs text-gray-400 block">{familyEntitled}/{familyUsed}</span>
+                        </td>
+                        <td className="px-4 py-3 text-center">
                           <button
                             onClick={() => handleEditBalance(emp)}
-                            className="px-2 py-1 font-medium text-white bg-emerald-600 rounded hover:bg-emerald-700"
-                            style={{ fontSize: '10px' }}
+                            className="px-3 py-1.5 text-xs font-medium text-white bg-emerald-600 rounded hover:bg-emerald-700"
                           >
-                            Adj
+                            Adjust
                           </button>
                         </td>
                       </tr>
@@ -629,7 +551,6 @@ export default function LeavePlanner() {
                   })}
                 </tbody>
               </table>
-              </div>
             </div>
           </div>
         );
@@ -1135,10 +1056,6 @@ export default function LeavePlanner() {
                   <option value="off_day">Off Day</option>
                   <option value="medical">Medical</option>
                   <option value="family_responsibility">Family Care</option>
-                  <option value="sick">Sick Leave</option>
-                  <option value="emergency">Emergency</option>
-                  <option value="unpaid">Unpaid</option>
-                  <option value="ph">Public Holiday (PH)</option>
                 </select>
               </div>
               <div>
