@@ -233,7 +233,8 @@ export default function EmployeeDashboard() {
 
   // Calculate leave balances with accrual rules
   const calculateLeaveBalances = (emp, empLeaves) => {
-    const hireDate = new Date(emp.JoinDate || emp.HireDate || emp.joinDate || emp.hireDate || '2025-01-01');
+    if (!emp) return; // Guard against null employee data
+    const hireDate = new Date(emp.JoinDate || emp.HireDate || emp.joinDate || emp.hireDate || emp['Date of Join'] || '2025-01-01');
     const today = new Date();
     
     // Calculate years of service
