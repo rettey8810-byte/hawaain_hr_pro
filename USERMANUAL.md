@@ -2302,22 +2302,140 @@ A: All employees can access "Self-Service" from the sidebar to manage their prof
 
 ---
 
-## Employee Self-Service Portal
+## Employee Self-Service Portal (v2.5)
 
 ### Accessing Your Portal
-1. Go to "Self Service" → "My Self Service"
-2. View dashboard with:
-   - Leave balances
-   - Recent payslips
-   - Pending approvals
-   - Document alerts
+1. Login with your credentials (email or username + password)
+2. You are automatically redirected to **Employee Dashboard**
 
-### Available Actions
-- View/download payslips
-- Check leave history
-- Monitor attendance
-- Read company announcements
-- Access quick links (Apply Leave, Submit Expense)
+### Employee Dashboard Overview
+The Employee Dashboard provides a centralized view of your work information with:
+
+#### Welcome Header
+- **Employee Name**: Shows your full name from profile
+- **Designation**: Your job title and department
+- **Company**: Current company assignment
+
+#### Navigation Bar (Top)
+Quick links for easy navigation:
+- **Dashboard Home** - Return to main dashboard
+- **My Leaves** - View leave balances and apply
+- **Payslips** - View and download salary slips
+- **Profile** - Update your personal information
+
+#### Employee Information Card
+Displays key employment details:
+- **Employee ID**: Your unique employee code
+- **Department**: Current department assignment
+- **Join Date**: Your hire date (supports multiple date formats)
+- **Pending Requests**: Count of leave requests awaiting approval
+
+#### Leave Balances Section (8 Types)
+Visual cards showing your leave entitlement with progress bars:
+
+1. **Annual Leave** (30 days after 1 year service)
+   - Accrues weekly: 30/52 = ~0.58 days per week
+   - No leave entitlement during first year
+   - Maximum 30 days per year
+
+2. **Off Days** (4 days per month, max 48/year)
+   - Accrues monthly: 4 days per month of service
+   - Maximum 48 days per year
+   - Unused days carry forward
+
+3. **Medical Leave** (10 days per year)
+   - Fixed 10 days annually
+   - Requires medical certificate for approval
+   - For illness and medical appointments
+
+4. **Family Care** (10 days per year)
+   - Fixed 10 days for family responsibilities
+   - For spouse/child/parent illness
+   - Emergency family obligations
+
+5. **Sick Leave** (As needed)
+   - Extended sick leave beyond medical quota
+   - Requires medical certificate
+   - Subject to HR approval
+
+6. **Public Holidays** (0 days - automatic)
+   - Based on public holiday calendar
+   - Automatically counted by system
+   - No application required
+
+7. **Emergency Leave** (3 days per year)
+   - For urgent unexpected situations
+   - Up to 3 days annually
+   - Quick approval process
+
+8. **Unpaid Leave** (Unlimited)
+   - No limit (shown as ∞)
+   - Salary deduction applies
+   - Extended absence option
+
+#### Quick Action Buttons
+- **Apply Leave** - Start leave application
+- **View Payslips** - Access payslip history
+- **My Attendance** - Check attendance record
+- **My Documents** - Upload personal documents
+
+#### Recent Leave History
+Table showing your last 5 leave applications with:
+- Leave type
+- Date range
+- Days taken
+- Approval status
+- Approver name
+
+### Self-Service Pages
+
+#### My Payslips (`/payslips`)
+View and download your monthly salary slips:
+- **List View**: Month-by-month payslip history
+- **Download**: Click any month to download PDF
+- **Details**: Gross salary, allowances, deductions, net pay
+- **Bank Info**: Salary transfer account details
+
+#### My Attendance (`/my-attendance`)
+Track your work attendance:
+- **Calendar View**: Monthly calendar with check-in/out times
+- **Today's Status**: Current day's check-in time
+- **Attendance Stats**: Present, late, absent counts
+- **Working Hours**: Daily and monthly hour totals
+- **Overtime**: OT hours tracking
+
+#### My Documents (`/my-documents`)
+Upload and manage personal documents:
+- **Upload New**: Add passport, visa, certificates, IDs
+- **View Existing**: See uploaded documents
+- **Download**: Retrieve your stored documents
+- **Document Types**: Passport, Visa, Work Permit, Medical, Certificate, Contract, ID
+
+#### My Profile (`/profile`)
+View and update your information:
+- **Personal Info**: Name, contact, emergency contact
+- **Employment Details**: Department, designation, manager
+- **Bank Details**: Account for salary transfer
+- **Address**: Home and mailing address
+- **Contact Update**: Phone, email modifications
+
+### Troubleshooting
+
+#### Employee Data Not Found
+If you see "Employee data not found":
+1. Check your username contains employee code (e.g., mohammad25489)
+2. Contact HR to verify your email is linked to employee record
+3. System searches: employeeId → Email → FullName matching
+
+#### Leave Balance Shows Zero
+- **First Year**: Annual leave is 0 until 1 year service completed
+- **Join Date**: Check if your hire date is correctly entered
+- **Service Calculation**: Based on years/months since join date
+
+#### Cannot Access Payslips
+- **Role Restriction**: Only HR/GM can view all payslips
+- **Your Payslip**: Employees can view own payslips at `/payslips`
+- **Firestore Index**: If error occurs, HR needs to create Firestore index
 
 ---
 

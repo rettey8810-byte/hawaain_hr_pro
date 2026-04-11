@@ -5,6 +5,68 @@ All notable changes to HR Factory will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.5.0] - 2026-04-11
+
+### 🚀 Added - Employee Dashboard v2.5 (Major Enhancement)
+
+#### Enhanced Employee Dashboard (`/employee-dashboard`)
+- **Welcome Header**: Gradient design showing employee name, designation, and company
+- **Navigation Bar**: Quick links to Dashboard, My Leaves, Payslips, Profile
+- **Employee Info Card**: Displays Employee ID, Department, Join Date, Pending Requests
+- **8 Leave Type Support**: All leave types now displayed with visual cards:
+  - Annual Leave (30 days after 1 year service, weekly accrual)
+  - Off Days (4 per month, max 48/year, monthly accrual)
+  - Medical (10 days/year fixed)
+  - Family Care (10 days/year fixed)
+  - Sick Leave (as needed with medical certificate)
+  - Public Holidays (automatic from calendar)
+  - Emergency (3 days/year)
+  - Unpaid (unlimited)
+- **Leave Balance Cards**: Visual cards with progress bars showing used/total/remaining
+- **Leave Accrual Info**: Detailed accrual rules displayed for each leave type
+- **Quick Action Buttons**: Apply Leave, View Payslips, My Attendance, My Documents
+- **Recent Leave History**: Last 5 applications with status tracking
+
+#### Smart Employee Data Fetching
+- **Multi-strategy Search Algorithm**:
+  1. Search by employeeId (document ID)
+  2. Search by Email field (case insensitive)
+  3. Extract EmpID from username pattern (e.g., mohammad25489 → 25489)
+  4. Search by FullName matching userData.name
+  5. Final fallback: fetch all employees and match by code in FullName
+- **Automatic Employee Code Extraction**: Username parsing to find employee records
+- **Null Guards**: Prevents crashes when employee data is missing
+- **Debug Logging**: Console logs for troubleshooting employee matching
+
+#### Join Date Display Fix
+- **Multiple Date Field Support**: Checks all possible date field names:
+  - `Date of Join`, `JoinDate`, `HireDate`
+  - `dateOfJoining`, `DateOfJoining`, `DOJ`
+  - `startDate`, `StartDate`
+- **Date Format Handling**: Supports various date formats and displays properly
+
+#### New Employee Self-Service Pages
+- **My Payslips** (`/payslips`): View and download monthly salary slips
+- **My Attendance** (`/my-attendance`): Calendar view, check-in/out, attendance stats
+- **My Documents** (`/my-documents`): Upload passport, certificates, IDs, contracts
+- **Profile** (`/profile`): View and edit personal information
+
+#### UI/UX Improvements
+- **Better Layout**: Improved spacing and organization
+- **Visual Progress Bars**: Color-coded leave usage indicators
+- **Responsive Design**: Works on desktop and mobile
+- **Loading States**: Proper loading indicators during data fetch
+
+### 🐛 Fixed
+- Employee data not loading for certain users (added fallback matching)
+- Join date not displaying (added multi-field support)
+- Only 4 leave types showing (now shows all 8 types)
+- Missing navigation to home dashboard (added navigation bar)
+
+### 📝 Documentation
+- Updated README.md with Employee Self-Service Portal v2.5 features
+- Updated USERMANUAL.md with comprehensive Employee Dashboard guide
+
 ## [2.4.0] - 2026-04-10
 
 ### 🚀 Added - User Management v2.0 (Complete Redesign)

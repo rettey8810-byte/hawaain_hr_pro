@@ -198,13 +198,24 @@ A comprehensive HR management system with expatriate compliance tracking, docume
 - **No Objection Certificate (NOC)** - Track and issue NOCs
 - **Reference Letter Generator** - Auto-generate employment certificates
 
-### 👤 Employee Self-Service
-- **Profile Self-Update**: Employees update their own info
-- **Payslip Download**: Access and download payslips (view-only for employees)
-- **Leave Balance View**: Check leave quotas
-- **Document Upload**: Upload personal documents
-- **Request Forms**: Certificate requests, address changes
-- **Request Tracking**: Track pending requests
+### 👤 Employee Self-Service Portal (Enhanced v2.5)
+- **Employee Dashboard**: Centralized hub with welcome header, stats, and quick actions
+- **8 Leave Types Support**: Annual, Off Days, Medical, Family Care, Sick, Public Holidays, Emergency, Unpaid
+- **Leave Balance Cards**: Visual cards showing remaining days with progress bars
+- **Real-time Leave Accrual**: Automatic calculation based on hire date and service years
+- **Navigation Bar**: Quick access to Dashboard, My Leaves, Payslips, Profile
+- **Employee Info Display**: Employee ID, Department, Join Date, Pending Requests
+
+#### Employee Self-Service Pages
+- **My Payslips** (`/payslips`): View and download salary slips with earnings/deductions breakdown
+- **My Attendance** (`/my-attendance`): Calendar view, check-in/out, attendance statistics
+- **My Documents** (`/my-documents`): Upload passport, certificates, ID cards, contracts
+- **My Profile** (`/profile`): View and edit personal information
+
+#### Smart Employee Data Fetching
+- **Multi-strategy Search**: Finds employee by employeeId, Email, EmpID, or FullName matching
+- **Automatic Matching**: Extracts employee code from username (e.g., mohammad25489 → 25489)
+- **Fallback Matching**: Searches all employees to find matching FullName containing employee code
 
 **Note**: Salary information is only visible to HR and GM roles. Employees can view their own payslips but not salary breakdowns of others.
 
