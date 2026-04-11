@@ -142,6 +142,24 @@ git restore --staged path/to/file
 
 ### April 2026 Updates
 
+**User Management v2.0 (Complete Redesign)**
+- **Location**: Settings → User Management
+- **New Card-Based UI** - Beautiful card layout replacing old table view
+- **Role-Grouped Display** - Users organized by role with color-coded badges
+  - Superadmin (Purple), GM (Red), HRM (Blue), Dept Head (Orange), Supervisor (Yellow), Staff (Green), Employee (Teal)
+- **User Cards** show:
+  - Avatar with initials, Full name, Username/Employee code
+  - Status badge (Active/Inactive/Suspended)
+  - Email, Phone, Department, Company
+- **Three Action Buttons** on each card:
+  - **View** - Opens detailed user info modal (ID, email, username, department, designation, phone, status, created date)
+  - **Edit** - Modify name, username, department, designation, phone, role, status
+  - **Reset** - Reset password (user must change on next login)
+- **Search** - Real-time search by name, email, username, or employee code
+- **Add User** - Full form to create new users with name, email, username, password, role
+- **Real-time Updates** - Uses Firestore onSnapshot for live updates
+- **All Users Visible** - GM/HRM/Superadmin can see all 888+ users across the system
+
 **Turnover Dashboard (New Module)**
 - New comprehensive Turnover Dashboard at `/turnover`
 - Located in HR Management navigation section

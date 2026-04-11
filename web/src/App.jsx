@@ -19,6 +19,7 @@ import Layout from './components/Layout';
 import Login from './components/Login';
 import Signup from './components/Signup';
 import Dashboard from './components/Dashboard';
+import EmployeeDashboard from './components/EmployeeDashboard';
 import Employees from './components/Employees';
 import EmployeeForm from './components/EmployeeForm';
 import EmployeeDetail from './components/EmployeeDetail';
@@ -149,6 +150,28 @@ function SuperAdminRoute({ children }) {
   return children;
 }
 
+function EmployeeRoute({ children }) {
+  const { user, userData, loading } = useAuth();
+  
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center h-screen">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
+  
+  if (!user) return <Navigate to="/login" />;
+  
+  // If employee role, redirect to employee dashboard
+  const employeeRoles = ['employee', 'staff'];
+  if (employeeRoles.includes(userData?.role)) {
+    return <Navigate to="/employee-dashboard" />;
+  }
+  
+  return children;
+}
+
 // Feature-based permission route guard
 function PermissionRoute({ children, feature, action }) {
   const { user, hasAccess, loading } = useAuth();
@@ -209,7 +232,14 @@ function App() {
               {/* Protected Routes */}
               <Route path="/" element={
                 <PrivateRoute>
-                  <Layout><Dashboard /></Layout>
+                  <EmployeeRoute>
+                    <Layout><Dashboard /></Layout>
+                  </EmployeeRoute>
+                </PrivateRoute>
+              } />
+              <Route path="/employee-dashboard" element={
+                <PrivateRoute>
+                  <Layout><EmployeeDashboard /></Layout>
                 </PrivateRoute>
               } />
               

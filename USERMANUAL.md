@@ -4,10 +4,11 @@
 1. [Introduction](#introduction)
 2. [Getting Started](#getting-started)
 3. [User Roles & Permissions](#user-roles--permissions)
-4. [Company Management](#company-management)
-5. [Company Structure](#company-structure)
-6. [Dashboard](#dashboard)
-7. [Employee Management](#employee-management)
+4. [User Management](#user-management)
+5. [Company Management](#company-management)
+6. [Company Structure](#company-structure)
+7. [Dashboard](#dashboard)
+8. [Employee Management](#employee-management)
 8. [Recruitment & ATS](#recruitment--ats)
 9. [Payroll & Payslips](#payroll--payslips)
 10. [Manpower Budget](#manpower-budget)
@@ -121,6 +122,172 @@ The system uses a hierarchical role structure where higher roles can create and 
 2. Superadmin has exclusive rights to create companies
 3. Only Superadmin can assign the Superadmin role
 4. Users cannot modify or delete users at the same or higher level
+
+---
+
+## User Management
+
+### Overview (Superadmin/GM/HRM Only)
+
+The User Management module provides complete control over system users with a modern card-based interface. Manage all 888+ users across the organization with powerful search, edit, and password reset capabilities.
+
+### Access
+
+Go to **Settings → User Management** in the sidebar navigation.
+
+### User Interface
+
+#### Card-Based Layout
+- **Role-Grouped Display** - Users automatically grouped by their role
+- **Color-Coded Badges** - Each role has a distinct color:
+  - 🔴 **GM** (General Manager) - Red badge
+  - 🔵 **HRM** (HR Manager) - Blue badge
+  - 🟠 **Dept Head** - Orange badge
+  - 🟡 **Supervisor** - Yellow badge
+  - 🟢 **Staff** - Green badge
+  - 🩵 **Employee** - Teal badge
+  - 🟣 **Superadmin** - Purple badge
+
+#### User Cards
+Each user card displays:
+- **Avatar** - Circular initials (e.g., "JD" for John Doe)
+- **Full Name** - User's complete name
+- **Username/ID** - Username or employee code
+- **Status Badge** - Active (green), Inactive (gray), or Suspended (red)
+- **Contact Info** - Email, phone number
+- **Department** - User's department
+- **Company** - Assigned company
+
+### Searching Users
+
+1. Use the **Search box** at the top right
+2. Search by:
+   - Full name (e.g., "John Doe")
+   - Email address (e.g., "john@company.com")
+   - Username (e.g., "jdoe123")
+   - Employee code (e.g., "EMP001")
+3. Results filter instantly as you type
+4. Shows count of matching users
+
+### Viewing User Details
+
+1. Find the user card in the grid
+2. Click the **"View"** button (blue)
+3. Modal opens showing complete profile:
+   - **User ID** - Firebase UID (e.g., "abc123xyz")
+   - **Full Name** - Complete name
+   - **Role** - Current role with badge
+   - **Email** - Login email address
+   - **Username** - System username
+   - **Employee Code** - If applicable
+   - **Department** - Assigned department
+   - **Designation** - Job title
+   - **Phone** - Contact number
+   - **Company** - Company assignment
+   - **Status** - Active/Inactive/Suspended
+   - **Created** - Account creation date
+4. Click **"Edit User"** to modify details
+5. Click **"Close"** to dismiss
+
+### Editing a User
+
+1. Click **"Edit"** button (indigo) on user card
+2. Or click "Edit User" from the View modal
+3. **Editable Fields**:
+   - **Full Name** - Update user's complete name
+   - **Username** - Change system username
+   - **Department** - Update department assignment
+   - **Designation** - Modify job title
+   - **Phone** - Update contact number
+   - **Role** - Change user role (dropdown)
+     - Select from: Superadmin, GM, HRM, Dept Head, Supervisor, Staff, Employee
+   - **Status** - Change account status:
+     - **Active** - User can log in normally
+     - **Inactive** - Account disabled temporarily
+     - **Suspended** - Account blocked
+4. **Protected Fields** (cannot edit):
+   - Email address (linked to Firebase Auth)
+   - User ID (Firebase UID)
+5. Click **"Save Changes"** to update
+6. Changes reflect immediately across the system
+
+### Resetting User Password
+
+1. Click **"Reset"** button (orange) on user card
+2. Modal shows user name for confirmation
+3. Enter **New Password** (minimum 6 characters)
+4. Click **"Reset Password"**
+5. System:
+   - Updates password in Firebase Auth
+   - Sets `mustChangePassword` flag
+   - User prompted to change password on next login
+6. Success message confirms reset
+
+### Adding a New User
+
+1. Click **"Add User"** button (top right)
+2. Fill the registration form:
+   - **Full Name** (required) - Complete name
+   - **Email** (required) - Valid email for login
+   - **Username** (optional) - System identifier
+   - **Password** (required) - Min 6 characters
+   - **Confirm Password** (required) - Must match
+   - **Role** (required) - Select from dropdown:
+     - Employee - Regular staff with view-only access
+     - Staff - Standard employee role
+     - Supervisor - Can manage team members
+     - Dept Head - Department management
+     - HRM - HR Manager with full HR access
+     - GM - General Manager with company-wide access
+     - Superadmin - Full system access (Superadmin only)
+3. Click **"Create User"**
+4. System:
+   - Creates Firebase Auth account
+   - Creates Firestore user document
+   - Assigns to current company
+   - Sends confirmation (if configured)
+5. New user appears immediately in the grid
+
+### User Status Management
+
+#### Active Status
+- User can log in and access all permitted features
+- Normal operational state
+- Displayed with green badge
+
+#### Inactive Status
+- User cannot log in
+- Temporary suspension (e.g., leave of absence)
+- Can be reactivated by admin
+- Displayed with gray badge
+
+#### Suspended Status
+- User cannot log in
+- Permanent or disciplinary suspension
+- Requires admin intervention to restore
+- Displayed with red badge
+
+### Role-Based Access Control
+
+**Who Can Manage Users:**
+- **Superadmin** - Full CRUD on ALL users across ALL companies
+- **GM** - Full CRUD on users in their company (except Superadmins)
+- **HRM** - Full CRUD on users in their company (except Superadmins and GMs)
+- **Dept Head** - Can view team members, limited edit permissions
+- **Supervisor/Staff/Employee** - Can only view their own profile
+
+**Role Hierarchy Enforcement:**
+- Users can only create/edit roles BELOW their level
+- Cannot modify users at same or higher level
+- Superadmin exclusive for creating companies and Superadmin users
+
+### Best Practices
+
+1. **Verify Before Reset** - Confirm user identity before password reset
+2. **Status Changes** - Use "Inactive" for temporary leave, "Suspended" for disciplinary action
+3. **Role Changes** - Document role changes for audit purposes
+4. **New User Onboarding** - Set temporary password and instruct user to change on first login
+5. **Regular Review** - Periodically review inactive/suspended accounts
 
 ---
 

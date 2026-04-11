@@ -7,6 +7,83 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [2.4.0] - 2026-04-10
 
+### 🚀 Added - User Management v2.0 (Complete Redesign)
+
+#### New Card-Based User Management (`/user-management`)
+- **Complete UI Redesign** - Modern card-based layout replacing table view
+- **Grouped by Role** - Users organized by role with color-coded badges:
+  - Superadmin (Purple), GM (Red), HRM (Blue), Dept Head (Orange), Supervisor (Yellow), Staff (Green), Employee (Teal)
+- **Responsive Grid Layout** - 1-4 columns based on screen size (mobile to desktop)
+- **User Cards Display**:
+  - Avatar with initials
+  - Full name and username/employee code
+  - Status badge (Active/Inactive/Suspended)
+  - Email, phone, department, company info
+- **Quick Action Buttons** on each card:
+  - **View** - Open detailed user information modal
+  - **Edit** - Modify user details
+  - **Reset** - Reset user password
+- **Real-time Search** - Search by name, email, username, or employee code
+- **Live User Count** - Shows total users loaded from Firestore
+
+#### User Detail View Modal
+- **Comprehensive Profile Display**:
+  - User ID (Firebase UID)
+  - Full name and role
+  - Email address
+  - Username / Employee code
+  - Department and designation
+  - Phone number
+  - Company assignment
+  - Status (Active/Inactive/Suspended)
+  - Account creation date
+- **Quick Edit Access** - Direct button to open edit modal from view
+
+#### Edit User Functionality
+- **Editable Fields**:
+  - Full Name
+  - Username
+  - Department
+  - Designation
+  - Phone number
+  - Role (dropdown with all roles)
+  - Status (Active/Inactive/Suspended)
+- **Protected Fields**:
+  - Email (cannot be changed - Firebase Auth linked)
+  - User ID (immutable)
+- **Role Assignment** - Change user role with dropdown selector
+- **Status Management** - Activate, deactivate, or suspend accounts
+
+#### Reset Password Feature
+- **Password Reset Modal**:
+  - Enter new password (min 6 characters)
+  - Confirmation with user name display
+  - Sets `mustChangePassword` flag
+  - User prompted to change password on next login
+- **Security** - Only admin-level users can reset passwords
+
+#### Add New User
+- **Complete Registration Form**:
+  - Full name (required)
+  - Email address (required)
+  - Username (optional)
+  - Password with confirmation (required, min 6 chars)
+  - Role selection (required)
+- **Firebase Integration** - Creates Auth user and Firestore document
+- **Company Assignment** - Auto-assigns to current company
+
+#### Technical Improvements
+- **All Users Loading** - Bypasses company filter for admin roles (GM, HRM, Superadmin)
+- **Firestore onSnapshot** - Real-time updates when users are added/modified/deleted
+- **Role Hierarchy Support** - Full support for all 7 role types including new "employee" role
+- **Loading States** - Animated spinner while fetching users
+- **Toast Notifications** - Success/error messages for all actions
+
+**Access**: Settings → User Management  
+**Permissions**: Superadmin, GM, HRM (full CRUD), others (view only self)
+
+---
+
 ### 🚀 Added - Turnover Dashboard Module
 
 #### New Turnover Dashboard (`/turnover`)

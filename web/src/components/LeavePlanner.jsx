@@ -406,13 +406,19 @@ export default function LeavePlanner() {
         return (
           <div className="bg-white rounded-2xl shadow-lg p-6">
             <div className="flex items-center justify-between mb-6">
-              <h3 className="text-xl font-bold text-gray-900">Leave Balances (From 1st Jan 2025)</h3>
+              <h3 className="text-xl font-bold text-gray-900">Leave Balances (Auto-Accrues Weekly)</h3>
               <div className="text-sm text-gray-500">
-                <span className="inline-flex items-center px-3 py-1 bg-emerald-100 text-emerald-700 rounded-full text-xs font-bold mr-2">30 days/year Annual</span>
-                <span className="inline-flex items-center px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-xs font-bold mr-2">4 days/month Off Day</span>
+                <span className="inline-flex items-center px-3 py-1 bg-emerald-100 text-emerald-700 rounded-full text-xs font-bold mr-2">30/year after 1yr</span>
+                <span className="inline-flex items-center px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-xs font-bold mr-2">4/month Off Day</span>
                 <span className="inline-flex items-center px-3 py-1 bg-rose-100 text-rose-700 rounded-full text-xs font-bold mr-2">10 Medical</span>
                 <span className="inline-flex items-center px-3 py-1 bg-amber-100 text-amber-700 rounded-full text-xs font-bold">10 Family Care</span>
               </div>
+            </div>
+            <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-4">
+              <p className="text-sm text-blue-800">
+                <strong>Leave Accrual Rules:</strong> Annual leave (30 days/year) starts after completing 1 year and accrues ~0.58 days per week. 
+                Off days (4 per month) accrue ~0.92 days per week (max 48). Medical and Family Care are fixed at 10 days/year each.
+              </p>
             </div>
             <div className="overflow-x-auto">
               <table className="w-full divide-y divide-gray-200">
@@ -429,20 +435,18 @@ export default function LeavePlanner() {
                 </thead>
                 <tbody className="divide-y divide-gray-100">
                   {employees.map(emp => {
-                    const hireDate = emp.JoinDate || emp.joinDate || emp.HireDate || '2025-01-01';
-                    const startDate = new Date('2025-01-01');
+                    const hireDate = new Date(emp.JoinDate || emp.joinDate || emp.HireDate || emp.hireDate || '2025-01-01');
                     const now = new Date();
                     
-                    // Calculate months since Jan 2025 or hire date (whichever is later)
-                    const effectiveStart = new Date(Math.max(startDate.getTime(), new Date(hireDate).getTime()));
-                    const monthsSinceStart = Math.max(1, Math.floor((now - effectiveStart) / (1000 * 60 * 60 * 24 * 30.44)));
-                    const yearsSinceStart = monthsSinceStart / 12;
+                    // Calculate time of service
+                    const yearsOfService = (now - hireDate) / (1000 * 60 * 60 * 24 * 365.25);
+                    const monthsOfService = yearsOfService * 12;
+                    const weeksOfService = (now - hireDate) / (1000 * 60 * 60 * 24 * 7);
                     
-                    // Get leaves for this employee from 2025
+                    // Get leaves for this employee
                     const empLeaves = leaves.filter(l => 
                       l.employeeId === emp.id && 
-                      l.status === 'approved' &&
-                      new Date(l.startDate) >= startDate
+                      l.status === 'approved'
                     );
                     
                     // Calculate used leaves by type
@@ -462,10 +466,21 @@ export default function LeavePlanner() {
                       .filter(l => l.leaveType === 'ph')
                       .reduce((sum, l) => sum + (parseInt(l.days) || 0), 0);
                     
-                    // Calculate entitlements (prorated based on time)
-                    const annualTotal = Math.round(30 * yearsSinceStart);
-                    const offDayTotal = Math.min(48, monthsSinceStart * 4); // 4 per month, max 48
+                    // ANNUAL LEAVE: 30 days/year after 1 year, accrues weekly (~0.58 days/week)
+                    let annualTotal = 0;
+                    if (yearsOfService >= 1) {
+                      const weeksAfterFirstYear = (yearsOfService - 1) * 52;
+                      const currentYearWeeks = Math.min(weeksAfterFirstYear % 52 + (now.getDay() / 7), 52);
+                      annualTotal = Math.round((30 / 52) * currentYearWeeks * 10) / 10;
+                    }
+                    
+                    // OFF DAYS: 4 days/month, accrues weekly (~0.92 days/week), max 48
+                    const offDayTotal = Math.min(48, Math.round(weeksOfService * 0.92));
+                    
+                    // MEDICAL: Fixed 10 days/year
                     const medicalTotal = 10;
+                    
+                    // FAMILY CARE: Fixed 10 days/year
                     const familyTotal = 10;
                     
                     return (
