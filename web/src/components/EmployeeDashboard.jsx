@@ -147,6 +147,9 @@ export default function EmployeeDashboard() {
     offDay: { total: 0, used: 0, remaining: 0 },
     medical: { total: 0, used: 0, remaining: 0 },
     family: { total: 0, used: 0, remaining: 0 },
+    sick: { total: 0, used: 0, remaining: 0 },
+    ph: { total: 0, used: 0, remaining: 0 },
+    emergency: { total: 0, used: 0, remaining: 0 },
     unpaid: { total: Infinity, used: 0, remaining: Infinity }
   });
 
@@ -332,6 +335,15 @@ export default function EmployeeDashboard() {
     const familyUsed = approvedLeaves
       .filter(l => l.leaveType === 'family_responsibility')
       .reduce((sum, l) => sum + (parseInt(l.days) || 0), 0);
+    const sickUsed = approvedLeaves
+      .filter(l => l.leaveType === 'sick')
+      .reduce((sum, l) => sum + (parseInt(l.days) || 0), 0);
+    const phUsed = approvedLeaves
+      .filter(l => l.leaveType === 'ph')
+      .reduce((sum, l) => sum + (parseInt(l.days) || 0), 0);
+    const emergencyUsed = approvedLeaves
+      .filter(l => l.leaveType === 'emergency')
+      .reduce((sum, l) => sum + (parseInt(l.days) || 0), 0);
     const unpaidUsed = approvedLeaves
       .filter(l => l.leaveType === 'unpaid')
       .reduce((sum, l) => sum + (parseInt(l.days) || 0), 0);
@@ -363,11 +375,19 @@ export default function EmployeeDashboard() {
     const familyTotal = 10;
     const familyRemaining = Math.max(0, familyTotal - familyUsed);
     
+    // Other leave types with fixed or unlimited entitlements
+    const sickTotal = 0; // As needed, requires medical certificate
+    const phTotal = 0; // Based on public holiday calendar
+    const emergencyTotal = 3; // 3 days per year for emergencies
+    
     setLeaveBalances({
       annual: { total: annualTotal, used: annualUsed, remaining: annualRemaining },
       offDay: { total: offDayTotal, used: offDayUsed, remaining: offDayRemaining },
       medical: { total: medicalTotal, used: medicalUsed, remaining: medicalRemaining },
       family: { total: familyTotal, used: familyUsed, remaining: familyRemaining },
+      sick: { total: sickTotal, used: sickUsed, remaining: sickTotal - sickUsed },
+      ph: { total: phTotal, used: phUsed, remaining: phTotal - phUsed },
+      emergency: { total: emergencyTotal, used: emergencyUsed, remaining: Math.max(0, emergencyTotal - emergencyUsed) },
       unpaid: { total: Infinity, used: unpaidUsed, remaining: Infinity }
     });
   };
@@ -416,7 +436,9 @@ export default function EmployeeDashboard() {
           </div>
           <div className="bg-white/20 rounded-xl p-3">
             <p className="text-sm text-emerald-100">Join Date</p>
-            <p className="font-semibold">{formatDate(employee?.JoinDate || employee?.HireDate)}</p>
+            <p className="font-semibold">
+              {formatDate(employee?.['Date of Join'] || employee?.JoinDate || employee?.HireDate || employee?.joinDate || employee?.hireDate || employee?.StartDate)}
+            </p>
           </div>
           <div className="bg-white/20 rounded-xl p-3">
             <p className="text-sm text-emerald-100">Pending Requests</p>
@@ -507,6 +529,38 @@ export default function EmployeeDashboard() {
             remaining={leaveBalances.family.remaining}
             color="amber"
           />
+          <LeaveBalanceCard
+            title="Sick Leave"
+            icon={HeartPulse}
+            total={leaveBalances.sick.total}
+            used={leaveBalances.sick.used}
+            remaining={leaveBalances.sick.remaining}
+            color="purple"
+          />
+          <LeaveBalanceCard
+            title="Public Holidays"
+            icon={Sun}
+            total={leaveBalances.ph.total}
+            used={leaveBalances.ph.used}
+            remaining={leaveBalances.ph.remaining}
+            color="orange"
+          />
+          <LeaveBalanceCard
+            title="Emergency"
+            icon={AlertCircle}
+            total={leaveBalances.emergency.total}
+            used={leaveBalances.emergency.used}
+            remaining={leaveBalances.emergency.remaining}
+            color="red"
+          />
+          <LeaveBalanceCard
+            title="Unpaid Leave"
+            icon={Umbrella}
+            total={leaveBalances.unpaid.total === Infinity ? '∞' : leaveBalances.unpaid.total}
+            used={leaveBalances.unpaid.used}
+            remaining="∞"
+            color="gray"
+          />
         </div>
         
         {/* Leave Accrual Info */}
@@ -516,10 +570,14 @@ export default function EmployeeDashboard() {
             <div>
               <p className="font-semibold text-blue-900">Leave Accrual Rules</p>
               <ul className="text-sm text-blue-800 mt-1 space-y-1">
-                <li>• <strong>Annual Leave:</strong> 30 days/year after completing 1 year. Accrues ~0.58 days per week.</li>
-                <li>• <strong>Off Days:</strong> 4 days per month. Accrues ~0.92 days per week (max 48 days).</li>
-                <li>• <strong>Medical:</strong> 10 days per year (fixed).</li>
-                <li>• <strong>Family Care:</strong> 10 days per year (fixed).</li>
+                <li>• <strong>Annual:</strong> 30 days/year after 1 year. Accrues ~0.58 days/week.</li>
+                <li>• <strong>Off Days:</strong> 4 days/month (max 48 days). Accrues ~0.92 days/week.</li>
+                <li>• <strong>Medical:</strong> 10 days/year (fixed).</li>
+                <li>• <strong>Family Care:</strong> 10 days/year (fixed).</li>
+                <li>• <strong>Sick:</strong> As needed (medical certificate required).</li>
+                <li>• <strong>PH:</strong> Based on public holiday calendar.</li>
+                <li>• <strong>Emergency:</strong> 3 days/year (special circumstances).</li>
+                <li>• <strong>Unpaid:</strong> Unlimited (subject to approval).</li>
               </ul>
             </div>
           </div>
