@@ -501,21 +501,20 @@ export default function LeavePlanner() {
                 <span className="px-3 py-1 bg-indigo-100 text-indigo-700 rounded-full text-xs font-bold">PH: {totalPublicHolidays}/yr</span>
               </div>
             </div>
-            <div className="overflow-x-auto overflow-y-auto max-h-[70vh]" style={{ direction: 'rtl' }}>
-              <div style={{ direction: 'ltr' }}>
-                <table className="w-full divide-y divide-gray-200 min-w-[1000px]">
+            <div className="overflow-y-auto" style={{ maxHeight: '70vh' }}>
+              <table className="w-full divide-y divide-gray-200" style={{ fontSize: '11px' }}>
                 <thead className="bg-gray-50 sticky top-0 z-10">
                   <tr>
-                    <th className="px-4 py-3 text-left text-xs font-bold text-gray-600 uppercase sticky left-0 bg-gray-50 z-20">Employee</th>
-                    <th className="px-3 py-3 text-center text-xs font-bold text-emerald-600 uppercase">Annual<br/><span className="text-gray-400 font-normal">Left/Total/Used</span></th>
-                    <th className="px-3 py-3 text-center text-xs font-bold text-blue-600 uppercase">Off Days<br/><span className="text-gray-400 font-normal">Left/Total/Used</span></th>
-                    <th className="px-3 py-3 text-center text-xs font-bold text-rose-600 uppercase">Medical<br/><span className="text-gray-400 font-normal">Left/Total/Used</span></th>
-                    <th className="px-3 py-3 text-center text-xs font-bold text-amber-600 uppercase">Family<br/><span className="text-gray-400 font-normal">Left/Total/Used</span></th>
-                    <th className="px-3 py-3 text-center text-xs font-bold text-purple-600 uppercase">Sick<br/><span className="text-gray-400 font-normal">Left/Total/Used</span></th>
-                    <th className="px-3 py-3 text-center text-xs font-bold text-pink-600 uppercase">Emergency<br/><span className="text-gray-400 font-normal">Used</span></th>
-                    <th className="px-3 py-3 text-center text-xs font-bold text-cyan-600 uppercase">Unpaid<br/><span className="text-gray-400 font-normal">Used</span></th>
-                    <th className="px-3 py-3 text-center text-xs font-bold text-indigo-600 uppercase">PH<br/><span className="text-gray-400 font-normal">{totalPublicHolidays}/Used</span></th>
-                    <th className="px-3 py-3 text-center text-xs font-bold text-gray-600 uppercase">Actions</th>
+                    <th className="px-2 py-2 text-left font-bold text-gray-600 uppercase sticky left-0 bg-gray-50 z-20" style={{ fontSize: '10px', width: '180px' }}>Employee</th>
+                    <th className="px-1 py-2 text-center font-bold text-emerald-600 uppercase" style={{ fontSize: '10px', width: '70px' }}>Annual<br/><span className="text-gray-400 font-normal">Left/Ent/Used</span></th>
+                    <th className="px-1 py-2 text-center font-bold text-blue-600 uppercase" style={{ fontSize: '10px', width: '70px' }}>Off<br/><span className="text-gray-400 font-normal">Left/Ent/Used</span></th>
+                    <th className="px-1 py-2 text-center font-bold text-rose-600 uppercase" style={{ fontSize: '10px', width: '70px' }}>Med<br/><span className="text-gray-400 font-normal">Left/Ent/Used</span></th>
+                    <th className="px-1 py-2 text-center font-bold text-amber-600 uppercase" style={{ fontSize: '10px', width: '70px' }}>Fam<br/><span className="text-gray-400 font-normal">Left/Ent/Used</span></th>
+                    <th className="px-1 py-2 text-center font-bold text-purple-600 uppercase" style={{ fontSize: '10px', width: '70px' }}>Sick<br/><span className="text-gray-400 font-normal">Left/Ent/Used</span></th>
+                    <th className="px-1 py-2 text-center font-bold text-pink-600 uppercase" style={{ fontSize: '10px', width: '60px' }}>Emerg</th>
+                    <th className="px-1 py-2 text-center font-bold text-cyan-600 uppercase" style={{ fontSize: '10px', width: '60px' }}>Unpaid</th>
+                    <th className="px-1 py-2 text-center font-bold text-indigo-600 uppercase" style={{ fontSize: '10px', width: '60px' }}>PH</th>
+                    <th className="px-1 py-2 text-center font-bold text-gray-600 uppercase" style={{ fontSize: '10px', width: '70px' }}>Action</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">
@@ -564,31 +563,31 @@ export default function LeavePlanner() {
                     const familyEntitled = 10;
                     const sickEntitled = 15;
                     
-                    // Leave Balance Cell Component
+                    // Leave Balance Cell Component - Compact
                     const BalanceCell = ({ left, total, used, color }) => (
-                      <td className="px-3 py-3 text-center">
-                        <span className={`text-sm font-bold text-${color}-600`}>{Math.max(0, left)}</span>
-                        <span className="text-xs text-gray-400 block">{total}/{used}</span>
+                      <td className="px-1 py-2 text-center" style={{ fontSize: '11px' }}>
+                        <span className={`font-bold text-${color}-600`}>{Math.max(0, left)}</span>
+                        <span className="text-gray-400 block" style={{ fontSize: '9px' }}>{total}/{used}</span>
                       </td>
                     );
                     
-                    // Used Only Cell Component
+                    // Used Only Cell Component - Compact
                     const UsedCell = ({ used, color }) => (
-                      <td className="px-3 py-3 text-center">
-                        <span className={`text-sm font-bold text-${color}-600`}>{used}</span>
+                      <td className="px-1 py-2 text-center" style={{ fontSize: '11px' }}>
+                        <span className={`font-bold text-${color}-600`}>{used}</span>
                       </td>
                     );
                     
                     return (
                       <tr key={emp.id} className="hover:bg-gray-50">
-                        <td className="px-4 py-3 sticky left-0 bg-white">
+                        <td className="px-2 py-2 sticky left-0 bg-white" style={{ width: '180px' }}>
                           <div className="flex items-center">
-                            <div className="h-10 w-10 rounded-full bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center text-white font-bold">
+                            <div className="h-8 w-8 rounded-full bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center text-white font-bold text-xs">
                               {(emp.FullName || emp.name || 'U').charAt(0)}
                             </div>
-                            <div className="ml-3">
-                              <p className="text-sm font-bold text-gray-900">{emp.FullName || emp.name}</p>
-                              <p className="text-xs text-gray-500">{emp.EmpID || emp.id} • {yearsOfService}y {monthsOfService % 12}m • Joined: {formatDate(hireDate)}</p>
+                            <div className="ml-2 min-w-0">
+                              <p className="font-bold text-gray-900 truncate" style={{ fontSize: '11px' }}>{emp.FullName || emp.name}</p>
+                              <p className="text-gray-500" style={{ fontSize: '9px' }}>{emp.EmpID || emp.id} • {yearsOfService}y {monthsOfService % 12}m</p>
                             </div>
                           </div>
                         </td>
@@ -600,12 +599,13 @@ export default function LeavePlanner() {
                         <UsedCell used={emergencyUsed} color="pink" />
                         <UsedCell used={unpaidUsed} color="cyan" />
                         <UsedCell used={phUsed} color="indigo" />
-                        <td className="px-3 py-3 text-center">
+                        <td className="px-1 py-2 text-center" style={{ width: '70px' }}>
                           <button
                             onClick={() => handleEditBalance(emp)}
-                            className="px-3 py-1.5 text-xs font-medium text-white bg-emerald-600 rounded hover:bg-emerald-700"
+                            className="px-2 py-1 font-medium text-white bg-emerald-600 rounded hover:bg-emerald-700"
+                            style={{ fontSize: '10px' }}
                           >
-                            Adjust
+                            Adj
                           </button>
                         </td>
                       </tr>
