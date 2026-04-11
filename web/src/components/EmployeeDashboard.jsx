@@ -408,6 +408,25 @@ export default function EmployeeDashboard() {
 
   return (
     <div className="max-w-6xl mx-auto space-y-6">
+      {/* Navigation Bar */}
+      <div className="bg-white rounded-xl shadow-sm p-4 flex items-center justify-between">
+        <Link to="/dashboard" className="flex items-center gap-2 text-emerald-600 hover:text-emerald-700 font-semibold">
+          <Home className="h-5 w-5" />
+          <span>Dashboard Home</span>
+        </Link>
+        <div className="flex items-center gap-4">
+          <Link to="/leave-planner" className="text-gray-600 hover:text-gray-900 text-sm">
+            My Leaves
+          </Link>
+          <Link to="/payslips" className="text-gray-600 hover:text-gray-900 text-sm">
+            Payslips
+          </Link>
+          <Link to="/profile" className="text-gray-600 hover:text-gray-900 text-sm">
+            Profile
+          </Link>
+        </div>
+      </div>
+
       {/* Welcome Header */}
       <div className="bg-gradient-to-r from-emerald-500 to-teal-600 rounded-2xl shadow-lg p-6 text-white">
         <div className="flex items-center justify-between">
