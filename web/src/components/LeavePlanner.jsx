@@ -92,6 +92,19 @@ export default function LeavePlanner() {
   const [printLeave, setPrintLeave] = useState(null);
   const [activeTab, setActiveTab] = useState('list');
   const [leaveBalances, setLeaveBalances] = useState({});
+  
+  // Edit Balance Modal State
+  const [showEditBalanceModal, setShowEditBalanceModal] = useState(false);
+  const [selectedEmployee, setSelectedEmployee] = useState(null);
+  const [balanceForm, setBalanceForm] = useState({
+    annual: 0,
+    offDay: 0,
+    medical: 0,
+    family: 0,
+    operation: 'add', // 'add' or 'remove'
+    days: 0,
+    reason: ''
+  });
 
   // Fetch ALL employees for name lookup
   const fetchAllEmployees = useCallback(async () => {
@@ -280,6 +293,51 @@ export default function LeavePlanner() {
     }
   };
 
+  // Handle edit balance
+  const handleEditBalance = (emp) => {
+    setSelectedEmployee(emp);
+    setBalanceForm({
+      annual: 0,
+      offDay: 0,
+      medical: 0,
+      family: 0,
+      operation: 'add',
+      days: 0,
+      reason: ''
+    });
+    setShowEditBalanceModal(true);
+  };
+
+  // Save balance adjustment
+  const handleSaveBalance = async (e) => {
+    e.preventDefault();
+    if (!selectedEmployee) return;
+
+    try {
+      // Create a leave record for the adjustment
+      const adjustmentData = {
+        employeeId: selectedEmployee.id,
+        leaveType: balanceForm.leaveType || 'annual',
+        days: balanceForm.operation === 'add' ? parseInt(balanceForm.days) : -parseInt(balanceForm.days),
+        startDate: new Date().toISOString().split('T')[0],
+        endDate: new Date().toISOString().split('T')[0],
+        reason: `Balance Adjustment: ${balanceForm.reason}`,
+        status: 'approved',
+        companyId,
+        createdBy: user?.uid,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        isAdjustment: true
+      };
+
+      await addDoc(collection(db, 'leaves'), adjustmentData);
+      toast.success(`Balance ${balanceForm.operation === 'add' ? 'added' : 'deducted'} successfully`);
+      setShowEditBalanceModal(false);
+    } catch (error) {
+      toast.error('Failed to adjust balance: ' + error.message);
+    }
+  };
+
   // Import from Leave_Status.json
   const handleImportFromJSON = async (jsonData) => {
     try {
@@ -406,42 +464,32 @@ export default function LeavePlanner() {
         return (
           <div className="bg-white rounded-2xl shadow-lg p-6">
             <div className="flex items-center justify-between mb-6">
-              <h3 className="text-xl font-bold text-gray-900">Leave Balances (Auto-Accrues Weekly)</h3>
-              <div className="text-sm text-gray-500">
-                <span className="inline-flex items-center px-3 py-1 bg-emerald-100 text-emerald-700 rounded-full text-xs font-bold mr-2">30/year after 1yr</span>
-                <span className="inline-flex items-center px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-xs font-bold mr-2">4/month Off Day</span>
-                <span className="inline-flex items-center px-3 py-1 bg-rose-100 text-rose-700 rounded-full text-xs font-bold mr-2">10 Medical</span>
-                <span className="inline-flex items-center px-3 py-1 bg-amber-100 text-amber-700 rounded-full text-xs font-bold">10 Family Care</span>
+              <h3 className="text-xl font-bold text-gray-900">Leave Balances</h3>
+              <div className="flex gap-2">
+                <span className="px-3 py-1 bg-emerald-100 text-emerald-700 rounded-full text-xs font-bold">Annual: 30/yr</span>
+                <span className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-xs font-bold">Off Days: 4/mo</span>
+                <span className="px-3 py-1 bg-rose-100 text-rose-700 rounded-full text-xs font-bold">Medical: 10/yr</span>
+                <span className="px-3 py-1 bg-amber-100 text-amber-700 rounded-full text-xs font-bold">Family: 10/yr</span>
               </div>
-            </div>
-            <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 mb-4">
-              <p className="text-sm text-blue-800">
-                <strong>Leave Accrual Rules:</strong> Annual leave (30 days/year) starts after completing 1 year and accrues ~0.58 days per week. 
-                Off days (4 per month) accrue ~0.92 days per week (max 48). Medical and Family Care are fixed at 10 days/year each.
-              </p>
             </div>
             <div className="overflow-x-auto">
               <table className="w-full divide-y divide-gray-200">
-                <thead className="bg-gradient-to-r from-emerald-50 to-teal-50">
+                <thead className="bg-gray-50">
                   <tr>
-                    <th className="px-4 py-3 text-left text-xs font-bold text-emerald-700 uppercase">Employee</th>
-                    <th className="px-4 py-3 text-center text-xs font-bold text-emerald-700 uppercase">Annual<br/>(Total/Used/Remain)</th>
-                    <th className="px-4 py-3 text-center text-xs font-bold text-emerald-700 uppercase">Off Days<br/>(Total/Used/Remain)</th>
-                    <th className="px-4 py-3 text-center text-xs font-bold text-emerald-700 uppercase">Medical<br/>(Total/Used/Remain)</th>
-                    <th className="px-4 py-3 text-center text-xs font-bold text-emerald-700 uppercase">Family Care<br/>(Total/Used/Remain)</th>
-                    <th className="px-4 py-3 text-center text-xs font-bold text-emerald-700 uppercase">PH<br/>(Used)</th>
-                    <th className="px-4 py-3 text-center text-xs font-bold text-emerald-700 uppercase">Status</th>
+                    <th className="px-4 py-3 text-left text-xs font-bold text-gray-600 uppercase">Employee</th>
+                    <th className="px-4 py-3 text-center text-xs font-bold text-emerald-600 uppercase">Annual<br/><span className="text-gray-400 font-normal">Entitled/Used/Left</span></th>
+                    <th className="px-4 py-3 text-center text-xs font-bold text-blue-600 uppercase">Off Days<br/><span className="text-gray-400 font-normal">Entitled/Used/Left</span></th>
+                    <th className="px-4 py-3 text-center text-xs font-bold text-rose-600 uppercase">Medical<br/><span className="text-gray-400 font-normal">Entitled/Used/Left</span></th>
+                    <th className="px-4 py-3 text-center text-xs font-bold text-amber-600 uppercase">Family<br/><span className="text-gray-400 font-normal">Entitled/Used/Left</span></th>
+                    <th className="px-4 py-3 text-center text-xs font-bold text-gray-600 uppercase">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">
                   {employees.map(emp => {
                     const hireDate = new Date(emp.JoinDate || emp.joinDate || emp.HireDate || emp.hireDate || '2025-01-01');
                     const now = new Date();
-                    
-                    // Calculate time of service
-                    const yearsOfService = (now - hireDate) / (1000 * 60 * 60 * 24 * 365.25);
-                    const monthsOfService = yearsOfService * 12;
-                    const weeksOfService = (now - hireDate) / (1000 * 60 * 60 * 24 * 7);
+                    const yearsOfService = Math.floor((now - hireDate) / (1000 * 60 * 60 * 24 * 365.25));
+                    const monthsOfService = Math.floor((now - hireDate) / (1000 * 60 * 60 * 24 * 30.44));
                     
                     // Get leaves for this employee
                     const empLeaves = leaves.filter(l => 
@@ -449,111 +497,54 @@ export default function LeavePlanner() {
                       l.status === 'approved'
                     );
                     
-                    // Calculate used leaves by type
-                    const annualUsed = empLeaves
-                      .filter(l => l.leaveType === 'annual')
-                      .reduce((sum, l) => sum + (parseInt(l.days) || 0), 0);
-                    const offDayUsed = empLeaves
-                      .filter(l => l.leaveType === 'off_day')
-                      .reduce((sum, l) => sum + (parseInt(l.days) || 0), 0);
-                    const medicalUsed = empLeaves
-                      .filter(l => l.leaveType === 'medical')
-                      .reduce((sum, l) => sum + (parseInt(l.days) || 0), 0);
-                    const familyUsed = empLeaves
-                      .filter(l => l.leaveType === 'family_responsibility')
-                      .reduce((sum, l) => sum + (parseInt(l.days) || 0), 0);
-                    const phUsed = empLeaves
-                      .filter(l => l.leaveType === 'ph')
-                      .reduce((sum, l) => sum + (parseInt(l.days) || 0), 0);
+                    // Calculate used leaves
+                    const annualUsed = empLeaves.filter(l => l.leaveType === 'annual').reduce((sum, l) => sum + (parseInt(l.days) || 0), 0);
+                    const offDayUsed = empLeaves.filter(l => l.leaveType === 'off_day').reduce((sum, l) => sum + (parseInt(l.days) || 0), 0);
+                    const medicalUsed = empLeaves.filter(l => l.leaveType === 'medical').reduce((sum, l) => sum + (parseInt(l.days) || 0), 0);
+                    const familyUsed = empLeaves.filter(l => l.leaveType === 'family_responsibility').reduce((sum, l) => sum + (parseInt(l.days) || 0), 0);
                     
-                    // ANNUAL LEAVE: 30 days/year after 1 year, accrues weekly (~0.58 days/week)
-                    let annualTotal = 0;
-                    if (yearsOfService >= 1) {
-                      const weeksAfterFirstYear = (yearsOfService - 1) * 52;
-                      const currentYearWeeks = Math.min(weeksAfterFirstYear % 52 + (now.getDay() / 7), 52);
-                      annualTotal = Math.round((30 / 52) * currentYearWeeks * 10) / 10;
-                    }
-                    
-                    // OFF DAYS: 4 days/month, accrues weekly (~0.92 days/week), max 48
-                    const offDayTotal = Math.min(48, Math.round(weeksOfService * 0.92));
-                    
-                    // MEDICAL: Fixed 10 days/year
-                    const medicalTotal = 10;
-                    
-                    // FAMILY CARE: Fixed 10 days/year
-                    const familyTotal = 10;
+                    // Simple fixed entitlements
+                    const annualEntitled = yearsOfService >= 1 ? 30 : 0;
+                    const offDayEntitled = Math.min(48, monthsOfService * 4);
+                    const medicalEntitled = 10;
+                    const familyEntitled = 10;
                     
                     return (
-                      <tr key={emp.id} className="hover:bg-emerald-50/50">
-                        <td className="px-4 py-4">
+                      <tr key={emp.id} className="hover:bg-gray-50">
+                        <td className="px-4 py-3">
                           <div className="flex items-center">
                             <div className="h-10 w-10 rounded-full bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center text-white font-bold">
                               {(emp.FullName || emp.name || 'U').charAt(0)}
                             </div>
                             <div className="ml-3">
                               <p className="text-sm font-bold text-gray-900">{emp.FullName || emp.name}</p>
-                              <p className="text-xs text-gray-500">{emp.EmpID || emp.id}</p>
-                              <p className="text-xs text-gray-400">Hired: {formatDate(hireDate)}</p>
+                              <p className="text-xs text-gray-500">{emp.EmpID || emp.id} • {yearsOfService}y {monthsOfService % 12}m</p>
                             </div>
                           </div>
                         </td>
-                        <td className="px-4 py-4 text-center">
-                          <div className="flex items-center justify-center gap-1 text-xs">
-                            <span className="text-gray-600">{annualTotal}</span>
-                            <span className="text-gray-400">/</span>
-                            <span className="text-rose-600">{annualUsed}</span>
-                            <span className="text-gray-400">/</span>
-                            <span className="font-bold text-emerald-600">{Math.max(0, annualTotal - annualUsed)}</span>
-                          </div>
-                          <div className="w-full bg-gray-200 rounded-full h-1.5 mt-1 max-w-[100px] mx-auto">
-                            <div className="bg-emerald-500 h-1.5 rounded-full" style={{ width: `${annualTotal > 0 ? Math.min((annualUsed / annualTotal) * 100, 100) : 0}%` }}></div>
-                          </div>
+                        <td className="px-4 py-3 text-center">
+                          <span className="text-sm font-bold text-emerald-600">{Math.max(0, annualEntitled - annualUsed)}</span>
+                          <span className="text-xs text-gray-400 block">{annualEntitled}/{annualUsed}</span>
                         </td>
-                        <td className="px-4 py-4 text-center">
-                          <div className="flex items-center justify-center gap-1 text-xs">
-                            <span className="text-gray-600">{offDayTotal}</span>
-                            <span className="text-gray-400">/</span>
-                            <span className="text-rose-600">{offDayUsed}</span>
-                            <span className="text-gray-400">/</span>
-                            <span className="font-bold text-emerald-600">{Math.max(0, offDayTotal - offDayUsed)}</span>
-                          </div>
-                          <div className="w-full bg-gray-200 rounded-full h-1.5 mt-1 max-w-[100px] mx-auto">
-                            <div className="bg-blue-500 h-1.5 rounded-full" style={{ width: `${offDayTotal > 0 ? Math.min((offDayUsed / offDayTotal) * 100, 100) : 0}%` }}></div>
-                          </div>
+                        <td className="px-4 py-3 text-center">
+                          <span className="text-sm font-bold text-blue-600">{Math.max(0, offDayEntitled - offDayUsed)}</span>
+                          <span className="text-xs text-gray-400 block">{offDayEntitled}/{offDayUsed}</span>
                         </td>
-                        <td className="px-4 py-4 text-center">
-                          <div className="flex items-center justify-center gap-1 text-xs">
-                            <span className="text-gray-600">{medicalTotal}</span>
-                            <span className="text-gray-400">/</span>
-                            <span className="text-rose-600">{medicalUsed}</span>
-                            <span className="text-gray-400">/</span>
-                            <span className="font-bold text-emerald-600">{Math.max(0, medicalTotal - medicalUsed)}</span>
-                          </div>
-                          <div className="w-full bg-gray-200 rounded-full h-1.5 mt-1 max-w-[100px] mx-auto">
-                            <div className="bg-rose-500 h-1.5 rounded-full" style={{ width: `${(medicalUsed / medicalTotal) * 100}%` }}></div>
-                          </div>
+                        <td className="px-4 py-3 text-center">
+                          <span className="text-sm font-bold text-rose-600">{Math.max(0, medicalEntitled - medicalUsed)}</span>
+                          <span className="text-xs text-gray-400 block">{medicalEntitled}/{medicalUsed}</span>
                         </td>
-                        <td className="px-4 py-4 text-center">
-                          <div className="flex items-center justify-center gap-1 text-xs">
-                            <span className="text-gray-600">{familyTotal}</span>
-                            <span className="text-gray-400">/</span>
-                            <span className="text-rose-600">{familyUsed}</span>
-                            <span className="text-gray-400">/</span>
-                            <span className="font-bold text-emerald-600">{Math.max(0, familyTotal - familyUsed)}</span>
-                          </div>
-                          <div className="w-full bg-gray-200 rounded-full h-1.5 mt-1 max-w-[100px] mx-auto">
-                            <div className="bg-amber-500 h-1.5 rounded-full" style={{ width: `${(familyUsed / familyTotal) * 100}%` }}></div>
-                          </div>
+                        <td className="px-4 py-3 text-center">
+                          <span className="text-sm font-bold text-amber-600">{Math.max(0, familyEntitled - familyUsed)}</span>
+                          <span className="text-xs text-gray-400 block">{familyEntitled}/{familyUsed}</span>
                         </td>
-                        <td className="px-4 py-4 text-center">
-                          <span className="text-sm font-bold text-purple-600">{phUsed}</span>
-                        </td>
-                        <td className="px-4 py-4 text-center">
-                          {(annualTotal - annualUsed) < 5 ? (
-                            <span className="px-2 py-1 bg-amber-100 text-amber-700 rounded-full text-xs font-bold">Low</span>
-                          ) : (
-                            <span className="px-2 py-1 bg-emerald-100 text-emerald-700 rounded-full text-xs font-bold">OK</span>
-                          )}
+                        <td className="px-4 py-3 text-center">
+                          <button
+                            onClick={() => handleEditBalance(emp)}
+                            className="px-3 py-1.5 text-xs font-medium text-white bg-emerald-600 rounded hover:bg-emerald-700"
+                          >
+                            Adjust
+                          </button>
                         </td>
                       </tr>
                     );
@@ -1038,6 +1029,107 @@ export default function LeavePlanner() {
           employee={employees.find(e => e.id === printLeave.employeeId)}
           onClose={() => setShowPrintView(false)} 
         />
+      )}
+
+      {/* Edit Balance Modal */}
+      {showEditBalanceModal && selectedEmployee && (
+        <div className="fixed inset-0 bg-gray-900/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl p-6 max-w-md w-full shadow-2xl">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-xl font-bold text-gray-900">Adjust Leave Balance</h3>
+              <button onClick={() => setShowEditBalanceModal(false)}>
+                <XCircle className="h-6 w-6 text-gray-400 hover:text-gray-600" />
+              </button>
+            </div>
+            <p className="text-sm text-gray-600 mb-4">
+              Employee: <strong>{selectedEmployee.FullName || selectedEmployee.name}</strong>
+            </p>
+            <form onSubmit={handleSaveBalance} className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Leave Type</label>
+                <select
+                  value={balanceForm.leaveType || 'annual'}
+                  onChange={(e) => setBalanceForm({...balanceForm, leaveType: e.target.value})}
+                  className="block w-full rounded-lg border-gray-300 border px-3 py-2"
+                >
+                  <option value="annual">Annual Leave</option>
+                  <option value="off_day">Off Day</option>
+                  <option value="medical">Medical</option>
+                  <option value="family_responsibility">Family Care</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Operation</label>
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setBalanceForm({...balanceForm, operation: 'add'})}
+                    className={`flex-1 py-2 rounded-lg font-medium ${
+                      balanceForm.operation === 'add' 
+                        ? 'bg-emerald-100 text-emerald-700 border-2 border-emerald-500' 
+                        : 'bg-gray-100 text-gray-700 border-2 border-transparent'
+                    }`}
+                  >
+                    + Add Days
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setBalanceForm({...balanceForm, operation: 'remove'})}
+                    className={`flex-1 py-2 rounded-lg font-medium ${
+                      balanceForm.operation === 'remove' 
+                        ? 'bg-rose-100 text-rose-700 border-2 border-rose-500' 
+                        : 'bg-gray-100 text-gray-700 border-2 border-transparent'
+                    }`}
+                  >
+                    - Remove Days
+                  </button>
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Days</label>
+                <input
+                  type="number"
+                  min="1"
+                  max="30"
+                  required
+                  value={balanceForm.days}
+                  onChange={(e) => setBalanceForm({...balanceForm, days: parseInt(e.target.value) || 0})}
+                  className="block w-full rounded-lg border-gray-300 border px-3 py-2"
+                  placeholder="Enter days"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Reason</label>
+                <textarea
+                  value={balanceForm.reason}
+                  onChange={(e) => setBalanceForm({...balanceForm, reason: e.target.value})}
+                  className="block w-full rounded-lg border-gray-300 border px-3 py-2"
+                  rows="2"
+                  placeholder="Enter reason for adjustment"
+                />
+              </div>
+              <div className="flex gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setShowEditBalanceModal(false)}
+                  className="flex-1 px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className={`flex-1 px-4 py-2 text-sm font-medium text-white rounded-lg ${
+                    balanceForm.operation === 'add' 
+                      ? 'bg-emerald-600 hover:bg-emerald-700' 
+                      : 'bg-rose-600 hover:bg-rose-700'
+                  }`}
+                >
+                  {balanceForm.operation === 'add' ? 'Add Days' : 'Remove Days'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
       )}
     </div>
   );
