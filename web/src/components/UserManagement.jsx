@@ -54,7 +54,7 @@ export default function UserManagement() {
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
       return (
-        (user.fullName || '').toLowerCase().includes(query) ||
+        (user.fullName || user.displayName || user.name || '').toLowerCase().includes(query) ||
         (user.email || '').toLowerCase().includes(query) ||
         (user.username || '').toLowerCase().includes(query) ||
         (user.employeeCode || '').toLowerCase().includes(query)
@@ -280,11 +280,11 @@ export default function UserManagement() {
                   <div className="flex items-center gap-3">
                     <div className="h-12 w-12 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center">
                       <span className="text-white font-medium text-lg">
-                        {(user.fullName || user.name || 'U').charAt(0).toUpperCase()}
+                        {(user.fullName || user.displayName || user.name || 'U').charAt(0).toUpperCase()}
                       </span>
                     </div>
                     <div>
-                      <h3 className="font-medium text-gray-900">{user.fullName || user.name || 'Unknown'}</h3>
+                      <h3 className="font-medium text-gray-900">{user.fullName || user.displayName || user.name || 'Unknown'}</h3>
                       <p className="text-sm text-gray-500">{user.username || user.employeeCode || user.id.slice(0, 8)}</p>
                     </div>
                   </div>
@@ -372,19 +372,15 @@ export default function UserManagement() {
             <div className="flex items-center gap-4 mb-6">
               <div className="h-16 w-16 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center">
                 <span className="text-white font-medium text-2xl">
-                  {(selectedUser.fullName || selectedUser.name || 'U').charAt(0).toUpperCase()}
+                  {(selectedUser.fullName || selectedUser.displayName || selectedUser.name || 'U').charAt(0).toUpperCase()}
                 </span>
               </div>
               <div>
-                <h4 className="text-xl font-medium text-gray-900">{selectedUser.fullName || selectedUser.name}</h4>
+                <h4 className="text-xl font-medium text-gray-900">{selectedUser.fullName || selectedUser.displayName || selectedUser.name}</h4>
                 <p className="text-sm text-gray-500">{getRoleLabel(selectedUser.role)}</p>
               </div>
             </div>
-            <div className="space-y-3">
-              <div className="flex justify-between py-2 border-b">
-                <span className="text-gray-500">User ID:</span>
-                <span className="text-gray-900 font-mono text-sm">{selectedUser.id}</span>
-              </div>
+            <div className="space-y-2">
               <div className="flex justify-between py-2 border-b">
                 <span className="text-gray-500">Email:</span>
                 <span className="text-gray-900">{selectedUser.email}</span>
@@ -569,7 +565,7 @@ export default function UserManagement() {
               </button>
             </div>
             <p className="text-sm text-gray-600 mb-4">
-              Reset password for <strong>{selectedUser.fullName || selectedUser.name}</strong>
+              Reset password for <strong>{selectedUser.fullName || selectedUser.displayName || selectedUser.name}</strong>
             </p>
             <form onSubmit={handleResetPassword} className="space-y-4">
               <div>
