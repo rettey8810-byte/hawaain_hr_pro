@@ -465,23 +465,29 @@ export default function LeavePlanner() {
           <div className="bg-white rounded-2xl shadow-lg p-6">
             <div className="flex items-center justify-between mb-6">
               <h3 className="text-xl font-bold text-gray-900">Leave Balances</h3>
-              <div className="flex gap-2">
+              <div className="flex flex-wrap gap-2">
                 <span className="px-3 py-1 bg-emerald-100 text-emerald-700 rounded-full text-xs font-bold">Annual: 30/yr</span>
                 <span className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-xs font-bold">Off Days: 4/mo</span>
                 <span className="px-3 py-1 bg-rose-100 text-rose-700 rounded-full text-xs font-bold">Medical: 10/yr</span>
                 <span className="px-3 py-1 bg-amber-100 text-amber-700 rounded-full text-xs font-bold">Family: 10/yr</span>
+                <span className="px-3 py-1 bg-purple-100 text-purple-700 rounded-full text-xs font-bold">Sick: 15/yr</span>
+                <span className="px-3 py-1 bg-indigo-100 text-indigo-700 rounded-full text-xs font-bold">PH: 15/yr</span>
               </div>
             </div>
             <div className="overflow-x-auto">
               <table className="w-full divide-y divide-gray-200">
                 <thead className="bg-gray-50">
                   <tr>
-                    <th className="px-4 py-3 text-left text-xs font-bold text-gray-600 uppercase">Employee</th>
-                    <th className="px-4 py-3 text-center text-xs font-bold text-emerald-600 uppercase">Annual<br/><span className="text-gray-400 font-normal">Entitled/Used/Left</span></th>
-                    <th className="px-4 py-3 text-center text-xs font-bold text-blue-600 uppercase">Off Days<br/><span className="text-gray-400 font-normal">Entitled/Used/Left</span></th>
-                    <th className="px-4 py-3 text-center text-xs font-bold text-rose-600 uppercase">Medical<br/><span className="text-gray-400 font-normal">Entitled/Used/Left</span></th>
-                    <th className="px-4 py-3 text-center text-xs font-bold text-amber-600 uppercase">Family<br/><span className="text-gray-400 font-normal">Entitled/Used/Left</span></th>
-                    <th className="px-4 py-3 text-center text-xs font-bold text-gray-600 uppercase">Actions</th>
+                    <th className="px-2 py-2 text-left text-xs font-bold text-gray-600 uppercase sticky left-0 bg-gray-50 z-10">Employee</th>
+                    <th className="px-2 py-2 text-center text-xs font-bold text-emerald-600 uppercase">Annual<br/><span className="text-gray-400 font-normal">Ent/Used/Left</span></th>
+                    <th className="px-2 py-2 text-center text-xs font-bold text-blue-600 uppercase">Off<br/><span className="text-gray-400 font-normal">Ent/Used/Left</span></th>
+                    <th className="px-2 py-2 text-center text-xs font-bold text-rose-600 uppercase">Medical<br/><span className="text-gray-400 font-normal">Ent/Used/Left</span></th>
+                    <th className="px-2 py-2 text-center text-xs font-bold text-amber-600 uppercase">Family<br/><span className="text-gray-400 font-normal">Ent/Used/Left</span></th>
+                    <th className="px-2 py-2 text-center text-xs font-bold text-purple-600 uppercase">Sick<br/><span className="text-gray-400 font-normal">Ent/Used/Left</span></th>
+                    <th className="px-2 py-2 text-center text-xs font-bold text-pink-600 uppercase">Emerg</th>
+                    <th className="px-2 py-2 text-center text-xs font-bold text-cyan-600 uppercase">Unpaid</th>
+                    <th className="px-2 py-2 text-center text-xs font-bold text-indigo-600 uppercase">PH</th>
+                    <th className="px-2 py-2 text-center text-xs font-bold text-gray-600 uppercase">Action</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">
@@ -502,43 +508,61 @@ export default function LeavePlanner() {
                     const offDayUsed = empLeaves.filter(l => l.leaveType === 'off_day').reduce((sum, l) => sum + (parseInt(l.days) || 0), 0);
                     const medicalUsed = empLeaves.filter(l => l.leaveType === 'medical').reduce((sum, l) => sum + (parseInt(l.days) || 0), 0);
                     const familyUsed = empLeaves.filter(l => l.leaveType === 'family_responsibility').reduce((sum, l) => sum + (parseInt(l.days) || 0), 0);
+                    const sickUsed = empLeaves.filter(l => l.leaveType === 'sick').reduce((sum, l) => sum + (parseInt(l.days) || 0), 0);
+                    const emergencyUsed = empLeaves.filter(l => l.leaveType === 'emergency').reduce((sum, l) => sum + (parseInt(l.days) || 0), 0);
+                    const unpaidUsed = empLeaves.filter(l => l.leaveType === 'unpaid').reduce((sum, l) => sum + (parseInt(l.days) || 0), 0);
+                    const phUsed = empLeaves.filter(l => l.leaveType === 'ph').reduce((sum, l) => sum + (parseInt(l.days) || 0), 0);
                     
                     // Simple fixed entitlements
                     const annualEntitled = yearsOfService >= 1 ? 30 : 0;
                     const offDayEntitled = Math.min(48, monthsOfService * 4);
                     const medicalEntitled = 10;
                     const familyEntitled = 10;
+                    const sickEntitled = 15;
                     
                     return (
                       <tr key={emp.id} className="hover:bg-gray-50">
-                        <td className="px-4 py-3">
+                        <td className="px-2 py-2 sticky left-0 bg-white z-10">
                           <div className="flex items-center">
-                            <div className="h-10 w-10 rounded-full bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center text-white font-bold">
+                            <div className="h-8 w-8 rounded-full bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center text-white font-bold text-xs">
                               {(emp.FullName || emp.name || 'U').charAt(0)}
                             </div>
-                            <div className="ml-3">
-                              <p className="text-sm font-bold text-gray-900">{emp.FullName || emp.name}</p>
+                            <div className="ml-2 min-w-0">
+                              <p className="text-xs font-bold text-gray-900 truncate">{emp.FullName || emp.name}</p>
                               <p className="text-xs text-gray-500">{emp.EmpID || emp.id} • {yearsOfService}y {monthsOfService % 12}m</p>
                             </div>
                           </div>
                         </td>
-                        <td className="px-4 py-3 text-center">
+                        <td className="px-2 py-2 text-center">
                           <span className="text-sm font-bold text-emerald-600">{Math.max(0, annualEntitled - annualUsed)}</span>
                           <span className="text-xs text-gray-400 block">{annualEntitled}/{annualUsed}</span>
                         </td>
-                        <td className="px-4 py-3 text-center">
+                        <td className="px-2 py-2 text-center">
                           <span className="text-sm font-bold text-blue-600">{Math.max(0, offDayEntitled - offDayUsed)}</span>
                           <span className="text-xs text-gray-400 block">{offDayEntitled}/{offDayUsed}</span>
                         </td>
-                        <td className="px-4 py-3 text-center">
+                        <td className="px-2 py-2 text-center">
                           <span className="text-sm font-bold text-rose-600">{Math.max(0, medicalEntitled - medicalUsed)}</span>
                           <span className="text-xs text-gray-400 block">{medicalEntitled}/{medicalUsed}</span>
                         </td>
-                        <td className="px-4 py-3 text-center">
+                        <td className="px-2 py-2 text-center">
                           <span className="text-sm font-bold text-amber-600">{Math.max(0, familyEntitled - familyUsed)}</span>
                           <span className="text-xs text-gray-400 block">{familyEntitled}/{familyUsed}</span>
                         </td>
-                        <td className="px-4 py-3 text-center">
+                        <td className="px-2 py-2 text-center">
+                          <span className="text-sm font-bold text-purple-600">{Math.max(0, sickEntitled - sickUsed)}</span>
+                          <span className="text-xs text-gray-400 block">{sickEntitled}/{sickUsed}</span>
+                        </td>
+                        <td className="px-2 py-2 text-center">
+                          <span className="text-sm font-bold text-pink-600">{emergencyUsed}</span>
+                        </td>
+                        <td className="px-2 py-2 text-center">
+                          <span className="text-sm font-bold text-cyan-600">{unpaidUsed}</span>
+                        </td>
+                        <td className="px-2 py-2 text-center">
+                          <span className="text-sm font-bold text-indigo-600">{phUsed}</span>
+                        </td>
+                        <td className="px-2 py-2 text-center">
                           <button
                             onClick={() => handleEditBalance(emp)}
                             className="px-3 py-1.5 text-xs font-medium text-white bg-emerald-600 rounded hover:bg-emerald-700"
