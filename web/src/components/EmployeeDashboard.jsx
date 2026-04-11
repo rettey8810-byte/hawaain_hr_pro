@@ -153,7 +153,18 @@ export default function EmployeeDashboard() {
   // Fetch employee data and leaves
   useEffect(() => {
     const fetchData = async () => {
-      if (!userData?.employeeId && !userData?.uid && !userData?.email) return;
+      if (!userData?.employeeId && !userData?.uid && !userData?.email) {
+        console.log('No user identifiers available:', userData);
+        return;
+      }
+      
+      console.log('Fetching employee data for:', {
+        employeeId: userData?.employeeId,
+        uid: userData?.uid,
+        email: userData?.email,
+        username: userData?.username,
+        name: userData?.name
+      });
       
       setLoading(true);
       try {
@@ -162,26 +173,33 @@ export default function EmployeeDashboard() {
 
         // Try to find by employeeId first
         if (employeeId) {
+          console.log('Trying to find by employeeId:', employeeId);
           const empQuery = query(
             collection(db, 'employees'),
             where('__name__', '==', employeeId)
           );
           const empSnap = await getDocs(empQuery);
+          console.log('employeeId search result:', empSnap.empty ? 'empty' : 'found');
           if (!empSnap.empty) {
             empData = { id: empSnap.docs[0].id, ...empSnap.docs[0].data() };
+            console.log('Found employee by ID:', empData.id);
           }
         }
 
-        // If not found, try by email
+        // If not found, try by email (case insensitive)
         if (!empData && userData?.email) {
+          const emailLower = userData.email.toLowerCase();
+          console.log('Trying to find by email:', emailLower);
           const emailQuery = query(
             collection(db, 'employees'),
             where('Email', '==', userData.email)
           );
           const emailSnap = await getDocs(emailQuery);
+          console.log('Email search result:', emailSnap.empty ? 'empty' : 'found');
           if (!emailSnap.empty) {
             empData = { id: emailSnap.docs[0].id, ...emailSnap.docs[0].data() };
             employeeId = empData.id;
+            console.log('Found employee by email:', empData.id);
           }
         }
 
@@ -189,25 +207,48 @@ export default function EmployeeDashboard() {
         if (!empData && userData?.username) {
           // Extract employee code from username (e.g., mohammad25489 -> 25489)
           const empCode = userData.username.replace(/[^0-9]/g, '');
+          console.log('Trying to find by EmpID from username:', empCode);
           if (empCode) {
             const codeQuery = query(
               collection(db, 'employees'),
               where('EmpID', '==', empCode)
             );
             const codeSnap = await getDocs(codeQuery);
+            console.log('EmpID search result:', codeSnap.empty ? 'empty' : 'found');
             if (!codeSnap.empty) {
               empData = { id: codeSnap.docs[0].id, ...codeSnap.docs[0].data() };
               employeeId = empData.id;
+              console.log('Found employee by EmpID:', empData.id);
             }
           }
         }
 
+        // Last resort: try by FullName matching userData.name
+        if (!empData && userData?.name) {
+          console.log('Trying to find by FullName:', userData.name);
+          const nameQuery = query(
+            collection(db, 'employees'),
+            where('FullName', '==', userData.name)
+          );
+          const nameSnap = await getDocs(nameQuery);
+          console.log('FullName search result:', nameSnap.empty ? 'empty' : 'found');
+          if (!nameSnap.empty) {
+            empData = { id: nameSnap.docs[0].id, ...nameSnap.docs[0].data() };
+            employeeId = empData.id;
+            console.log('Found employee by FullName:', empData.id);
+          }
+        }
+
         if (empData) {
+          console.log('Setting employee data:', empData);
           setEmployee(empData);
+        } else {
+          console.log('Employee not found with any search method');
         }
 
         // Fetch employee leaves using found employeeId
         if (employeeId) {
+          console.log('Fetching leaves for employeeId:', employeeId);
           const leavesQuery = query(
             collection(db, 'leaves'),
             where('employeeId', '==', employeeId),
@@ -216,13 +257,17 @@ export default function EmployeeDashboard() {
           );
           const leavesSnap = await getDocs(leavesQuery);
           const leavesData = leavesSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+          console.log('Leaves found:', leavesData.length);
           setLeaves(leavesData);
 
           // Calculate leave balances based on hire date
-          calculateLeaveBalances(empData, leavesData);
+          if (empData) {
+            calculateLeaveBalances(empData, leavesData);
+          }
         }
       } catch (err) {
         console.error('Error fetching employee data:', err);
+        console.error('Error stack:', err.stack);
       } finally {
         setLoading(false);
       }
