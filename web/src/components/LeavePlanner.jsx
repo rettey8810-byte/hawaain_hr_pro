@@ -92,6 +92,7 @@ export default function LeavePlanner() {
   const [printLeave, setPrintLeave] = useState(null);
   const [activeTab, setActiveTab] = useState('list');
   const [leaveBalances, setLeaveBalances] = useState({});
+  const [publicHolidays, setPublicHolidays] = useState([]);
   
   // Edit Balance Modal State
   const [showEditBalanceModal, setShowEditBalanceModal] = useState(false);
@@ -106,6 +107,26 @@ export default function LeavePlanner() {
     reason: ''
   });
 
+  // Fetch Public Holidays
+  useEffect(() => {
+    const fetchPublicHolidays = async () => {
+      if (!companyId) return;
+      try {
+        const q = query(
+          collection(db, 'publicHolidays'),
+          where('companyId', '==', companyId),
+          where('year', '==', 2026)
+        );
+        const snap = await getDocs(q);
+        const holidays = snap.docs.map(d => d.data());
+        setPublicHolidays(holidays);
+      } catch (err) {
+        console.error('Error fetching public holidays:', err);
+      }
+    };
+    fetchPublicHolidays();
+  }, [companyId]);
+
   // Fetch ALL employees for name lookup
   const fetchAllEmployees = useCallback(async () => {
     if (!companyId) return;
@@ -117,20 +138,10 @@ export default function LeavePlanner() {
       );
       const snap = await getDocs(q);
       const empList = snap.docs.map(d => ({ id: d.id, ...d.data() }));
-      // Debug: Log first employee to check date fields
+      // Debug: Log first employee to check all available fields
       if (empList.length > 0) {
-        console.log('First employee date fields:', {
-          JoinDate: empList[0].JoinDate,
-          joinDate: empList[0].joinDate,
-          HireDate: empList[0].HireDate,
-          hireDate: empList[0].hireDate,
-          dateOfJoining: empList[0].dateOfJoining,
-          DateOfJoining: empList[0].DateOfJoining,
-          DOJ: empList[0].DOJ,
-          startDate: empList[0].startDate,
-          StartDate: empList[0].StartDate,
-          FullName: empList[0].FullName
-        });
+        console.log('First employee all fields:', Object.keys(empList[0]));
+        console.log('First employee data:', empList[0]);
       }
       empList.sort((a, b) => (a.FullName || a.name || '').localeCompare(b.FullName || b.name || ''));
       setEmployees(empList);
@@ -476,6 +487,7 @@ export default function LeavePlanner() {
   const renderTabContent = () => {
     switch (activeTab) {
       case 'balances':
+        const totalPublicHolidays = publicHolidays.length;
         return (
           <div className="bg-white rounded-2xl shadow-lg p-6">
             <div className="flex items-center justify-between mb-6">
@@ -486,14 +498,14 @@ export default function LeavePlanner() {
                 <span className="px-3 py-1 bg-rose-100 text-rose-700 rounded-full text-xs font-bold">Medical: 10/yr</span>
                 <span className="px-3 py-1 bg-amber-100 text-amber-700 rounded-full text-xs font-bold">Family: 10/yr</span>
                 <span className="px-3 py-1 bg-purple-100 text-purple-700 rounded-full text-xs font-bold">Sick: 15/yr</span>
-                <span className="px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-xs font-bold">Unpaid: ∞</span>
+                <span className="px-3 py-1 bg-indigo-100 text-indigo-700 rounded-full text-xs font-bold">PH: {totalPublicHolidays}/yr</span>
               </div>
             </div>
-            <div className="overflow-x-auto">
-              <table className="w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
+            <div className="overflow-auto max-h-[70vh]">
+              <table className="w-full divide-y divide-gray-200 min-w-[1000px]">
+                <thead className="bg-gray-50 sticky top-0 z-10">
                   <tr>
-                    <th className="px-4 py-3 text-left text-xs font-bold text-gray-600 uppercase sticky left-0 bg-gray-50">Employee</th>
+                    <th className="px-4 py-3 text-left text-xs font-bold text-gray-600 uppercase sticky left-0 bg-gray-50 z-20">Employee</th>
                     <th className="px-3 py-3 text-center text-xs font-bold text-emerald-600 uppercase">Annual<br/><span className="text-gray-400 font-normal">Left/Total/Used</span></th>
                     <th className="px-3 py-3 text-center text-xs font-bold text-blue-600 uppercase">Off Days<br/><span className="text-gray-400 font-normal">Left/Total/Used</span></th>
                     <th className="px-3 py-3 text-center text-xs font-bold text-rose-600 uppercase">Medical<br/><span className="text-gray-400 font-normal">Left/Total/Used</span></th>
@@ -501,7 +513,7 @@ export default function LeavePlanner() {
                     <th className="px-3 py-3 text-center text-xs font-bold text-purple-600 uppercase">Sick<br/><span className="text-gray-400 font-normal">Left/Total/Used</span></th>
                     <th className="px-3 py-3 text-center text-xs font-bold text-pink-600 uppercase">Emergency<br/><span className="text-gray-400 font-normal">Used</span></th>
                     <th className="px-3 py-3 text-center text-xs font-bold text-cyan-600 uppercase">Unpaid<br/><span className="text-gray-400 font-normal">Used</span></th>
-                    <th className="px-3 py-3 text-center text-xs font-bold text-indigo-600 uppercase">PH<br/><span className="text-gray-400 font-normal">Used</span></th>
+                    <th className="px-3 py-3 text-center text-xs font-bold text-indigo-600 uppercase">PH<br/><span className="text-gray-400 font-normal">{totalPublicHolidays}/Used</span></th>
                     <th className="px-3 py-3 text-center text-xs font-bold text-gray-600 uppercase">Actions</th>
                   </tr>
                 </thead>
