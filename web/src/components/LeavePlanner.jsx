@@ -564,19 +564,35 @@ export default function LeavePlanner() {
                     const sickEntitled = 15;
                     
                     // Leave Balance Cell Component - Compact
-                    const BalanceCell = ({ left, total, used, color }) => (
-                      <td className="px-1 py-2 text-center" style={{ fontSize: '11px' }}>
-                        <span className={`font-bold text-${color}-600`}>{Math.max(0, left)}</span>
-                        <span className="text-gray-400 block" style={{ fontSize: '9px' }}>{total}/{used}</span>
-                      </td>
-                    );
+                    const BalanceCell = ({ left, total, used, color }) => {
+                      const colorClasses = {
+                        emerald: 'text-emerald-600',
+                        blue: 'text-blue-600',
+                        rose: 'text-rose-600',
+                        amber: 'text-amber-600',
+                        purple: 'text-purple-600'
+                      };
+                      return (
+                        <td className="px-1 py-2 text-center" style={{ fontSize: '11px' }}>
+                          <span className={'font-bold ' + (colorClasses[color] || 'text-gray-600')}>{Math.max(0, left)}</span>
+                          <span className="text-gray-400 block" style={{ fontSize: '9px' }}>{total}/{used}</span>
+                        </td>
+                      );
+                    };
                     
                     // Used Only Cell Component - Compact
-                    const UsedCell = ({ used, color }) => (
-                      <td className="px-1 py-2 text-center" style={{ fontSize: '11px' }}>
-                        <span className={`font-bold text-${color}-600`}>{used}</span>
-                      </td>
-                    );
+                    const UsedCell = ({ used, color }) => {
+                      const colorClasses = {
+                        pink: 'text-pink-600',
+                        cyan: 'text-cyan-600',
+                        indigo: 'text-indigo-600'
+                      };
+                      return (
+                        <td className="px-1 py-2 text-center" style={{ fontSize: '11px' }}>
+                          <span className={'font-bold ' + (colorClasses[color] || 'text-gray-600')}>{used}</span>
+                        </td>
+                      );
+                    };
                     
                     return (
                       <tr key={emp.id} className="hover:bg-gray-50">
