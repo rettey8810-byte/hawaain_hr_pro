@@ -239,6 +239,35 @@ export default function EmployeeDashboard() {
           }
         }
 
+        // Final fallback: fetch all employees and match by employee code in FullName
+        if (!empData && userData?.username) {
+          const empCode = userData.username.replace(/[^0-9]/g, '');
+          console.log('Final fallback: searching all employees for code:', empCode);
+          if (empCode) {
+            const allQuery = query(collection(db, 'employees'));
+            const allSnap = await getDocs(allQuery);
+            console.log('Total employees in database:', allSnap.size);
+            
+            // Find employee whose FullName contains the code
+            const matchedEmp = allSnap.docs.find(doc => {
+              const data = doc.data();
+              const fullName = (data.FullName || data.Name || '').toLowerCase();
+              const empId = (data.EmpID || data.empId || '').toString();
+              const codeMatch = fullName.includes(empCode) || empId === empCode;
+              if (codeMatch) {
+                console.log('Potential match:', doc.id, fullName, empId);
+              }
+              return codeMatch;
+            });
+            
+            if (matchedEmp) {
+              empData = { id: matchedEmp.id, ...matchedEmp.data() };
+              employeeId = empData.id;
+              console.log('Found employee by code in FullName:', empData.id, empData.FullName);
+            }
+          }
+        }
+
         if (empData) {
           console.log('Setting employee data:', empData);
           setEmployee(empData);
