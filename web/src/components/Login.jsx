@@ -47,7 +47,19 @@ export default function Login() {
       await login(email, password);
       navigate('/');
     } catch (err) {
-      setError('Failed to sign in: ' + err.message);
+      // Handle specific Firebase Auth errors
+      let errorMessage = err.message;
+      if (err.code === 'auth/invalid-credential' || err.code === 'auth/wrong-password') {
+        errorMessage = 'Invalid email/username or password. Please check your credentials.';
+      } else if (err.code === 'auth/user-not-found') {
+        errorMessage = 'User not found. Please check your email/username.';
+      } else if (err.code === 'auth/invalid-email') {
+        errorMessage = 'Invalid email format. Please check your email address.';
+      } else if (err.code === 'auth/too-many-requests') {
+        errorMessage = 'Too many failed attempts. Please try again later.';
+      }
+      setError('Failed to sign in: ' + errorMessage);
+      console.error('Login error:', err.code, err.message);
     } finally {
       setLoading(false);
     }
