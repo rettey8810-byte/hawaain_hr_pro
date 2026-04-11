@@ -117,6 +117,21 @@ export default function LeavePlanner() {
       );
       const snap = await getDocs(q);
       const empList = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      // Debug: Log first employee to check date fields
+      if (empList.length > 0) {
+        console.log('First employee date fields:', {
+          JoinDate: empList[0].JoinDate,
+          joinDate: empList[0].joinDate,
+          HireDate: empList[0].HireDate,
+          hireDate: empList[0].hireDate,
+          dateOfJoining: empList[0].dateOfJoining,
+          DateOfJoining: empList[0].DateOfJoining,
+          DOJ: empList[0].DOJ,
+          startDate: empList[0].startDate,
+          StartDate: empList[0].StartDate,
+          FullName: empList[0].FullName
+        });
+      }
       empList.sort((a, b) => (a.FullName || a.name || '').localeCompare(b.FullName || b.name || ''));
       setEmployees(empList);
     } catch (err) {
@@ -492,7 +507,21 @@ export default function LeavePlanner() {
                 </thead>
                 <tbody className="divide-y divide-gray-100">
                   {employees.map(emp => {
-                    const hireDate = new Date(emp.JoinDate || emp.joinDate || emp.HireDate || emp.hireDate || '2025-01-01');
+                    // Check all possible date field names
+                    const dateStr = emp.JoinDate || emp.joinDate || emp.HireDate || emp.hireDate || emp.dateOfJoining || emp.DateOfJoining || emp.DOJ || emp.startDate || emp.StartDate;
+                    let hireDate;
+                    
+                    if (dateStr && dateStr !== 'null' && dateStr !== 'undefined') {
+                      // Try to parse the date
+                      hireDate = new Date(dateStr);
+                      // Check if valid date
+                      if (isNaN(hireDate.getTime())) {
+                        hireDate = new Date('2025-01-01');
+                      }
+                    } else {
+                      hireDate = new Date('2025-01-01');
+                    }
+                    
                     const now = new Date();
                     const yearsOfService = Math.floor((now - hireDate) / (1000 * 60 * 60 * 24 * 365.25));
                     const monthsOfService = Math.floor((now - hireDate) / (1000 * 60 * 60 * 24 * 30.44));
