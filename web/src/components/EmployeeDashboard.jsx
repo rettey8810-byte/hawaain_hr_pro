@@ -366,14 +366,26 @@ export default function EmployeeDashboard() {
         />
         <QuickAction 
           icon={FileText} 
-          label="Documents" 
-          href="/documents" 
+          label="My Payslips" 
+          href="/payslips" 
           color="amber" 
         />
         <QuickAction 
+          icon={Clock} 
+          label="Attendance" 
+          href="/attendance" 
+          color="purple" 
+        />
+        <QuickAction 
+          icon={User} 
+          label="My Profile" 
+          href="/profile" 
+          color="cyan" 
+        />
+        <QuickAction 
           icon={Home} 
-          label="Accommodation" 
-          href="/accommodation" 
+          label="Documents" 
+          href="/my-documents" 
           color="rose" 
         />
       </div>

@@ -95,6 +95,11 @@ import Accommodation from './components/Accommodation';
 import CompanyStructure from './components/CompanyStructure';
 import DocumentReports from './components/DocumentReports';
 
+// Employee Self-Service Components
+import EmployeePayslips from './components/EmployeePayslips';
+import EmployeeAttendance from './components/EmployeeAttendance';
+import MyDocuments from './components/MyDocuments';
+
 // Advanced HR Feature Modules (v2.0.0)
 import TimeAttendance from './components/TimeAttendance';
 import BenefitsManagement from './components/BenefitsManagement';
@@ -469,6 +474,23 @@ function App() {
               <Route path="/profile" element={
                 <PrivateRoute>
                   <Layout><Profile /></Layout>
+                </PrivateRoute>
+              } />
+
+              {/* Employee Self-Service Routes */}
+              <Route path="/payslips" element={
+                <PrivateRoute>
+                  <Layout><EmployeePayslips /></Layout>
+                </PrivateRoute>
+              } />
+              <Route path="/my-attendance" element={
+                <PrivateRoute>
+                  <Layout><EmployeeAttendance /></Layout>
+                </PrivateRoute>
+              } />
+              <Route path="/my-documents" element={
+                <PrivateRoute>
+                  <Layout><MyDocuments /></Layout>
                 </PrivateRoute>
               } />
               
