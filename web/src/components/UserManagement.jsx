@@ -22,6 +22,8 @@ export default function UserManagement() {
   const [message, setMessage] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [newPassword, setNewPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [resetSuccess, setResetSuccess] = useState(null);
 
   // Load ALL users
   useEffect(() => {
@@ -162,13 +164,16 @@ export default function UserManagement() {
 
     try {
       await updateDoc(doc(db, 'users', selectedUser.id), {
-        mustChangePassword: true,
+        mustChangePassword: false,
+        passwordUpdatedAt: new Date().toISOString(),
         updatedAt: new Date().toISOString()
       });
-      setShowResetPasswordModal(false);
+      setResetSuccess({
+        user: selectedUser.fullName || selectedUser.displayName || selectedUser.name,
+        password: newPassword
+      });
       setNewPassword('');
-      setMessage('Password reset successfully! User will be prompted to change on next login.');
-      setTimeout(() => setMessage(''), 3000);
+      setShowPassword(false);
     } catch (error) {
       setMessage('Error resetting password: ' + error.message);
     }
@@ -560,42 +565,75 @@ export default function UserManagement() {
           <div className="bg-white rounded-lg max-w-md w-full p-6">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-medium text-gray-900">Reset Password</h3>
-              <button onClick={() => setShowResetPasswordModal(false)}>
+              <button onClick={() => { setShowResetPasswordModal(false); setResetSuccess(null); }}>
                 <X className="h-5 w-5 text-gray-400" />
               </button>
             </div>
-            <p className="text-sm text-gray-600 mb-4">
-              Reset password for <strong>{selectedUser.fullName || selectedUser.displayName || selectedUser.name}</strong>
-            </p>
-            <form onSubmit={handleResetPassword} className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700">New Password</label>
-                <input
-                  type="password"
-                  required
-                  minLength={6}
-                  value={newPassword}
-                  onChange={(e) => setNewPassword(e.target.value)}
-                  className="mt-1 block w-full rounded-md border-gray-300 border px-3 py-2"
-                  placeholder="Enter new password (min 6 characters)"
-                />
-              </div>
-              <div className="flex justify-end space-x-3">
+            
+            {resetSuccess ? (
+              <div className="text-center">
+                <div className="w-16 h-16 bg-emerald-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <CheckCircle className="h-8 w-8 text-emerald-600" />
+                </div>
+                <h4 className="text-lg font-medium text-gray-900 mb-2">Password Reset Successfully!</h4>
+                <p className="text-sm text-gray-600 mb-4">User: <strong>{resetSuccess.user}</strong></p>
+                <div className="bg-gray-100 rounded-lg p-4 mb-4">
+                  <p className="text-xs text-gray-500 mb-1">New Password:</p>
+                  <p className="text-lg font-mono font-medium text-gray-900">{resetSuccess.password}</p>
+                </div>
+                <p className="text-xs text-amber-600 mb-4">⚠️ Please copy this password now. It won't be shown again!</p>
                 <button
-                  type="button"
-                  onClick={() => setShowResetPasswordModal(false)}
-                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded hover:bg-gray-200"
+                  onClick={() => { setShowResetPasswordModal(false); setResetSuccess(null); }}
+                  className="w-full px-4 py-2 text-sm font-medium text-white bg-emerald-600 rounded hover:bg-emerald-700"
                 >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="px-4 py-2 text-sm font-medium text-white bg-orange-600 rounded hover:bg-orange-700"
-                >
-                  Reset Password
+                  Done
                 </button>
               </div>
-            </form>
+            ) : (
+              <>
+                <p className="text-sm text-gray-600 mb-4">
+                  Reset password for <strong>{selectedUser.fullName || selectedUser.displayName || selectedUser.name}</strong>
+                </p>
+                <form onSubmit={handleResetPassword} className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700">New Password</label>
+                    <div className="relative mt-1">
+                      <input
+                        type={showPassword ? 'text' : 'password'}
+                        required
+                        minLength={6}
+                        value={newPassword}
+                        onChange={(e) => setNewPassword(e.target.value)}
+                        className="block w-full rounded-md border-gray-300 border px-3 py-2 pr-10"
+                        placeholder="Enter new password (min 6 characters)"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                      >
+                        {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                      </button>
+                    </div>
+                  </div>
+                  <div className="flex justify-end space-x-3">
+                    <button
+                      type="button"
+                      onClick={() => setShowResetPasswordModal(false)}
+                      className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded hover:bg-gray-200"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      className="px-4 py-2 text-sm font-medium text-white bg-orange-600 rounded hover:bg-orange-700"
+                    >
+                      Reset Password
+                    </button>
+                  </div>
+                </form>
+              </>
+            )}
           </div>
         </div>
       )}
