@@ -501,8 +501,9 @@ export default function LeavePlanner() {
                 <span className="px-3 py-1 bg-indigo-100 text-indigo-700 rounded-full text-xs font-bold">PH: {totalPublicHolidays}/yr</span>
               </div>
             </div>
-            <div className="overflow-auto max-h-[70vh]">
-              <table className="w-full divide-y divide-gray-200 min-w-[1000px]">
+            <div className="overflow-x-auto overflow-y-auto max-h-[70vh]" style={{ direction: 'rtl' }}>
+              <div style={{ direction: 'ltr' }}>
+                <table className="w-full divide-y divide-gray-200 min-w-[1000px]">
                 <thead className="bg-gray-50 sticky top-0 z-10">
                   <tr>
                     <th className="px-4 py-3 text-left text-xs font-bold text-gray-600 uppercase sticky left-0 bg-gray-50 z-20">Employee</th>
@@ -519,8 +520,8 @@ export default function LeavePlanner() {
                 </thead>
                 <tbody className="divide-y divide-gray-100">
                   {employees.map(emp => {
-                    // Check all possible date field names
-                    const dateStr = emp.JoinDate || emp.joinDate || emp.HireDate || emp.hireDate || emp.dateOfJoining || emp.DateOfJoining || emp.DOJ || emp.startDate || emp.StartDate;
+                    // Check all possible date field names (including 'Date of Join' with spaces)
+                    const dateStr = emp['Date of Join'] || emp.JoinDate || emp.joinDate || emp.HireDate || emp.hireDate || emp.dateOfJoining || emp.DateOfJoining || emp.DOJ || emp.startDate || emp.StartDate;
                     let hireDate;
                     
                     if (dateStr && dateStr !== 'null' && dateStr !== 'undefined') {
@@ -612,6 +613,7 @@ export default function LeavePlanner() {
                   })}
                 </tbody>
               </table>
+              </div>
             </div>
           </div>
         );
