@@ -409,106 +409,25 @@ export default function EmployeeDashboard() {
   }
 
   return (
-    <div className="flex min-h-screen bg-gray-50">
-      {/* Sidebar Navigation */}
-      <aside className="w-64 bg-white shadow-lg flex flex-col">
-        {/* Logo / Brand */}
-        <div className="p-4 border-b border-gray-100">
-          <Link to="/dashboard" className="flex items-center gap-2 text-emerald-600 font-bold text-lg">
-            <LayoutDashboard className="h-6 w-6" />
-            <span>HR Factory</span>
+    <div className="max-w-6xl mx-auto space-y-6">
+      {/* Top Navigation Bar */}
+      <div className="bg-white rounded-xl shadow-sm p-4 flex items-center justify-between">
+        <Link to="/dashboard" className="flex items-center gap-2 text-emerald-600 hover:text-emerald-700 font-semibold">
+          <Home className="h-5 w-5" />
+          <span>Dashboard Home</span>
+        </Link>
+        <div className="flex items-center gap-4">
+          <Link to="/leave-planner" className="text-gray-600 hover:text-gray-900 text-sm">
+            My Leaves
+          </Link>
+          <Link to="/payslips" className="text-gray-600 hover:text-gray-900 text-sm">
+            Payslips
+          </Link>
+          <Link to="/profile" className="text-gray-600 hover:text-gray-900 text-sm">
+            Profile
           </Link>
         </div>
-
-        {/* Main Nav - Dashboard Section */}
-        <nav className="flex-1 p-4 space-y-1">
-          <p className="px-3 text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">
-            Main Menu
-          </p>
-
-          <Link
-            to="/employee-dashboard"
-            className="flex items-center gap-3 px-3 py-2.5 rounded-lg bg-emerald-50 text-emerald-700 font-medium"
-          >
-            <Home className="h-5 w-5" />
-            <span>Dashboard</span>
-          </Link>
-
-          <Link
-            to="/leave-planner"
-            className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-600 hover:bg-gray-50 hover:text-gray-900"
-          >
-            <Calendar className="h-5 w-5" />
-            <span>My Leaves</span>
-          </Link>
-
-          <Link
-            to="/payslips"
-            className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-600 hover:bg-gray-50 hover:text-gray-900"
-          >
-            <FileText className="h-5 w-5" />
-            <span>Payslips</span>
-          </Link>
-
-          <Link
-            to="/my-attendance"
-            className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-600 hover:bg-gray-50 hover:text-gray-900"
-          >
-            <Clock className="h-5 w-5" />
-            <span>Attendance</span>
-          </Link>
-
-          <Link
-            to="/my-documents"
-            className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-600 hover:bg-gray-50 hover:text-gray-900"
-          >
-            <FolderOpen className="h-5 w-5" />
-            <span>Documents</span>
-          </Link>
-
-          <div className="border-t border-gray-100 my-4"></div>
-
-          <p className="px-3 text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">
-            Account
-          </p>
-
-          <Link
-            to="/profile"
-            className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-600 hover:bg-gray-50 hover:text-gray-900"
-          >
-            <User className="h-5 w-5" />
-            <span>My Profile</span>
-          </Link>
-
-          <Link
-            to="/dashboard"
-            className="flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-600 hover:bg-gray-50 hover:text-gray-900"
-          >
-            <ArrowLeft className="h-5 w-5" />
-            <span>Back to Main</span>
-          </Link>
-        </nav>
-
-        {/* User Info at Bottom */}
-        <div className="p-4 border-t border-gray-100">
-          <div className="flex items-center gap-3">
-            <div className="h-8 w-8 rounded-full bg-emerald-100 flex items-center justify-center">
-              <User className="h-4 w-4 text-emerald-600" />
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-gray-900 truncate">
-                {employee?.FullName || userData?.displayName || 'Employee'}
-              </p>
-              <p className="text-xs text-gray-500 truncate">
-                {employee?.Designation || 'Staff'}
-              </p>
-            </div>
-          </div>
-        </div>
-      </aside>
-
-      {/* Main Content Area */}
-      <main className="flex-1 p-6 space-y-6 overflow-y-auto">
+      </div>
 
       {/* Welcome Header */}
       <div className="bg-gradient-to-r from-emerald-500 to-teal-600 rounded-2xl shadow-lg p-6 text-white">
@@ -758,7 +677,6 @@ export default function EmployeeDashboard() {
           </div>
         </div>
       </div>
-      </main>
     </div>
   );
 }
