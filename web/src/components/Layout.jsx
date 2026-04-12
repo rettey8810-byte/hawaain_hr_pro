@@ -311,6 +311,19 @@ export default function Layout({ children }) {
             </button>
           </div>
           <nav className="flex-1 space-y-1 px-2 py-4 overflow-y-auto">
+            {/* Home Link - Direct */}
+            <Link
+              to="/dashboard"
+              className={`w-full flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-md transition-colors mb-2 ${
+                isActive('/dashboard')
+                  ? 'bg-blue-50 text-blue-700'
+                  : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900'
+              }`}
+            >
+              <Home className="h-5 w-5 flex-shrink-0" />
+              <span>Home</span>
+            </Link>
+            <div className="border-t border-gray-200 my-2"></div>
             {navigationCategories.map(category => (
               <NavCategory key={category.name} category={category} />
             ))}
@@ -325,6 +338,19 @@ export default function Layout({ children }) {
             <img src="/logo.png" alt="Logo" className="h-10 w-auto mr-2" />
           </div>
           <nav className="flex-1 space-y-1 px-2 py-4 overflow-y-auto">
+            {/* Home Link - Direct */}
+            <Link
+              to="/dashboard"
+              className={`w-full flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-md transition-colors mb-2 ${
+                isActive('/dashboard')
+                  ? 'bg-blue-50 text-blue-700'
+                  : 'text-gray-700 hover:bg-gray-100 hover:text-gray-900'
+              }`}
+            >
+              <Home className="h-5 w-5 flex-shrink-0" />
+              <span>Home</span>
+            </Link>
+            <div className="border-t border-gray-200 my-2"></div>
             {navigationCategories.map(category => (
               <NavCategory key={category.name} category={category} />
             ))}
