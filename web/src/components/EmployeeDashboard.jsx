@@ -417,6 +417,9 @@ export default function EmployeeDashboard() {
           <span>Dashboard Home</span>
         </Link>
         <div className="flex items-center gap-4">
+          <Link to="/employee-dashboard" className="text-gray-600 hover:text-gray-900 text-sm font-medium">
+            Dashboard
+          </Link>
           <Link to="/leave-planner" className="text-gray-600 hover:text-gray-900 text-sm">
             My Leaves
           </Link>
