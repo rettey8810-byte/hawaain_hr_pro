@@ -251,3 +251,98 @@ export const FEATURES = [
   { id: 'integrations', label: 'Integrations Hub', actions: ['view', 'configure', 'manage'] },
   { id: 'analytics', label: 'HR Analytics', actions: ['view', 'create', 'export'] }
 ];
+
+// ============================================
+// NEW: Access Levels for HRM/GM Control
+// ============================================
+
+export const ACCESS_LEVELS = {
+  level1: {
+    id: 'level1',
+    label: 'Level 1 - HR Staff & Executive',
+    description: 'Full access including GM salary data',
+    canViewSalary: ['all', 'gm', 'hrm', 'dept_head', 'supervisor', 'staff', 'employee'],
+    canViewAllEmployees: true,
+    canViewAllDepartments: true,
+    canManageUsers: true,
+    color: 'bg-purple-100 text-purple-800'
+  },
+  level2: {
+    id: 'level2',
+    label: 'Level 2 - HR Staff',
+    description: 'All access except salary data',
+    canViewSalary: [],
+    canViewAllEmployees: true,
+    canViewAllDepartments: true,
+    canManageUsers: true,
+    color: 'bg-blue-100 text-blue-800'
+  },
+  level3: {
+    id: 'level3',
+    label: 'Level 3 - HODs & Assistant HODs',
+    description: 'Full access for their department only (no salary)',
+    canViewSalary: [],
+    canViewAllEmployees: false,
+    canViewAllDepartments: false,
+    canManageUsers: false,
+    color: 'bg-green-100 text-green-800'
+  },
+  level4: {
+    id: 'level4',
+    label: 'Level 4 - Staff',
+    description: 'View own data only',
+    canViewSalary: ['self'],
+    canViewAllEmployees: false,
+    canViewAllDepartments: false,
+    canManageUsers: false,
+    color: 'bg-gray-100 text-gray-800'
+  }
+};
+
+export const getAccessLevelLabel = (levelId) => {
+  return ACCESS_LEVELS[levelId]?.label || 'No Access Level';
+};
+
+export const getAccessLevelColor = (levelId) => {
+  return ACCESS_LEVELS[levelId]?.color || 'bg-gray-100 text-gray-600';
+};
+
+export const canViewSalary = (viewerAccessLevel, targetUserRole, isOwnData = false) => {
+  const level = ACCESS_LEVELS[viewerAccessLevel];
+  if (!level) return false;
+  
+  // Level 1 can view all salaries including GM
+  if (level.canViewSalary.includes('all')) return true;
+  
+  // Level 4 can only view own salary
+  if (level.canViewSalary.includes('self') && isOwnData) return true;
+  
+  // Check if can view specific role's salary
+  return level.canViewSalary.includes(targetUserRole);
+};
+
+export const canViewEmployeeData = (viewerAccessLevel, targetUserDepartment, viewerDepartment) => {
+  const level = ACCESS_LEVELS[viewerAccessLevel];
+  if (!level) return false;
+  
+  // Level 1 and 2 can view all employees
+  if (level.canViewAllEmployees) return true;
+  
+  // Level 3 can only view their department
+  if (!level.canViewAllDepartments) {
+    return targetUserDepartment === viewerDepartment;
+  }
+  
+  return false;
+};
+
+export const ALL_ACCESS_LEVELS = Object.keys(ACCESS_LEVELS).map(level => ({
+  value: level,
+  label: ACCESS_LEVELS[level].label,
+  description: ACCESS_LEVELS[level].description
+}));
+
+// Who can assign access levels (HRM and GM)
+export const canAssignAccessLevel = (userRole) => {
+  return userRole === 'hrm' || userRole === 'gm' || userRole === 'superadmin';
+};

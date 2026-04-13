@@ -15,7 +15,9 @@ import {
   canManageUser, 
   hasFeatureAccess,
   isHigherRole,
-  getRoleLevel 
+  getRoleLevel,
+  canViewSalary,
+  canViewEmployeeData
 } from '../config/rolePermissions';
 
 const AuthContext = createContext();
@@ -226,6 +228,21 @@ export function AuthProvider({ children }) {
     });
   };
 
+  // Access Level-based visibility checks (new system)
+  const canViewSalaryData = (targetUserRole, isOwnData = false) => {
+    const accessLevel = userData?.accessLevel || 'level4';
+    return canViewSalary(accessLevel, targetUserRole, isOwnData);
+  };
+
+  const canViewEmployeeByAccessLevel = (employee) => {
+    const accessLevel = userData?.accessLevel || 'level4';
+    const viewerDepartment = userData?.department;
+    return canViewEmployeeData(accessLevel, employee.department, viewerDepartment);
+  };
+
+  // Get user's access level
+  const getUserAccessLevel = () => userData?.accessLevel || 'level4';
+
   const value = {
     user,
     userData,
@@ -254,6 +271,10 @@ export function AuthProvider({ children }) {
     getDataVisibilityFilter,
     canViewEmployee,
     filterByVisibility,
+    // Access Level-based visibility (new system)
+    canViewSalaryData,
+    canViewEmployeeByAccessLevel,
+    getUserAccessLevel,
     // Raw data
     currentRole,
     ROLE_HIERARCHY,

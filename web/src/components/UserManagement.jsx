@@ -7,7 +7,7 @@ import { useCompany } from '../contexts/CompanyContext';
 import { useAuth } from '../contexts/AuthContext';
 import { doc, updateDoc, deleteDoc, collection, query, onSnapshot } from 'firebase/firestore';
 import { db } from '../firebase/config';
-import { ROLE_HIERARCHY } from '../config/rolePermissions';
+import { ROLE_HIERARCHY, getAccessLevelLabel, getAccessLevelColor, ALL_ACCESS_LEVELS, canAssignAccessLevel } from '../config/rolePermissions';
 
 export default function UserManagement() {
   const { companyId, companies } = useCompany();
@@ -111,6 +111,7 @@ export default function UserManagement() {
       phone: user.phone || '',
       companyId: user.companyId || '',
       status: user.status || 'active',
+      accessLevel: user.accessLevel || 'level4',
       password: '',
       confirmPassword: ''
     });
@@ -131,6 +132,7 @@ export default function UserManagement() {
         role: formData.role,
         status: formData.status,
         companyId: formData.companyId,
+        accessLevel: formData.accessLevel,
         updatedAt: new Date().toISOString()
       });
       setShowEditModal(false);
@@ -302,6 +304,13 @@ export default function UserManagement() {
                   </span>
                 </div>
 
+                {/* Access Level Badge */}
+                <div className="mt-2">
+                  <span className={`px-2 py-0.5 text-xs rounded-full ${getAccessLevelColor(user.accessLevel)}`}>
+                    {getAccessLevelLabel(user.accessLevel) || 'Level 4 - Staff'}
+                  </span>
+                </div>
+
                 <div className="mt-4 space-y-2 text-sm">
                   <div className="flex items-center gap-2 text-gray-600">
                     <Mail className="h-4 w-4" />
@@ -422,6 +431,12 @@ export default function UserManagement() {
                   'bg-red-100 text-red-800'
                 }`}>{selectedUser.status || 'active'}</span>
               </div>
+              <div className="flex justify-between py-2 border-b">
+                <span className="text-gray-500">Access Level:</span>
+                <span className={`px-2 py-0.5 rounded text-xs ${getAccessLevelColor(selectedUser.accessLevel)}`}>
+                  {getAccessLevelLabel(selectedUser.accessLevel) || 'Level 4 - Staff'}
+                </span>
+              </div>
               <div className="flex justify-between py-2">
                 <span className="text-gray-500">Created:</span>
                 <span className="text-gray-900 text-sm">{selectedUser.createdAt ? new Date(selectedUser.createdAt).toLocaleDateString() : 'N/A'}</span>
@@ -539,6 +554,31 @@ export default function UserManagement() {
                   <option value="suspended">Suspended</option>
                 </select>
               </div>
+              
+              {/* Access Level - Only visible to HRM/GM/Superadmin */}
+              {canAssignAccessLevel(userData?.role) && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">
+                    Access Level
+                    <span className="text-xs text-gray-500 ml-1">(Controls salary visibility & permissions)</span>
+                  </label>
+                  <select
+                    value={formData.accessLevel}
+                    onChange={(e) => setFormData({...formData, accessLevel: e.target.value})}
+                    className="mt-1 block w-full rounded-md border-gray-300 border px-3 py-2"
+                  >
+                    {ALL_ACCESS_LEVELS.map(level => (
+                      <option key={level.value} value={level.value}>
+                        {level.label}
+                      </option>
+                    ))}
+                  </select>
+                  <p className="text-xs text-gray-500 mt-1">
+                    {ALL_ACCESS_LEVELS.find(l => l.value === formData.accessLevel)?.description}
+                  </p>
+                </div>
+              )}
+              
               <div className="flex justify-end space-x-3 pt-4">
                 <button
                   type="button"
