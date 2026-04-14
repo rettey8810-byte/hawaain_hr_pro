@@ -66,8 +66,8 @@ export function AuthProvider({ children }) {
             }
           }
           
-          // Sync department and position from employee record if missing
-          if (!data.department || !data.position) {
+          // Sync department, position, and companyId from employee record if missing
+          if (!data.department || !data.position || !data.companyId) {
             try {
               const employeesQuery = query(
                 collection(db, 'employees'),
@@ -82,6 +82,9 @@ export function AuthProvider({ children }) {
                 }
                 if (!data.position && employeeData['Designation']) {
                   updates.position = employeeData['Designation'];
+                }
+                if (!data.companyId && employeeData.companyId) {
+                  updates.companyId = employeeData.companyId;
                 }
                 if (Object.keys(updates).length > 0) {
                   await updateDoc(doc(db, 'users', user.uid), updates);
