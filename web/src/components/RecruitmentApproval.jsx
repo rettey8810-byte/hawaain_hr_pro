@@ -168,7 +168,7 @@ export default function RecruitmentApproval() {
       return matchesSearch && matchesStatus && req.department === userDept;
     }
     
-    return matchesSearch && matchesStatus && req.raisedBy === userData?.uid;
+    return matchesSearch && matchesStatus && req.raisedBy === user?.uid;
   });
 
   const canCreateRequisition = () => {
@@ -245,7 +245,7 @@ export default function RecruitmentApproval() {
       
       status: 'pending_hod',
       
-      raisedBy: userData?.uid,
+      raisedBy: user?.uid,
       raisedByName: userData?.name,
       raisedByRole: userData?.role,
       raisedAt: new Date().toISOString(),
