@@ -200,8 +200,10 @@ export default function Employees() {
     return count;
   };
 
-  // Filter employees client-side
-  const filteredEmployees = employees.filter(emp => {
+  // Filter employees client-side (apply role-based visibility first)
+  const visibleEmployees = filterByVisibility(employees);
+  
+  const filteredEmployees = visibleEmployees.filter(emp => {
     const name = emp.FullName || emp.name || '';
     const empId = emp.EmpID || emp.employeeId || '';
     const nationality = emp.Nationality || emp.country || '';
