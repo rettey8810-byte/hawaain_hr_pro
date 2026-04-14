@@ -463,10 +463,10 @@ export default function Dashboard() {
         />
         <StatCard
           title="Terminations"
-          value={completedTerminations}
+          value={completedTerminations + terminatedEmployeesCount}
           icon={UserX}
           gradient="red"
-          subtitle={`${activeTerminations} in progress`}
+          subtitle={`${activeTerminations} in progress, ${terminatedEmployeesCount} past staff`}
           href="/terminations"
         />
       </div>

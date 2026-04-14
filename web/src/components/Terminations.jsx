@@ -156,11 +156,18 @@ export default function Terminations() {
     setShowEmployeeDropdown(false);
   };
 
+  // Calculate terminated employees count
+  const terminatedEmployeesCount = allEmployees.filter(e => {
+    const matchesCompany = !companyId || e.companyId === companyId;
+    return matchesCompany && (e.status === 'terminated' || e.empStatus === 'Terminated');
+  }).length;
+
   const stats = {
-    total: terminations.length,
+    total: terminations.length + terminatedEmployeesCount,
     pending: terminations.filter(t => t.status === 'pending').length,
     inProgress: terminations.filter(t => t.status === 'in_progress').length,
-    completed: terminations.filter(t => t.status === 'completed').length,
+    completed: terminations.filter(t => t.status === 'completed').length + terminatedEmployeesCount,
+    pastStaffs: terminatedEmployeesCount,
     thisMonth: terminations.filter(t => {
       const date = new Date(t.createdAt || t.startDate);
       const now = new Date();
@@ -403,8 +410,8 @@ export default function Terminations() {
           <p className="text-2xl font-bold">{stats.completed}</p>
         </div>
         <div className="bg-white rounded-xl p-4 shadow border-l-4 border-purple-500">
-          <p className="text-sm text-gray-500">This Month</p>
-          <p className="text-2xl font-bold">{stats.thisMonth}</p>
+          <p className="text-sm text-gray-500">Past Staffs</p>
+          <p className="text-2xl font-bold">{stats.pastStaffs}</p>
         </div>
       </div>
 
