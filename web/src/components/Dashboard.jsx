@@ -113,8 +113,10 @@ export default function Dashboard() {
   }, []);
 
   // Filter by company and exclude terminated employees
-  const companyEmployees = employees.filter(e => e.companyId === companyId && e.status !== 'terminated');
+  const companyEmployeesAll = employees.filter(e => e.companyId === companyId);
+  const companyEmployees = companyEmployeesAll.filter(e => e.status !== 'terminated');
   const activeEmployeesCount = companyEmployees.length;
+  const terminatedEmployeesCount = companyEmployeesAll.filter(e => e.status === 'terminated').length;
   const companyLeaves = leaves.filter(l => l.companyId === companyId);
   
   // Calculate termination stats for current company
@@ -396,7 +398,7 @@ export default function Dashboard() {
           value={activeEmployeesCount}
           icon={Users}
           gradient="blue"
-          subtitle="Active workforce"
+          subtitle={`${terminatedEmployeesCount > 0 ? terminatedEmployeesCount + ' terminated excluded' : 'Active workforce'}`}
           href="/employees"
         />
         <StatCard
