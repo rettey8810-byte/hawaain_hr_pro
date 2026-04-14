@@ -66,6 +66,33 @@ export function AuthProvider({ children }) {
             }
           }
           
+          // Sync department and position from employee record if missing
+          if (!data.department || !data.position) {
+            try {
+              const employeesQuery = query(
+                collection(db, 'employees'),
+                where('Email', '==', user.email)
+              );
+              const employeesSnap = await getDocs(employeesQuery);
+              if (!employeesSnap.empty) {
+                const employeeData = employeesSnap.docs[0].data();
+                const updates = {};
+                if (!data.department && employeeData['Department ']) {
+                  updates.department = employeeData['Department '];
+                }
+                if (!data.position && employeeData['Designation']) {
+                  updates.position = employeeData['Designation'];
+                }
+                if (Object.keys(updates).length > 0) {
+                  await updateDoc(doc(db, 'users', user.uid), updates);
+                  data = { ...data, ...updates };
+                }
+              }
+            } catch (err) {
+              console.error('Error syncing employee data:', err);
+            }
+          }
+          
           setUserData(data);
         } else {
           // Auto-create user document if missing
@@ -81,11 +108,35 @@ export function AuthProvider({ children }) {
             }
           }
           
+          // Try to get department/position from employee record
+          let department = null;
+          let position = null;
+          try {
+            const employeesQuery = query(
+              collection(db, 'employees'),
+              where('Email', '==', user.email)
+            );
+            const employeesSnap = await getDocs(employeesQuery);
+            if (!employeesSnap.empty) {
+              const employeeData = employeesSnap.docs[0].data();
+              department = employeeData['Department '] || null;
+              position = employeeData['Designation'] || null;
+              // Also get companyId from employee if available
+              if (!companyId && employeeData.companyId) {
+                companyId = employeeData.companyId;
+              }
+            }
+          } catch (err) {
+            console.error('Error fetching employee data during auto-create:', err);
+          }
+          
           const newUserData = {
             name: user.displayName || user.email.split('@')[0],
             email: user.email,
             role: isSuperadmin ? 'superadmin' : 'staff',
             companyId: companyId,
+            department: department,
+            position: position,
             createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString()
           };
