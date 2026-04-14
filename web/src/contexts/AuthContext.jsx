@@ -6,7 +6,7 @@ import {
   signOut,
   updateProfile
 } from 'firebase/auth';
-import { doc, getDoc, setDoc, updateDoc, collection, query, getDocs, limit } from 'firebase/firestore';
+import { doc, getDoc, setDoc, updateDoc, collection, query, where, getDocs, limit } from 'firebase/firestore';
 import { auth, db } from '../firebase/config';
 import { 
   ROLE_HIERARCHY, 
