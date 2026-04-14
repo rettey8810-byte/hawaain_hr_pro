@@ -58,11 +58,12 @@ const URGENCY_LEVELS = [
 ];
 
 export default function RecruitmentApproval() {
-  const { userData, hasAccess } = useAuth();
+  const { user, userData, hasAccess } = useAuth();
   const { companyId } = useCompany();
   
   const [requisitions, setRequisitions] = useState([]);
   const [employees, setEmployees] = useState([]);
+  const [divisions, setDivisions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showDetailModal, setShowDetailModal] = useState(false);
@@ -119,15 +120,33 @@ export default function RecruitmentApproval() {
       const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
       setEmployees(data);
     });
+
+    // Fetch divisions for budget codes
+    const divisionsQuery = query(
+      collection(db, 'divisions'),
+      where('companyId', '==', companyId)
+    );
+
+    const unsubscribeDivisions = onSnapshot(divisionsQuery, (snapshot) => {
+      const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      setDivisions(data);
+    });
     
     return () => {
       unsubscribe();
       unsubscribeEmployees();
+      unsubscribeDivisions();
     };
   }, [companyId]);
 
   // Get unique departments from employee data
   const departments = [...new Set(employees.map(e => e['Department '] || e.Department || e.department).filter(Boolean))];
+
+  // Get budget code for a department from divisions
+  const getBudgetCodeForDepartment = (deptName) => {
+    const division = divisions.find(d => d.name === deptName);
+    return division?.budgetCode || '';
+  };
 
   // Filter requisitions
   const filteredRequisitions = requisitions.filter(req => {
@@ -177,8 +196,8 @@ export default function RecruitmentApproval() {
   const handleCreateRequisition = async (e) => {
     e.preventDefault();
 
-    // Validate userData is loaded
-    if (!userData?.uid) {
+    // Validate user is loaded
+    if (!user?.uid || !userData) {
       alert('Error: User data not loaded. Please refresh the page and try again.');
       return;
     }
@@ -494,7 +513,11 @@ export default function RecruitmentApproval() {
                   <select
                     required
                     value={formData.department}
-                    onChange={(e) => setFormData({...formData, department: e.target.value})}
+                    onChange={(e) => {
+                      const dept = e.target.value;
+                      const budgetCode = getBudgetCodeForDepartment(dept);
+                      setFormData({...formData, department: dept, budgetCode});
+                    }}
                     className="w-full px-3 py-2 border rounded-lg"
                   >
                     <option value="">Select Department...</option>
@@ -676,7 +699,7 @@ export default function RecruitmentApproval() {
 
               <div className="border-t pt-4">
                 <h4 className="font-medium mb-3">Budget Information</h4>
-                <div className="flex items-center gap-4">
+                <div className="flex items-start gap-4 flex-wrap">
                   <label className="flex items-center gap-2">
                     <input
                       type="checkbox"
@@ -687,13 +710,18 @@ export default function RecruitmentApproval() {
                     <span className="text-sm">Budget Approved</span>
                   </label>
                   {formData.budgetApproved && (
-                    <input
-                      type="text"
-                      value={formData.budgetCode}
-                      onChange={(e) => setFormData({...formData, budgetCode: e.target.value})}
-                      className="px-3 py-1 border rounded"
-                      placeholder="Budget Code"
-                    />
+                    <div className="flex flex-col gap-1">
+                      <input
+                        type="text"
+                        value={formData.budgetCode}
+                        onChange={(e) => setFormData({...formData, budgetCode: e.target.value})}
+                        className="px-3 py-1 border rounded"
+                        placeholder="Budget Code"
+                      />
+                      <span className="text-xs text-gray-500">
+                        Budget code is auto-populated from Company Structure. If empty, add it in Settings → Company Structure → Department.
+                      </span>
+                    </div>
                   )}
                 </div>
               </div>
