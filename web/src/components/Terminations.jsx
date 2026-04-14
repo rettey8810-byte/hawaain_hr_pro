@@ -106,6 +106,35 @@ export default function Terminations() {
     }
     return matchesSearch;
   });
+
+  // Get terminated employees for Past Staffs tab
+  const terminatedEmployees = allEmployees.filter(e => {
+    const matchesCompany = !companyId || e.companyId === companyId;
+    const isTerminated = e.status === 'terminated' || e.empStatus === 'Terminated';
+    const matchesSearch = 
+      (e.name || e.Name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (e.employeeId || '').toLowerCase().includes(searchTerm.toLowerCase());
+    return matchesCompany && isTerminated && matchesSearch;
+  });
+
+  // Combine for Past Staffs display
+  const pastStaffItems = activeTab === 'past_staffs' 
+    ? [
+        ...filteredTerminations.map(t => ({ ...t, itemType: 'termination' })),
+        ...terminatedEmployees.map(e => ({ 
+          id: e.id, 
+          employeeId: e.id,
+          employeeName: e.name || e.Name || 'Unknown',
+          itemType: 'employee',
+          status: 'completed',
+          type: e.terminationReason || 'terminated',
+          lastWorkingDate: e.terminationDate,
+          reason: e.terminationReason || 'Employee terminated',
+          terminationDate: e.terminationDate,
+          ...e
+        }))
+      ]
+    : filteredTerminations.map(t => ({ ...t, itemType: 'termination' }));
   
   // Filter employees for dropdown
   const filteredEmployees = employees.filter(e => {
@@ -428,32 +457,51 @@ export default function Terminations() {
 
       {/* List */}
       <div className="space-y-4">
-        {filteredTerminations.length === 0 ? (
+        {(activeTab === 'past_staffs' ? pastStaffItems.length === 0 : filteredTerminations.length === 0) ? (
           <div className="bg-white rounded-xl p-12 text-center text-gray-500">
             <UserX className="h-16 w-16 mx-auto mb-4 text-gray-300" />
-            <p className="text-lg">No termination records found</p>
-            <p className="text-sm">Click "New Termination" to add one</p>
+            <p className="text-lg">
+              {activeTab === 'past_staffs' ? 'No past staff found' : 'No termination records found'}
+            </p>
+            <p className="text-sm">
+              {activeTab === 'past_staffs' ? 'Terminated employees will appear here' : 'Click "New Termination" to add one'}
+            </p>
           </div>
         ) : (
-          filteredTerminations.map((termination) => (
+          (activeTab === 'past_staffs' ? pastStaffItems : filteredTerminations).map((termination) => (
             <div key={termination.id} className="bg-white rounded-xl shadow overflow-hidden">
               <div 
                 className="p-4 flex items-center justify-between cursor-pointer hover:bg-gray-50"
                 onClick={() => setExpandedId(expandedId === termination.id ? null : termination.id)}
               >
                 <div className="flex items-center gap-4">
-                  <div className="h-12 w-12 rounded-full bg-gradient-to-br from-red-500 to-rose-600 flex items-center justify-center text-white font-bold text-lg">
+                  <div className={`h-12 w-12 rounded-full bg-gradient-to-br flex items-center justify-center text-white font-bold text-lg ${
+                    termination.itemType === 'employee' ? 'from-gray-500 to-gray-600' : 'from-red-500 to-rose-600'
+                  }`}>
                     {termination.employeeName?.charAt(0) || '?'}
                   </div>
                   <div>
                     <p className="font-semibold text-lg">{termination.employeeName}</p>
                     <div className="flex items-center gap-2 mt-1">
-                      <span className={`px-2 py-0.5 rounded text-xs font-medium ${getTypeColor(termination.type)}`}>
-                        {TERMINATION_TYPES.find(t => t.id === termination.type)?.label}
-                      </span>
-                      <span className={`px-2 py-0.5 rounded text-xs font-medium ${getStatusColor(termination.status)}`}>
-                        {TERMINATION_STATUS.find(s => s.id === termination.status)?.label}
-                      </span>
+                      {termination.itemType === 'employee' ? (
+                        <>
+                          <span className="px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-700">
+                            Terminated Employee
+                          </span>
+                          <span className="px-2 py-0.5 rounded text-xs font-medium bg-red-100 text-red-700">
+                            Past Staff
+                          </span>
+                        </>
+                      ) : (
+                        <>
+                          <span className={`px-2 py-0.5 rounded text-xs font-medium ${getTypeColor(termination.type)}`}>
+                            {TERMINATION_TYPES.find(t => t.id === termination.type)?.label}
+                          </span>
+                          <span className={`px-2 py-0.5 rounded text-xs font-medium ${getStatusColor(termination.status)}`}>
+                            {TERMINATION_STATUS.find(s => s.id === termination.status)?.label}
+                          </span>
+                        </>
+                      )}
                     </div>
                   </div>
                 </div>
