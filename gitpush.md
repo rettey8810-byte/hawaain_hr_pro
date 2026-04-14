@@ -251,14 +251,24 @@ git restore --staged path/to/file
 - Cleaned up production code
 
 **How to Deploy**
-All changes are automatically deployed to Vercel when pushed to main branch.
+Vercel will auto-deploy on push **only if** the GitHub repo is connected in Vercel.
 
-Quick deploy command:
+Check in Vercel:
+- Project → Settings → Git → Connected Repository
+
+Quick deploy commands (PowerShell):
 ```powershell
-git add -A; git commit -m "your message"; git push origin main
+git add -A
+git commit -m "your message"
+git push origin main
 ```
 
-If Vercel doesn't auto-deploy (no new commits):
+If Vercel doesn't auto-deploy:
+- **No new commit was pushed** ("Everything up-to-date")
+- Or the repo is not connected in Vercel
+
+To trigger a new deploy without code changes:
 ```powershell
-git commit --allow-empty -m "trigger: force vercel deploy"; git push origin main
+git commit --allow-empty -m "trigger: force deploy"
+git push origin main
 ```
