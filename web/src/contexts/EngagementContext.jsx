@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { collection, query, where, onSnapshot, addDoc, updateDoc, doc, Timestamp, increment, arrayUnion } from 'firebase/firestore';
 import { db } from '../firebase/config';
 import { useAuth } from './AuthContext';
@@ -204,6 +204,3 @@ export const useEngagement = () => {
   if (!context) throw new Error('useEngagement must be used within EngagementProvider');
   return context;
 };
-
-import React from 'react';
-import { orderBy } from 'firebase/firestore';

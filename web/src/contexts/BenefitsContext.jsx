@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { collection, query, where, onSnapshot, addDoc, updateDoc, doc, Timestamp, deleteDoc } from 'firebase/firestore';
 import { db } from '../firebase/config';
 import { useAuth } from './AuthContext';
@@ -182,6 +182,3 @@ export const useBenefits = () => {
   if (!context) throw new Error('useBenefits must be used within BenefitsProvider');
   return context;
 };
-
-import React from 'react';
-import { orderBy } from 'firebase/firestore';

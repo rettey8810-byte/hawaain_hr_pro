@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { collection, query, where, onSnapshot, addDoc, updateDoc, doc, Timestamp, getDocs } from 'firebase/firestore';
 import { db } from '../firebase/config';
 import { useAuth } from './AuthContext';
@@ -250,6 +250,3 @@ export const useAnalytics = () => {
   if (!context) throw new Error('useAnalytics must be used within AnalyticsProvider');
   return context;
 };
-
-import React from 'react';
-import { orderBy } from 'firebase/firestore';

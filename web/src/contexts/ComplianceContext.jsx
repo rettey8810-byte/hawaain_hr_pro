@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { collection, query, where, orderBy, onSnapshot, addDoc, updateDoc, doc, Timestamp, deleteDoc } from 'firebase/firestore';
 import { db } from '../firebase/config';
 import { useAuth } from './AuthContext';
@@ -215,5 +215,3 @@ export const useCompliance = () => {
   if (!context) throw new Error('useCompliance must be used within ComplianceProvider');
   return context;
 };
-
-import React from 'react';

@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { collection, query, where, onSnapshot, addDoc, updateDoc, doc, Timestamp, deleteDoc } from 'firebase/firestore';
 import { db } from '../firebase/config';
 import { useAuth } from './AuthContext';
@@ -260,5 +260,3 @@ export const useIntegrations = () => {
   if (!context) throw new Error('useIntegrations must be used within IntegrationsProvider');
   return context;
 };
-
-import React from 'react';
