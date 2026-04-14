@@ -27,6 +27,7 @@ export function CompanyProvider({ children }) {
 
   const loadCompanies = async () => {
     setLoading(true);
+    console.log('[CompanyContext] Loading companies for user:', user?.email, 'userData.companyId:', userData?.companyId, 'role:', userData?.role);
     try {
       // If super admin OR GM, load all companies
       if (userData.role === 'superadmin' || userData.role === 'gm') {
@@ -46,12 +47,18 @@ export function CompanyProvider({ children }) {
       } else {
         // Regular user - load their assigned company
         if (userData.companyId) {
+          console.log('[CompanyContext] Loading company for user:', userData.companyId);
           const companyDoc = await getDoc(doc(db, 'companies', userData.companyId));
           if (companyDoc.exists()) {
             const companyData = { id: companyDoc.id, ...companyDoc.data() };
+            console.log('[CompanyContext] Company loaded:', companyData.id, companyData.name);
             setCompanies([companyData]);
             setCurrentCompany(companyData);
+          } else {
+            console.warn('[CompanyContext] Company not found in Firestore:', userData.companyId);
           }
+        } else {
+          console.warn('[CompanyContext] No companyId in userData for:', user?.email);
         }
       }
     } catch (error) {

@@ -25,7 +25,9 @@ export function useFirestore(collectionName, customConstraints = []) {
 
   // Auto-fetch data on mount
   useEffect(() => {
+    console.log(`[useFirestore:${collectionName}] companyId:`, companyId);
     if (!companyId) {
+      console.warn(`[useFirestore:${collectionName}] No companyId - returning empty`);
       setDocuments([]);
       setLoading(false);
       return;
@@ -43,6 +45,11 @@ export function useFirestore(collectionName, customConstraints = []) {
         id: doc.id,
         ...doc.data()
       }));
+      
+      console.log(`[useFirestore:${collectionName}] Fetched ${docs.length} docs for companyId: ${companyId}`);
+      if (docs.length > 0) {
+        console.log(`[useFirestore:${collectionName}] First doc companyId:`, docs[0]?.companyId);
+      }
       
       // Data isolation: Only return documents matching the companyId
       // No fallback to prevent cross-company data leakage
