@@ -100,19 +100,24 @@ export default function Dashboard() {
   const { companyId } = useCompany();
   const { userData, filterByVisibility } = useAuth();
   const { documents: employees } = useFirestore('employees');
-  const { documents: passports } = useFirestore('passports');
-  const { documents: visas } = useFirestore('visas');
-  const { documents: workPermits } = useFirestore('workPermits');
-  const { documents: medicals } = useFirestore('medicals');
   const { documents: leaves } = useFirestore('leaves');
   const { documents: terminations } = useFirestore('terminations');
-  const { documents: roomAssignments } = useFirestore('roomAssignments');
-  const { documents: rooms } = useFirestore('rooms');
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  // Helper to calculate days remaining from employee fields
+  const calculateDaysRemaining = (expiryDate) => {
+    if (!expiryDate) return null;
+    const expiry = new Date(expiryDate);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    expiry.setHours(0, 0, 0, 0);
+    const diffTime = expiry - today;
+    return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+  };
 
   // Filter by company and role visibility, exclude terminated employees
   const visibleEmployees = filterByVisibility ? filterByVisibility(employees) : employees;
@@ -339,28 +344,46 @@ export default function Dashboard() {
     link.click();
   };
 
-  const passportAlerts = useExpiryAlerts(passports);
-  const visaAlerts = useExpiryAlerts(visas);
-  const permitAlerts = useExpiryAlerts(workPermits);
-  const medicalAlerts = useExpiryAlerts(medicals);
+  // Calculate document stats from employee fields
+  const getDocumentStats = (fieldName) => {
+    const docs = companyEmployees.filter(emp => emp[fieldName]);
+    const withDates = docs.map(emp => ({
+      ...emp,
+      daysRemaining: calculateDaysRemaining(emp[fieldName])
+    }));
+    
+    return {
+      total: docs.length,
+      expired: withDates.filter(d => d.daysRemaining !== null && d.daysRemaining <= 0).length,
+      expiring30: withDates.filter(d => d.daysRemaining !== null && d.daysRemaining > 0 && d.daysRemaining <= 30).length,
+      expiring60: withDates.filter(d => d.daysRemaining !== null && d.daysRemaining > 30 && d.daysRemaining <= 60).length,
+      expiring90: withDates.filter(d => d.daysRemaining !== null && d.daysRemaining > 60 && d.daysRemaining <= 90).length,
+      getTotalExpiring() { return this.expiring30 + this.expiring60 + this.expiring90; }
+    };
+  };
+
+  const passportStats = getDocumentStats('PPExpiry');
+  const visaStats = getDocumentStats('VisaExpiry');
+  const permitStats = getDocumentStats('WPExpiry');
+  const medicalStats = getDocumentStats('MedExpiry');
 
   const totalAlerts = 
-    passportAlerts.getTotalExpiring() + 
-    visaAlerts.getTotalExpiring() + 
-    permitAlerts.getTotalExpiring() + 
-    medicalAlerts.getTotalExpiring();
+    passportStats.getTotalExpiring() + 
+    visaStats.getTotalExpiring() + 
+    permitStats.getTotalExpiring() + 
+    medicalStats.getTotalExpiring();
 
   const expiredCount = 
-    passportAlerts.alerts.expired.length + 
-    visaAlerts.alerts.expired.length + 
-    permitAlerts.alerts.expired.length + 
-    medicalAlerts.alerts.expired.length;
+    passportStats.expired + 
+    visaStats.expired + 
+    permitStats.expired + 
+    medicalStats.expired;
 
   const expiring30Count = 
-    passportAlerts.alerts.expiring30.length + 
-    visaAlerts.alerts.expiring30.length + 
-    permitAlerts.alerts.expiring30.length + 
-    medicalAlerts.alerts.expiring30.length;
+    passportStats.expiring30 + 
+    visaStats.expiring30 + 
+    permitStats.expiring30 + 
+    medicalStats.expiring30;
 
   return (
     <div className="space-y-6">
@@ -434,34 +457,34 @@ export default function Dashboard() {
       <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4">
         <StatCard
           title="Passports"
-          value={passports.length}
+          value={passportStats.total}
           icon={FileText}
           gradient="purple"
-          subtitle={`${passportAlerts.getTotalExpiring()} expiring`}
+          subtitle={`${passportStats.getTotalExpiring()} expiring soon`}
           href="/passports"
         />
         <StatCard
           title="Work Permits"
-          value={workPermits.length}
+          value={permitStats.total}
           icon={Briefcase}
           gradient="cyan"
-          subtitle={`${permitAlerts.getTotalExpiring()} expiring`}
+          subtitle={`${permitStats.getTotalExpiring()} expiring soon`}
           href="/work-permits"
         />
         <StatCard
           title="Visas"
-          value={visas.length}
+          value={visaStats.total}
           icon={Plane}
           gradient="purple"
-          subtitle={`${visaAlerts.getTotalExpiring()} expiring`}
+          subtitle={`${visaStats.getTotalExpiring()} expiring soon`}
           href="/visas"
         />
         <StatCard
           title="Medical Records"
-          value={medicals.length}
+          value={medicalStats.total}
           icon={HeartPulse}
           gradient="red"
-          subtitle={`${medicalAlerts.getTotalExpiring()} expiring`}
+          subtitle={`${medicalStats.getTotalExpiring()} expiring soon`}
           href="/medical"
         />
         <StatCard
