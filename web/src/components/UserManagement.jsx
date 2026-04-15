@@ -1,13 +1,13 @@
 import { useState, useEffect } from 'react';
-import { 
+import {
   Plus, Edit2, Trash2, Mail, Shield, User, Lock, X, Key, Search,
-  Eye, Phone, Briefcase, Building2, CheckCircle
+  Eye, Phone, Briefcase, Building2, CheckCircle, EyeOff, ToggleLeft, ToggleRight, Settings2
 } from 'lucide-react';
 import { useCompany } from '../contexts/CompanyContext';
 import { useAuth } from '../contexts/AuthContext';
 import { doc, updateDoc, deleteDoc, collection, query, onSnapshot } from 'firebase/firestore';
 import { db } from '../firebase/config';
-import { ROLE_HIERARCHY, getAccessLevelLabel, getAccessLevelColor, ALL_ACCESS_LEVELS, canAssignAccessLevel } from '../config/rolePermissions';
+import { ROLE_HIERARCHY, getAccessLevelLabel, getAccessLevelColor, ALL_ACCESS_LEVELS, canAssignAccessLevel, FEATURES, DEFAULT_FEATURE_PERMISSIONS } from '../config/rolePermissions';
 
 export default function UserManagement() {
   const { companyId, companies } = useCompany();
@@ -24,6 +24,11 @@ export default function UserManagement() {
   const [newPassword, setNewPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [resetSuccess, setResetSuccess] = useState(null);
+
+  // Permission management state
+  const [showPermissionsModal, setShowPermissionsModal] = useState(false);
+  const [userPermissions, setUserPermissions] = useState({});
+  const [permissionsLoading, setPermissionsLoading] = useState(false);
 
   // Load ALL users
   useEffect(() => {
@@ -152,6 +157,56 @@ export default function UserManagement() {
       setTimeout(() => setMessage(''), 3000);
     } catch (error) {
       setMessage('Error deleting user: ' + error.message);
+    }
+  };
+
+  // Permission management handlers
+  const handleManagePermissions = (user) => {
+    setSelectedUser(user);
+    // Load existing custom permissions or use role defaults
+    const existingPerms = user.customPermissions || {};
+    const roleDefaults = DEFAULT_FEATURE_PERMISSIONS[user.role] || {};
+    
+    // Merge with defaults
+    const mergedPerms = {};
+    FEATURES.forEach(feature => {
+      mergedPerms[feature.id] = {};
+      feature.actions.forEach(action => {
+        mergedPerms[feature.id][action] = existingPerms[feature.id]?.[action] ?? roleDefaults[feature.id]?.[action] ?? false;
+      });
+    });
+    
+    setUserPermissions(mergedPerms);
+    setShowPermissionsModal(true);
+  };
+
+  const togglePermission = (featureId, action) => {
+    setUserPermissions(prev => ({
+      ...prev,
+      [featureId]: {
+        ...prev[featureId],
+        [action]: !prev[featureId][action]
+      }
+    }));
+  };
+
+  const handleSavePermissions = async () => {
+    if (!selectedUser) return;
+    
+    setPermissionsLoading(true);
+    try {
+      await updateDoc(doc(db, 'users', selectedUser.id), {
+        customPermissions: userPermissions,
+        permissionsUpdatedAt: new Date().toISOString(),
+        permissionsUpdatedBy: userData?.uid
+      });
+      setShowPermissionsModal(false);
+      setMessage('Permissions updated successfully!');
+      setTimeout(() => setMessage(''), 3000);
+    } catch (error) {
+      setMessage('Error updating permissions: ' + error.message);
+    } finally {
+      setPermissionsLoading(false);
     }
   };
 
@@ -334,7 +389,7 @@ export default function UserManagement() {
                   </div>
                 </div>
 
-                <div className="mt-4 flex gap-2">
+                <div className="mt-4 flex gap-2 flex-wrap">
                   <button
                     onClick={() => handleViewUser(user)}
                     className="flex-1 flex items-center justify-center gap-1 px-3 py-1.5 text-sm text-blue-600 bg-blue-50 rounded hover:bg-blue-100"
@@ -359,6 +414,16 @@ export default function UserManagement() {
                     <Key className="h-4 w-4" />
                     Reset
                   </button>
+                  {/* Permission button - only for HRM/GM */}
+                  {(userData?.role === 'hrm' || userData?.role === 'gm' || userData?.role === 'superadmin') && (
+                    <button
+                      onClick={() => handleManagePermissions(user)}
+                      className="flex-1 flex items-center justify-center gap-1 px-3 py-1.5 text-sm text-purple-600 bg-purple-50 rounded hover:bg-purple-100"
+                    >
+                      <Settings2 className="h-4 w-4" />
+                      Permissions
+                    </button>
+                  )}
                 </div>
               </div>
             ))}

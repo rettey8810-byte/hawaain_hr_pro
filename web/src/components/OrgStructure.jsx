@@ -15,8 +15,7 @@ import {
   Filter,
   GitBranch,
   List,
-  TreePine,
-  Network
+  TreePine
 } from 'lucide-react';
 import { useFirestore } from '../hooks/useFirestore';
 import { useCompany } from '../contexts/CompanyContext';
@@ -460,121 +459,145 @@ export default function OrgStructure() {
 
       {/* Organization Structure - Hierarchy Chart View */}
       {viewMode === 'hierarchy' && (
-        <div className="bg-white rounded-xl shadow-sm p-8 overflow-x-auto">
+        <div className="bg-white rounded-xl shadow-sm p-4 overflow-x-auto">
           {orgStructure.length === 0 ? (
             <div className="p-12 text-center">
               <Network className="h-16 w-16 mx-auto mb-4 text-gray-300" />
               <p className="text-gray-500 text-lg">No employees found</p>
             </div>
           ) : (
-            <div className="flex flex-col items-center min-w-max">
+            <div className="min-w-max flex flex-col items-center">
+              {/* Company Title */}
+              <div className="text-center mb-8">
+                <h2 className="text-2xl font-bold text-gray-800">Organization Structure</h2>
+              </div>
+
               {orgStructure.map((dept) => {
-                // Build hierarchy levels for this department
-                const gmLevel = dept.levels.find(l => l.level === 10 || l.levelName.includes('General Manager'));
-                const directorLevel = dept.levels.find(l => l.level === 9 || l.levelName.includes('Director'));
-                const managerLevel = dept.levels.find(l => l.level === 8 || l.levelName.includes('Manager'));
-                const asstMgrLevel = dept.levels.find(l => l.level === 7 || l.levelName.includes('Assistant Manager'));
-                const supervisorLevel = dept.levels.find(l => l.level === 6 || l.levelName.includes('Supervisor'));
-                const otherLevels = dept.levels.filter(l => l.level <= 5);
+                const topLevel = dept.levels.find(l => l.level >= 9);
+                const managerLevel = dept.levels.find(l => l.level === 8 || l.level === 7);
+                const supervisorLevel = dept.levels.find(l => l.level === 6 || l.level === 5);
+                const staffLevel = dept.levels.find(l => l.level <= 4);
+
+                const ceo = topLevel?.employees?.[0];
+                const managers = managerLevel?.employees?.slice(0, 2) || [];
+                const tls = supervisorLevel?.employees?.slice(0, 4) || [];
+                const workers = staffLevel?.employees?.slice(0, 8) || [];
+
+                // Node component
+                const Node = ({ emp, type }) => {
+                  const styles = {
+                    ceo: { circle: 'w-24 h-24 text-2xl from-pink-400 to-pink-600 border-pink-300', badge: 'bg-pink-500', label: 'CEO' },
+                    manager: { circle: 'w-20 h-20 text-xl from-orange-400 to-orange-600 border-orange-300', badge: 'bg-orange-500', label: 'MANAGER' },
+                    tl: { circle: 'w-16 h-16 text-lg from-emerald-400 to-emerald-600 border-emerald-300', badge: 'bg-emerald-500', label: 'TL' },
+                    worker: { circle: 'w-14 h-14 text-base from-blue-400 to-blue-600 border-blue-300', badge: 'bg-blue-500', label: emp.designation?.toUpperCase()?.slice(0, 8) || 'WORKER' }
+                  };
+                  const s = styles[type];
+
+                  return (
+                    <div className="flex flex-col items-center mx-2">
+                      <div className={`${s.circle} rounded-full bg-gradient-to-br flex items-center justify-center text-white font-bold shadow-lg border-4`}>
+                        {emp.name?.charAt(0)?.toUpperCase()}
+                      </div>
+                      <div className={`mt-1 ${s.badge} text-white px-2 py-0.5 rounded text-[10px] font-bold whitespace-nowrap`}>
+                        {s.label}
+                      </div>
+                      <p className="text-[10px] font-medium text-gray-700 mt-1 text-center max-w-[80px] leading-tight">
+                        {emp.name}
+                      </p>
+                    </div>
+                  );
+                };
 
                 return (
-                  <div key={dept.name} className="mb-12 w-full">
-                    {/* Department Title */}
-                    <div className="text-center mb-8">
-                      <h3 className="text-xl font-bold text-gray-800 bg-violet-100 inline-block px-6 py-2 rounded-full">
-                        {dept.name}
-                      </h3>
+                  <div key={dept.name} className="mb-12 flex flex-col items-center">
+                    {/* Department Badge */}
+                    <div className="mb-6 bg-violet-100 text-violet-800 px-4 py-1 rounded-full text-sm font-semibold">
+                      {dept.name}
                     </div>
 
-                    {/* Level 1: GM/Director */}
-                    <div className="flex justify-center mb-8">
-                      {(gmLevel?.employees || directorLevel?.employees || [])?.slice(0, 1).map((emp) => (
-                        <div key={emp.id} className="text-center">
-                          <div className="w-24 h-24 rounded-full bg-gradient-to-br from-violet-600 to-purple-700 flex items-center justify-center text-white text-2xl font-bold shadow-lg mx-auto border-4 border-violet-200">
-                            {emp.name?.charAt(0)?.toUpperCase()}
-                          </div>
-                          <div className="mt-2 bg-violet-600 text-white px-3 py-1 rounded-lg text-sm font-medium inline-block">
-                            {emp.designation}
-                          </div>
-                          <p className="text-sm text-gray-600 mt-1 font-medium">{emp.name}</p>
+                    {/* Tree Layout */}
+                    <div className="flex flex-col items-center">
+                      {/* CEO Level */}
+                      {ceo && (
+                        <div className="mb-6">
+                          <Node emp={ceo} type="ceo" />
                         </div>
-                      ))}
-                    </div>
+                      )}
 
-                    {/* Connector Line Down */}
-                    <div className="flex justify-center mb-4">
-                      <div className="w-px h-8 bg-gray-300" />
-                    </div>
-                    <div className="flex justify-center mb-4">
-                      <div className="w-1/2 h-px bg-gray-300" />
-                    </div>
-
-                    {/* Level 2: Managers */}
-                    <div className="flex justify-center gap-16 mb-8">
-                      {(managerLevel?.employees || asstMgrLevel?.employees || [])?.slice(0, 2).map((emp, idx) => (
-                        <div key={emp.id} className="text-center relative">
-                          {/* Vertical connector */}
-                          <div className="absolute -top-4 left-1/2 w-px h-4 bg-gray-300 -translate-x-1/2" />
-                          <div className="w-20 h-20 rounded-full bg-gradient-to-br from-orange-500 to-red-500 flex items-center justify-center text-white text-xl font-bold shadow-lg mx-auto border-4 border-orange-200">
-                            {emp.name?.charAt(0)?.toUpperCase()}
+                      {/* Connector to Managers */}
+                      {managers.length > 0 && ceo && (
+                        <div className="flex flex-col items-center mb-4">
+                          <div className="w-px h-6 bg-gray-400" />
+                          <div className="flex">
+                            <div className="w-32 h-px bg-gray-400" />
+                            <div className="w-32 h-px bg-gray-400" />
                           </div>
-                          <div className="mt-2 bg-orange-500 text-white px-3 py-1 rounded-lg text-sm font-medium inline-block">
-                            {emp.designation}
-                          </div>
-                          <p className="text-sm text-gray-600 mt-1 font-medium">{emp.name}</p>
                         </div>
-                      ))}
-                    </div>
+                      )}
 
-                    {/* Connector Lines Down to Supervisors */}
-                    <div className="flex justify-center mb-4">
-                      <div className="w-3/4 h-px bg-gray-300" />
-                    </div>
-
-                    {/* Level 3: Supervisors/Coordinators */}
-                    <div className="flex justify-center gap-12 mb-8">
-                      {(supervisorLevel?.employees || [])?.slice(0, 4).map((emp) => (
-                        <div key={emp.id} className="text-center relative">
-                          <div className="absolute -top-4 left-1/2 w-px h-4 bg-gray-300 -translate-x-1/2" />
-                          <div className="w-16 h-16 rounded-full bg-gradient-to-br from-green-500 to-teal-500 flex items-center justify-center text-white text-lg font-bold shadow-lg mx-auto border-4 border-green-200">
-                            {emp.name?.charAt(0)?.toUpperCase()}
-                          </div>
-                          <div className="mt-2 bg-green-500 text-white px-2 py-1 rounded text-xs font-medium inline-block">
-                            {emp.designation}
-                          </div>
-                          <p className="text-xs text-gray-600 mt-1">{emp.name}</p>
-                        </div>
-                      ))}
-                    </div>
-
-                    {/* Connector Lines Down to Staff */}
-                    {otherLevels.length > 0 && (
-                      <>
-                        <div className="flex justify-center mb-4">
-                          <div className="w-full max-w-4xl h-px bg-gray-200" />
-                        </div>
-
-                        {/* Level 4: Staff */}
-                        <div className="flex justify-center flex-wrap gap-6">
-                          {otherLevels.flatMap(l => l.employees).slice(0, 8).map((emp) => (
-                            <div key={emp.id} className="text-center">
-                              <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center text-white text-sm font-bold shadow mx-auto border-2 border-blue-200">
-                                {emp.name?.charAt(0)?.toUpperCase()}
-                              </div>
-                              <p className="text-xs text-gray-500 mt-1 max-w-[80px] truncate">{emp.name}</p>
+                      {/* Managers Level */}
+                      {managers.length > 0 && (
+                        <div className="flex justify-center gap-16 mb-6">
+                          {managers.map((m, i) => (
+                            <div key={m.id} className="flex flex-col items-center relative">
+                              <div className="absolute -top-4 left-1/2 w-px h-4 bg-gray-400 -translate-x-1/2" />
+                              <Node emp={m} type="manager" />
                             </div>
                           ))}
-                          {dept.totalCount > 15 && (
-                            <div className="text-center">
-                              <div className="w-12 h-12 rounded-full bg-gray-200 flex items-center justify-center text-gray-500 text-sm font-bold mx-auto">
-                                +{dept.totalCount - 15}
-                              </div>
-                              <p className="text-xs text-gray-400 mt-1">more</p>
-                            </div>
-                          )}
                         </div>
-                      </>
-                    )}
+                      )}
+
+                      {/* Connector to TLs */}
+                      {tls.length > 0 && managers.length > 0 && (
+                        <div className="flex flex-col items-center mb-4">
+                          <div className="w-px h-4 bg-gray-400" />
+                          <div className="flex gap-16">
+                            {managers.map((_, i) => (
+                              <div key={i} className="flex">
+                                <div className="w-20 h-px bg-gray-400" />
+                                <div className="w-20 h-px bg-gray-400" />
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* TLs Level */}
+                      {tls.length > 0 && (
+                        <div className="flex justify-center gap-8 mb-6">
+                          {tls.map((tl, i) => (
+                            <div key={tl.id} className="flex flex-col items-center relative">
+                              <div className="absolute -top-4 left-1/2 w-px h-4 bg-gray-400 -translate-x-1/2" />
+                              <Node emp={tl} type="tl" />
+                            </div>
+                          ))}
+                        </div>
+                      )}
+
+                      {/* Connector to Workers */}
+                      {workers.length > 0 && tls.length > 0 && (
+                        <div className="flex flex-col items-center mb-4">
+                          <div className="w-px h-4 bg-gray-300" />
+                          <div className="flex gap-8">
+                            {tls.map((_, i) => (
+                              <div key={i} className="w-16 h-px bg-gray-300" />
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Workers Level */}
+                      {workers.length > 0 && (
+                        <div className="flex justify-center gap-6 flex-wrap max-w-4xl">
+                          {workers.map((w, i) => (
+                            <div key={w.id} className="flex flex-col items-center relative">
+                              <div className="absolute -top-4 left-1/2 w-px h-4 bg-gray-300 -translate-x-1/2" />
+                              <Node emp={w} type="worker" />
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
                   </div>
                 );
               })}
