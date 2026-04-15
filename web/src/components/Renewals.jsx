@@ -1,376 +1,284 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
-import { Plus, Search, Filter, Edit2, CheckCircle, Clock, AlertCircle, ArrowRight } from 'lucide-react';
-import { useFirestore } from '../hooks/useFirestore';
+import { Plus, Search, AlertTriangle, Download, Eye } from 'lucide-react';
+import { useAuth } from '../contexts/AuthContext';
+import { useCompany } from '../contexts/CompanyContext';
 import { formatDate, calculateDaysRemaining } from '../utils/helpers';
-
-const RENEWAL_STEPS = [
-  { id: 1, name: 'Alert Triggered', icon: AlertCircle },
-  { id: 2, name: 'HR Notified', icon: Clock },
-  { id: 3, name: 'Renewal Started', icon: Clock },
-  { id: 4, name: 'Document Uploaded', icon: Clock },
-  { id: 5, name: 'Status Updated', icon: CheckCircle }
-];
-
-const STATUS_COLORS = {
-  pending: 'bg-yellow-100 text-yellow-800',
-  in_progress: 'bg-blue-100 text-blue-800',
-  completed: 'bg-green-100 text-green-800',
-  cancelled: 'bg-red-100 text-red-800'
-};
+import { collection, query, where, getDocs } from 'firebase/firestore';
+import { db } from '../firebase/config';
 
 export default function Renewals() {
-  const { documents: renewals, loading, addDocument, updateDocument } = useFirestore('renewals');
-  const { documents: employees } = useFirestore('employees');
-  const { documents: passports } = useFirestore('passports');
-  const { documents: visas } = useFirestore('visas');
-  const { documents: workPermits } = useFirestore('workPermits');
-  const { documents: medicals } = useFirestore('medicals');
+  const [loading, setLoading] = useState(true);
+  const [renewalRecords, setRenewalRecords] = useState([]);
+  const [filteredRecords, setFilteredRecords] = useState([]);
+  const { isHR } = useAuth();
+  const { companyId } = useCompany();
   
   const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState('all');
-  const [showNewModal, setShowNewModal] = useState(false);
-  const [newRenewal, setNewRenewal] = useState({
-    employeeId: '',
-    documentType: 'passport',
-    documentId: '',
-    notes: ''
-  });
+  const [activeFilter, setActiveFilter] = useState(null);
+
+  const fetchData = useCallback(async () => {
+    if (!companyId) return;
+    setLoading(true);
+    try {
+      const q = query(collection(db, 'employees'), where('companyId', '==', companyId));
+      const snap = await getDocs(q);
+      const employees = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      
+      // Collect all expiring documents from employees
+      let records = [];
+      employees.forEach(emp => {
+        if (emp.PPExpiry) {
+          records.push({
+            id: `${emp.id}-passport`,
+            employeeId: emp.id,
+            documentType: 'Passport',
+            expiryDate: emp.PPExpiry,
+            details: emp.PassportNo || 'N/A',
+            employeeName: emp.FullName || 'Unknown',
+            empId: emp.EmpID || 'N/A',
+            department: emp.Department || 'N/A'
+          });
+        }
+        if (emp.WPExpiry) {
+          records.push({
+            id: `${emp.id}-workpermit`,
+            employeeId: emp.id,
+            documentType: 'Work Permit',
+            expiryDate: emp.WPExpiry,
+            details: emp.WPNo || 'N/A',
+            employeeName: emp.FullName || 'Unknown',
+            empId: emp.EmpID || 'N/A',
+            department: emp.Department || 'N/A'
+          });
+        }
+        if (emp.VisaExpiry) {
+          records.push({
+            id: `${emp.id}-visa`,
+            employeeId: emp.id,
+            documentType: 'Visa',
+            expiryDate: emp.VisaExpiry,
+            details: 'Visa',
+            employeeName: emp.FullName || 'Unknown',
+            empId: emp.EmpID || 'N/A',
+            department: emp.Department || 'N/A'
+          });
+        }
+        if (emp.MedExpiry) {
+          records.push({
+            id: `${emp.id}-medical`,
+            employeeId: emp.id,
+            documentType: 'Medical',
+            expiryDate: emp.MedExpiry,
+            details: 'Medical',
+            employeeName: emp.FullName || 'Unknown',
+            empId: emp.EmpID || 'N/A',
+            department: emp.Department || 'N/A'
+          });
+        }
+        if (emp.InsExpiry) {
+          records.push({
+            id: `${emp.id}-insurance`,
+            employeeId: emp.id,
+            documentType: 'Insurance',
+            expiryDate: emp.InsExpiry,
+            details: 'Insurance',
+            employeeName: emp.FullName || 'Unknown',
+            empId: emp.EmpID || 'N/A',
+            department: emp.Department || 'N/A'
+          });
+        }
+        if (emp.FeeExpiry) {
+          records.push({
+            id: `${emp.id}-fee`,
+            employeeId: emp.id,
+            documentType: 'Visa Fee',
+            expiryDate: emp.FeeExpiry,
+            details: 'Visa Fee',
+            employeeName: emp.FullName || 'Unknown',
+            empId: emp.EmpID || 'N/A',
+            department: emp.Department || 'N/A'
+          });
+        }
+      });
+      
+      setRenewalRecords(records);
+    } catch (err) {
+      console.error('Error:', err);
+    } finally {
+      setLoading(false);
+    }
+  }, [companyId]);
+
+  useEffect(() => { fetchData(); }, [fetchData]);
 
   useEffect(() => {
-    // Check for expiring documents and create renewal alerts
-    const allDocs = [
-      ...passports.map(p => ({ ...p, type: 'passport' })),
-      ...visas.map(v => ({ ...v, type: 'visa' })),
-      ...workPermits.map(w => ({ ...w, type: 'work-permit' })),
-      ...medicals.map(m => ({ ...m, type: 'medical' }))
-    ];
-
-    allDocs.forEach(doc => {
-      const days = calculateDaysRemaining(doc.expiryDate);
-      if (days !== null && days <= 90) {
-        const existingRenewal = renewals.find(r => 
-          r.documentId === doc.id && r.status !== 'completed'
-        );
-        
-        if (!existingRenewal) {
-          // Auto-create renewal for expiring documents
-          // This would typically be done by a cloud function
+    let filtered = renewalRecords;
+    if (activeFilter) {
+      filtered = filtered.filter(r => {
+        const days = calculateDaysRemaining(r.expiryDate);
+        switch(activeFilter) {
+          case 'expired': return days <= 0;
+          case '30days': return days > 0 && days <= 30;
+          case '60days': return days > 30 && days <= 60;
+          case '90days': return days > 60 && days <= 90;
+          default: return true;
         }
-      }
-    });
-  }, [passports, visas, workPermits, medicals, renewals]);
-
-  const getEmployeeName = (id) => {
-    const emp = employees.find(e => e.id === id);
-    return emp?.name || 'Unknown';
-  };
-
-  const getDocumentInfo = (type, id) => {
-    let doc;
-    switch(type) {
-      case 'passport': doc = passports.find(p => p.id === id); break;
-      case 'visa': doc = visas.find(v => v.id === id); break;
-      case 'work-permit': doc = workPermits.find(w => w.id === id); break;
-      case 'medical': doc = medicals.find(m => m.id === id); break;
+      });
     }
-    return doc;
-  };
+    if (searchTerm) {
+      filtered = filtered.filter(r => 
+        r.employeeName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        r.documentType?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        r.empId?.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+    }
+    setFilteredRecords(filtered);
+  }, [renewalRecords, searchTerm, activeFilter]);
 
-  const filteredRenewals = renewals.filter(r => {
-    const matchesSearch = !searchTerm || 
-      getEmployeeName(r.employeeId).toLowerCase().includes(searchTerm.toLowerCase()) ||
-      r.documentType.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus = statusFilter === 'all' || r.status === statusFilter;
-    return matchesSearch && matchesStatus;
-  });
-
-  const handleCreateRenewal = async (e) => {
-    e.preventDefault();
-    await addDocument({
-      ...newRenewal,
-      status: 'pending',
-      currentStep: 1,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-      steps: RENEWAL_STEPS.map(step => ({
-        ...step,
-        completed: step.id === 1,
-        completedAt: step.id === 1 ? new Date().toISOString() : null
-      }))
+  const exportToCSV = () => {
+    const headers = ['Employee ID', 'Name', 'Department', 'Document Type', 'Details', 'Expiry Date', 'Status', 'Days Remaining'];
+    const rows = filteredRecords.map(r => {
+      const days = calculateDaysRemaining(r.expiryDate);
+      return [r.empId, r.employeeName, r.department, r.documentType, r.details, formatDate(r.expiryDate), days <= 0 ? 'Expired' : days <= 30 ? 'Expiring Soon' : 'Valid', days];
     });
-    setShowNewModal(false);
-    setNewRenewal({ employeeId: '', documentType: 'passport', documentId: '', notes: '' });
+    const csv = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `renewals_${new Date().toISOString().split('T')[0]}.csv`;
+    a.click();
   };
 
-  const handleUpdateStep = async (renewal, stepId) => {
-    const updatedSteps = renewal.steps.map(step => 
-      step.id === stepId ? { ...step, completed: true, completedAt: new Date().toISOString() } : step
-    );
-    
-    const allCompleted = updatedSteps.every(s => s.completed);
-    
-    await updateDocument(renewal.id, {
-      steps: updatedSteps,
-      currentStep: stepId,
-      status: allCompleted ? 'completed' : stepId >= 3 ? 'in_progress' : 'pending',
-      updatedAt: new Date().toISOString()
-    });
+  const getStatusColor = (days) => {
+    if (days <= 0) return 'bg-red-100 text-red-800';
+    if (days <= 30) return 'bg-orange-100 text-orange-800';
+    if (days <= 60) return 'bg-yellow-100 text-yellow-800';
+    if (days <= 90) return 'bg-blue-100 text-blue-800';
+    return 'bg-green-100 text-green-800';
   };
 
-  if (loading) {
-    return (
-      <div className="flex justify-center items-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-      </div>
-    );
-  }
+  const getDocumentIcon = (type) => {
+    switch(type) {
+      case 'Passport': return '🛂';
+      case 'Work Permit': return '📋';
+      case 'Visa': return '🛂';
+      case 'Medical': return '🏥';
+      case 'Insurance': return '🛡️';
+      case 'Visa Fee': return '💳';
+      default: return '📄';
+    }
+  };
+
+  if (loading) return <div className="flex justify-center items-center h-64"><div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div></div>;
 
   return (
     <div className="space-y-6">
-      <div className="md:flex md:items-center md:justify-between">
-        <div className="min-w-0 flex-1">
-          <h2 className="text-2xl font-bold leading-7 text-gray-900">
-            Renewal Workflow
-          </h2>
-          <p className="mt-1 text-sm text-gray-500">
-            Track document renewal processes
-          </p>
+      <div className="md:flex md:items-center md:justify-between bg-gradient-to-r from-amber-500 via-orange-500 to-red-500 rounded-2xl p-6 text-white shadow-xl">
+        <div>
+          <h2 className="text-3xl font-bold">🔄 Document Renewals</h2>
+          <p className="mt-1 text-sm text-white/80">All expiring documents requiring renewal</p>
         </div>
-        <div className="mt-4 flex md:ml-4 md:mt-0">
-          <button
-            onClick={() => setShowNewModal(true)}
-            className="inline-flex items-center rounded-md bg-blue-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-500"
-          >
-            <Plus className="h-4 w-4 mr-2" />
-            New Renewal
+        <div className="mt-4 flex md:ml-4 md:mt-0 space-x-2">
+          {isHR?.() && (
+            <>
+              <button onClick={exportToCSV} className="inline-flex items-center rounded-xl bg-white px-5 py-2.5 text-sm font-bold text-orange-600 shadow-lg hover:bg-gray-50">
+                <Download className="h-5 w-5 mr-2" /> Export CSV
+              </button>
+              <Link to="/employees/new" className="inline-flex items-center rounded-xl bg-white px-5 py-2.5 text-sm font-bold text-orange-600 shadow-lg hover:bg-gray-50">
+                <Plus className="h-5 w-5 mr-2" /> Add Employee
+              </Link>
+            </>
+          )}
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
+        {[
+          { id: 'expired', label: 'Expired', color: 'from-rose-500 to-red-600' },
+          { id: '30days', label: '< 30 days', color: 'from-orange-400 to-amber-500' },
+          { id: '60days', label: '30-60 days', color: 'from-yellow-400 to-amber-500' },
+          { id: '90days', label: '60-90 days', color: 'from-sky-400 to-blue-500' }
+        ].map(filter => (
+          <button key={filter.id} onClick={() => setActiveFilter(activeFilter === filter.id ? null : filter.id)} 
+            className={`bg-gradient-to-br ${filter.color} rounded-2xl p-4 text-white shadow-lg transform hover:scale-105 transition-all text-left ${activeFilter === filter.id ? 'ring-4 ring-offset-2' : ''}`}>
+            <div className="flex items-center">
+              <div className="p-2 bg-white/20 rounded-lg mr-3"><AlertTriangle className="h-5 w-5 text-white" /></div>
+              <div>
+                <p className="text-xs text-white/80 font-medium">{filter.label}</p>
+                <p className="text-2xl font-bold">
+                  {renewalRecords.filter(r => {
+                    const days = calculateDaysRemaining(r.expiryDate);
+                    if (filter.id === 'expired') return days <= 0;
+                    if (filter.id === '30days') return days > 0 && days <= 30;
+                    if (filter.id === '60days') return days > 30 && days <= 60;
+                    if (filter.id === '90days') return days > 60 && days <= 90;
+                  }).length}
+                </p>
+              </div>
+            </div>
           </button>
+        ))}
+      </div>
+
+      <div className="bg-white/80 backdrop-blur-md rounded-2xl shadow-lg p-5 border border-white/50">
+        <div className="relative">
+          <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-orange-400" />
+          <input type="text" placeholder="Search by employee name, document type, or ID..." value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="block w-full rounded-xl border-0 bg-gray-50 pl-12 pr-4 py-3 text-gray-900 shadow-sm ring-1 ring-gray-200 focus:ring-2 focus:ring-orange-500" />
         </div>
       </div>
 
-      {/* Stats */}
-      <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
-        <div className="bg-white rounded-lg shadow p-4">
-          <div className="flex items-center">
-            <AlertCircle className="h-8 w-8 text-yellow-500" />
-            <div className="ml-3">
-              <p className="text-sm font-medium text-gray-500">Pending</p>
-              <p className="text-2xl font-semibold text-gray-900">
-                {renewals.filter(r => r.status === 'pending').length}
-              </p>
-            </div>
-          </div>
-        </div>
-        <div className="bg-white rounded-lg shadow p-4">
-          <div className="flex items-center">
-            <Clock className="h-8 w-8 text-blue-500" />
-            <div className="ml-3">
-              <p className="text-sm font-medium text-gray-500">In Progress</p>
-              <p className="text-2xl font-semibold text-gray-900">
-                {renewals.filter(r => r.status === 'in_progress').length}
-              </p>
-            </div>
-          </div>
-        </div>
-        <div className="bg-white rounded-lg shadow p-4">
-          <div className="flex items-center">
-            <CheckCircle className="h-8 w-8 text-green-500" />
-            <div className="ml-3">
-              <p className="text-sm font-medium text-gray-500">Completed</p>
-              <p className="text-2xl font-semibold text-gray-900">
-                {renewals.filter(r => r.status === 'completed').length}
-              </p>
-            </div>
-          </div>
-        </div>
-        <div className="bg-white rounded-lg shadow p-4">
-          <div className="flex items-center">
-            <div className="h-8 w-8 rounded-full bg-purple-100 flex items-center justify-center">
-              <span className="text-purple-700 font-bold">
-                {renewals.length}
-              </span>
-            </div>
-            <div className="ml-3">
-              <p className="text-sm font-medium text-gray-500">Total</p>
-              <p className="text-2xl font-semibold text-gray-900">Renewals</p>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Filters */}
-      <div className="bg-white rounded-lg shadow p-4">
-        <div className="flex flex-col sm:flex-row gap-4">
-          <div className="flex-1 relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
-            <input
-              type="text"
-              placeholder="Search renewals..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="block w-full rounded-md border-gray-300 pl-10 pr-3 py-2 text-sm border focus:border-blue-500 focus:ring-blue-500"
-            />
-          </div>
-          <div className="sm:w-48">
-            <select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-              className="block w-full rounded-md border-gray-300 px-3 py-2 text-sm border focus:border-blue-500 focus:ring-blue-500"
-            >
-              <option value="all">All Status</option>
-              <option value="pending">Pending</option>
-              <option value="in_progress">In Progress</option>
-              <option value="completed">Completed</option>
-            </select>
-          </div>
-        </div>
-      </div>
-
-      {/* Renewals List */}
-      <div className="bg-white rounded-lg shadow overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Employee
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Document Type
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Status
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Progress
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Created
-                </th>
-                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Actions
-                </th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {filteredRenewals.map((renewal) => {
-                const progress = (renewal.steps?.filter(s => s.completed).length / 5) * 100;
-                
-                return (
-                  <tr key={renewal.id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                      {getEmployeeName(renewal.employeeId)}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 capitalize">
-                      {renewal.documentType?.replace('-', ' ')}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                        STATUS_COLORS[renewal.status] || 'bg-gray-100 text-gray-800'
-                      }`}>
-                        {renewal.status?.replace('_', ' ')}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="w-full bg-gray-200 rounded-full h-2.5 max-w-xs">
-                        <div 
-                          className="bg-blue-600 h-2.5 rounded-full" 
-                          style={{ width: `${progress}%` }}
-                        ></div>
-                      </div>
-                      <span className="text-xs text-gray-500 mt-1">{Math.round(progress)}%</span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {formatDate(renewal.createdAt)}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                      <Link
-                        to="#"
-                        onClick={() => {
-                          const nextStep = renewal.steps?.find(s => !s.completed);
-                          if (nextStep) handleUpdateStep(renewal, nextStep.id);
-                        }}
-                        className="text-blue-600 hover:text-blue-900"
-                      >
-                        {renewal.status !== 'completed' ? 'Update' : 'View'}
-                      </Link>
-                    </td>
-                  </tr>
-                );
-              })}
-              {filteredRenewals.length === 0 && (
-                <tr>
-                  <td colSpan="6" className="px-6 py-4 text-center text-sm text-gray-500">
-                    No renewals found
+      <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
+        <table className="min-w-full divide-y divide-gray-200">
+          <thead className="bg-gray-50">
+            <tr>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Employee</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Document Type</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Details</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Department</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Expiry Date</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
+            </tr>
+          </thead>
+          <tbody className="bg-white divide-y divide-gray-200">
+            {filteredRecords.map((r) => {
+              const days = calculateDaysRemaining(r.expiryDate);
+              return (
+                <tr key={r.id} className="hover:bg-gray-50">
+                  <td className="px-6 py-4">
+                    <div className="font-medium text-gray-900">{r.employeeName}</div>
+                    <div className="text-sm text-gray-500">{r.empId}</div>
+                  </td>
+                  <td className="px-6 py-4">
+                    <span className="text-lg mr-2">{getDocumentIcon(r.documentType)}</span>
+                    <span className="text-sm font-medium">{r.documentType}</span>
+                  </td>
+                  <td className="px-6 py-4 text-sm font-mono">{r.details}</td>
+                  <td className="px-6 py-4 text-sm">{r.department}</td>
+                  <td className="px-6 py-4 text-sm">{formatDate(r.expiryDate)}</td>
+                  <td className="px-6 py-4">
+                    <span className={`px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(days)}`}>
+                      {days <= 0 ? 'Expired' : days <= 30 ? `${days} days` : days <= 60 ? `${days} days` : days <= 90 ? `${days} days` : 'Valid'}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4">
+                    <Link to={`/employees/${r.employeeId}`} className="text-orange-600 hover:text-orange-900">
+                      <Eye className="h-5 w-5" />
+                    </Link>
                   </td>
                 </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
+              );
+            })}
+          </tbody>
+        </table>
+        {filteredRecords.length === 0 && (
+          <div className="text-center py-12 text-gray-500">No renewal records found</div>
+        )}
       </div>
-
-      {/* New Renewal Modal */}
-      {showNewModal && (
-        <div className="fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
-            <h3 className="text-lg font-medium text-gray-900 mb-4">Create New Renewal</h3>
-            <form onSubmit={handleCreateRenewal} className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Employee</label>
-                <select
-                  required
-                  value={newRenewal.employeeId}
-                  onChange={(e) => setNewRenewal({...newRenewal, employeeId: e.target.value})}
-                  className="mt-1 block w-full rounded-md border-gray-300 border px-3 py-2"
-                >
-                  <option value="">Select Employee</option>
-                  {employees.map(emp => (
-                    <option key={emp.id} value={emp.id}>{emp.name}</option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Document Type</label>
-                <select
-                  value={newRenewal.documentType}
-                  onChange={(e) => setNewRenewal({...newRenewal, documentType: e.target.value})}
-                  className="mt-1 block w-full rounded-md border-gray-300 border px-3 py-2"
-                >
-                  <option value="passport">Passport</option>
-                  <option value="visa">Visa</option>
-                  <option value="work-permit">Work Permit</option>
-                  <option value="medical">Medical</option>
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Notes</label>
-                <textarea
-                  value={newRenewal.notes}
-                  onChange={(e) => setNewRenewal({...newRenewal, notes: e.target.value})}
-                  className="mt-1 block w-full rounded-md border-gray-300 border px-3 py-2"
-                  rows="3"
-                />
-              </div>
-              <div className="flex justify-end space-x-3 pt-4">
-                <button
-                  type="button"
-                  onClick={() => setShowNewModal(false)}
-                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700"
-                >
-                  Create
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
