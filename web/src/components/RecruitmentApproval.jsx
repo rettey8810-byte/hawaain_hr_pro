@@ -11,25 +11,27 @@ import {
 
 /**
  * Recruitment Approval Module
- * 
- * Workflow: HOD → HRM → GM
+ *
+ * Workflow: HOD → Asst HR Manager → HR Manager → Director
  * - HOD raises recruitment requisition
- * - HRM validates (budget, position requirements) and approves/rejects
- * - GM reviews and approves/rejects
+ * - Assistant HR Manager reviews
+ * - HR Manager validates and approves/rejects
+ * - Director gives final approval
  * - Generates official recruitment form when approved
  */
 
 const WORKFLOW_STAGES = [
   { key: 'hod_review', label: 'HOD Review', role: 'dept_head' },
-  { key: 'hrm_review', label: 'HRM Validation', role: 'hrm' },
+  { key: 'hm_review', label: 'HM Review (ABOOBAKURU QASIM)', role: 'hrm' },
   { key: 'gm_review', label: 'GM Approval', role: 'gm' }
 ];
 
 const STATUS_COLORS = {
   draft: 'bg-gray-100 text-gray-800',
   pending_hod: 'bg-yellow-100 text-yellow-800',
+  pending_asst_hrm: 'bg-cyan-100 text-cyan-800',
   pending_hrm: 'bg-blue-100 text-blue-800',
-  pending_gm: 'bg-purple-100 text-purple-800',
+  pending_director: 'bg-purple-100 text-purple-800',
   approved: 'bg-green-100 text-green-800',
   rejected: 'bg-red-100 text-red-800',
   filled: 'bg-emerald-100 text-emerald-800'
@@ -183,8 +185,8 @@ export default function RecruitmentApproval() {
     if (stage === 'hod_review') {
       return userRole === 'dept_head' && req.department === userData?.department && req.status === 'pending_hod';
     }
-    if (stage === 'hrm_review') {
-      return userRole === 'hrm' && req.status === 'pending_hrm';
+    if (stage === 'hm_review') {
+      return userRole === 'hrm' && req.status === 'pending_hm';
     }
     if (stage === 'gm_review') {
       return (userRole === 'gm' || userRole === 'superadmin') && req.status === 'pending_gm';
@@ -243,13 +245,14 @@ export default function RecruitmentApproval() {
         }))
       },
       
+      assignedHM: 'aboobaku56191', // ABOOBAKURU QASIM - HR Director
       status: 'pending_hod',
       
       raisedBy: user?.uid,
-      raisedByName: userData?.name,
-      raisedByRole: userData?.role,
+      raisedByName: userData?.name || 'Unknown',
+      raisedByRole: userData?.role || 'staff',
       raisedAt: new Date().toISOString(),
-      companyId,
+      companyId: companyId || 'sunisland-resort-and-spa',
       
       formGenerated: false,
       formUrl: null,
@@ -302,25 +305,25 @@ export default function RecruitmentApproval() {
     updatedStages[stageIndex] = {
       ...updatedStages[stageIndex],
       status: action === 'approved' ? 'approved' : 'rejected',
-      approverId: userData?.uid,
-      approverName: userData?.name,
-      approverRole: userData?.role,
+      approverId: user?.uid,
+      approverName: userData?.name || 'Unknown',
+      approverRole: userData?.role || 'staff',
       date: new Date().toISOString(),
       comments,
       budgetValidation: stage === 'hrm_review' ? comments : null,
       action
     };
 
-    let newStatus = req.status;
-    let newStage = req.workflow.currentStage;
+    let newStatus = req.status || 'pending';
+    let newStage = req.workflow?.currentStage || 'pending';
 
     if (action === 'rejected') {
       newStatus = 'rejected';
     } else if (action === 'approved') {
       if (stage === 'hod_review') {
-        newStatus = 'pending_hrm';
-        newStage = 'hrm_review';
-      } else if (stage === 'hrm_review') {
+        newStatus = 'pending_hm';
+        newStage = 'hm_review';
+      } else if (stage === 'hm_review') {
         newStatus = 'pending_gm';
         newStage = 'gm_review';
       } else if (stage === 'gm_review') {
@@ -410,7 +413,7 @@ export default function RecruitmentApproval() {
         >
           <option value="all">All Status</option>
           <option value="pending_hod">Pending HOD</option>
-          <option value="pending_hrm">Pending HRM</option>
+          <option value="pending_hm">Pending HM (QASIM)</option>
           <option value="pending_gm">Pending GM</option>
           <option value="approved">Approved</option>
           <option value="filled">Filled</option>

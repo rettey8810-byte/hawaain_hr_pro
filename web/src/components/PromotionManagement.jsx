@@ -218,10 +218,10 @@ export default function PromotionManagement() {
       
       // Audit
       raisedBy: userData?.uid,
-      raisedByName: userData?.name,
-      raisedByRole: userData?.role,
+      raisedByName: userData?.name || 'Unknown',
+      raisedByRole: userData?.role || 'staff',
       raisedAt: new Date().toISOString(),
-      companyId,
+      companyId: companyId || 'sunisland-resort-and-spa',
       
       // Document
       letterGenerated: false,
@@ -262,16 +262,16 @@ export default function PromotionManagement() {
       ...updatedStages[stageIndex],
       status: action === 'approved' ? 'approved' : 'rejected',
       approverId: userData?.uid,
-      approverName: userData?.name,
-      approverRole: userData?.role,
+      approverName: userData?.name || 'Unknown',
+      approverRole: userData?.role || 'staff',
       date: new Date().toISOString(),
       comments,
       validationNotes: stage === 'hrm_review' ? comments : null,
       action
     };
 
-    let newStatus = promo.status;
-    let newStage = promo.workflow.currentStage;
+    let newStatus = promo.status || 'pending';
+    let newStage = promo.workflow?.currentStage || 'pending';
 
     if (action === 'rejected') {
       newStatus = 'rejected';

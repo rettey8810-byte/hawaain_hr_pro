@@ -273,7 +273,8 @@ export function AuthProvider({ children }) {
         case 'company':
           return item.companyId === visibility.companyId;
         case 'department':
-          return item.companyId === visibility.companyId && item.department === visibility.department;
+          const itemDept = item['Department '] || item.Department || item.department || '';
+          return item.companyId === visibility.companyId && itemDept === visibility.department;
         case 'own':
           return item.userId === visibility.userId || item.createdBy === visibility.userId || item.email === userData?.email;
         default:

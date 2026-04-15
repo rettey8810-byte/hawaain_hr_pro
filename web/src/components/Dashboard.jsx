@@ -37,6 +37,7 @@ import {
 } from 'recharts';
 import { useFirestore } from '../hooks/useFirestore';
 import { useCompany } from '../contexts/CompanyContext';
+import { useAuth } from '../contexts/AuthContext';
 import { useExpiryAlerts } from '../hooks/useExpiryAlerts';
 
 function StatCard({ title, value, icon: Icon, gradient, subtitle, href }) {
@@ -97,6 +98,7 @@ function AlertItem({ title, count, type, icon: Icon, href }) {
 
 export default function Dashboard() {
   const { companyId } = useCompany();
+  const { userData, filterByVisibility } = useAuth();
   const { documents: employees } = useFirestore('employees');
   const { documents: passports } = useFirestore('passports');
   const { documents: visas } = useFirestore('visas');
@@ -112,8 +114,9 @@ export default function Dashboard() {
     setMounted(true);
   }, []);
 
-  // Filter by company and exclude terminated employees
-  const companyEmployeesAll = employees.filter(e => e.companyId === companyId);
+  // Filter by company and role visibility, exclude terminated employees
+  const visibleEmployees = filterByVisibility ? filterByVisibility(employees) : employees;
+  const companyEmployeesAll = visibleEmployees.filter(e => e.companyId === companyId);
   const companyEmployees = companyEmployeesAll.filter(e => e.status !== 'terminated');
   const activeEmployeesCount = companyEmployees.length;
   const terminatedEmployeesCount = companyEmployeesAll.filter(e => e.status === 'terminated').length;

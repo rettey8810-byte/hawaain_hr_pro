@@ -242,6 +242,13 @@ function App() {
                   </EmployeeRoute>
                 </PrivateRoute>
               } />
+              <Route path="/dashboard" element={
+                <PrivateRoute>
+                  <EmployeeRoute>
+                    <Layout><Dashboard /></Layout>
+                  </EmployeeRoute>
+                </PrivateRoute>
+              } />
               <Route path="/employee-dashboard" element={
                 <PrivateRoute>
                   <Layout><EmployeeDashboard /></Layout>

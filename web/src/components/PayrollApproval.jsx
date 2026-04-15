@@ -238,10 +238,10 @@ export default function PayrollApproval() {
       status: 'pending_hrm',
       
       raisedBy: userData?.uid,
-      raisedByName: userData?.name,
-      raisedByRole: userData?.role,
+      raisedByName: userData?.name || 'Unknown',
+      raisedByRole: userData?.role || 'staff',
       raisedAt: new Date().toISOString(),
-      companyId,
+      companyId: companyId || 'sunisland-resort-and-spa',
       
       formGenerated: false,
       formUrl: null,
@@ -282,15 +282,15 @@ export default function PayrollApproval() {
       ...updatedStages[stageIndex],
       status: action === 'approved' ? 'approved' : 'rejected',
       approverId: userData?.uid,
-      approverName: userData?.name,
-      approverRole: userData?.role,
+      approverName: userData?.name || 'Unknown',
+      approverRole: userData?.role || 'staff',
       date: new Date().toISOString(),
       comments,
       action
     };
 
-    let newStatus = payroll.status;
-    let newStage = payroll.workflow.currentStage;
+    let newStatus = payroll.status || 'pending';
+    let newStage = payroll.workflow?.currentStage || 'pending';
 
     if (action === 'rejected') {
       newStatus = 'rejected';

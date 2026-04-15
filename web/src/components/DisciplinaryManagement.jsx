@@ -206,10 +206,10 @@ export default function DisciplinaryManagement() {
       status: 'pending_hod',
       
       raisedBy: userData?.uid,
-      raisedByName: userData?.name,
-      raisedByRole: userData?.role,
+      raisedByName: userData?.name || 'Unknown',
+      raisedByRole: userData?.role || 'staff',
       raisedAt: new Date().toISOString(),
-      companyId,
+      companyId: companyId || 'sunisland-resort-and-spa',
       
       letterGenerated: false,
       letterUrl: null,
@@ -254,16 +254,16 @@ export default function DisciplinaryManagement() {
       ...updatedStages[stageIndex],
       status: action === 'approved' ? 'approved' : 'rejected',
       approverId: userData?.uid,
-      approverName: userData?.name,
-      approverRole: userData?.role,
+      approverName: userData?.name || 'Unknown',
+      approverRole: userData?.role || 'staff',
       date: new Date().toISOString(),
       comments,
       validationNotes: stage === 'hrm_review' ? comments : null,
       action
     };
 
-    let newStatus = actionItem.status;
-    let newStage = actionItem.workflow.currentStage;
+    let newStatus = actionItem.status || 'pending';
+    let newStage = actionItem.workflow?.currentStage || 'pending';
 
     if (action === 'rejected') {
       newStatus = 'rejected';
