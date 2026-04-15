@@ -338,8 +338,10 @@ export default function EmployeeDetail() {
           <InfoCard icon={Building2} label="Department" value={displayData?.['Department '] || displayData?.Department} />
           <InfoCard icon={Building2} label="Section" value={displayData?.Section} />
           <InfoCard icon={BadgeCheck} label="Designation" value={displayData?.Designation} />
+          <InfoCard icon={BadgeCheck} label="Level" value={displayData?.Level} />
           <InfoCard icon={Users} label="Superior" value={displayData?.Superior} />
-          <InfoCard icon={Calendar} label="Date of Join" value={formatDate(displayData?.['Date of Join'])} />
+          <InfoCard icon={Calendar} label="Date of Join (DOJ)" value={formatDate(displayData?.DOJ || displayData?.['Date of Join'])} />
+          <InfoCard icon={FileText} label="Work Permit No" value={displayData?.WPNo} />
         </div>
       </Section>
 
@@ -420,8 +422,24 @@ export default function EmployeeDetail() {
         </div>
       </Section>
 
+      {/* ID Documents & Expiry Section */}
+      <Section title="ID Documents & Expiry Dates" icon={FileText}>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <InfoCard icon={FileText} label="NIC Number" value={displayData?.NICNo} />
+          <InfoCard icon={Calendar} label="NIC Expiry" value={formatDate(displayData?.NICExpiry)} />
+          <InfoCard icon={FileText} label="Passport Number" value={displayData?.PassportNo} />
+          <InfoCard icon={Calendar} label="Passport Expiry" value={formatDate(displayData?.PassportExpiry)} />
+          <InfoCard icon={Calendar} label="PP Expiry" value={formatDate(displayData?.PPExpiry)} />
+          <InfoCard icon={Calendar} label="WP Expiry" value={formatDate(displayData?.WPExpiry)} />
+          <InfoCard icon={Calendar} label="Fee Expiry" value={formatDate(displayData?.FeeExpiry)} />
+          <InfoCard icon={Calendar} label="Medical Expiry" value={formatDate(displayData?.MedExpiry)} />
+          <InfoCard icon={Calendar} label="Insurance Expiry" value={formatDate(displayData?.InsExpiry)} />
+          <InfoCard icon={Calendar} label="Visa Expiry" value={formatDate(displayData?.VisaExpiry)} />
+        </div>
+      </Section>
+
       {/* Documents Section */}
-      <Section title="Documents" icon={FileText}>
+      <Section title="Uploaded Documents" icon={FileText}>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <DocumentCard
             title="Passport"

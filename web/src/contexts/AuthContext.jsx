@@ -188,7 +188,7 @@ export function AuthProvider({ children }) {
   const currentRole = userData?.role;
   
   // Legacy checks for backward compatibility
-  const isHR = () => ['hrm', 'hr', 'admin', 'superadmin', 'gm'].includes(userData?.role);
+  const isHR = () => ['hrm', 'ahrm', 'hr', 'admin', 'superadmin', 'gm'].includes(userData?.role);
   const isGM = () => ['gm', 'general_manager', 'admin', 'superadmin'].includes(userData?.role);
   const isHRorGM = () => isHR() || isGM();
   const isAdmin = () => ['admin', 'superadmin'].includes(userData?.role);

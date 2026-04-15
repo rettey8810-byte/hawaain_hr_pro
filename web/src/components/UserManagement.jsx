@@ -842,6 +842,113 @@ export default function UserManagement() {
           </div>
         </div>
       )}
+
+      {/* Permissions Management Modal */}
+      {showPermissionsModal && selectedUser && (
+        <div className="fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg max-w-4xl w-full p-6 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <h3 className="text-lg font-medium text-gray-900">Manage Permissions</h3>
+                <p className="text-sm text-gray-500">
+                  {selectedUser.fullName || selectedUser.name} ({ROLE_HIERARCHY[selectedUser.role]?.label})
+                </p>
+              </div>
+              <button onClick={() => setShowPermissionsModal(false)}>
+                <X className="h-5 w-5 text-gray-400" />
+              </button>
+            </div>
+
+            <p className="text-sm text-gray-600 mb-4 bg-blue-50 p-3 rounded">
+              <strong>Note:</strong> Toggle permissions to customize access. Changes override default role permissions.
+            </p>
+
+            <div className="space-y-4">
+              {FEATURES.map((feature, idx) => {
+                // Feature color scheme - vibrant colors
+                const colorSchemes = [
+                  { bg: 'bg-pink-100', text: 'text-pink-700', border: 'border-pink-300', icon: 'text-pink-600' },
+                  { bg: 'bg-purple-100', text: 'text-purple-700', border: 'border-purple-300', icon: 'text-purple-600' },
+                  { bg: 'bg-indigo-100', text: 'text-indigo-700', border: 'border-indigo-300', icon: 'text-indigo-600' },
+                  { bg: 'bg-blue-100', text: 'text-blue-700', border: 'border-blue-300', icon: 'text-blue-600' },
+                  { bg: 'bg-cyan-100', text: 'text-cyan-700', border: 'border-cyan-300', icon: 'text-cyan-600' },
+                  { bg: 'bg-teal-100', text: 'text-teal-700', border: 'border-teal-300', icon: 'text-teal-600' },
+                  { bg: 'bg-emerald-100', text: 'text-emerald-700', border: 'border-emerald-300', icon: 'text-emerald-600' },
+                  { bg: 'bg-green-100', text: 'text-green-700', border: 'border-green-300', icon: 'text-green-600' },
+                  { bg: 'bg-lime-100', text: 'text-lime-700', border: 'border-lime-300', icon: 'text-lime-600' },
+                  { bg: 'bg-yellow-100', text: 'text-yellow-700', border: 'border-yellow-300', icon: 'text-yellow-600' },
+                  { bg: 'bg-amber-100', text: 'text-amber-700', border: 'border-amber-300', icon: 'text-amber-600' },
+                  { bg: 'bg-orange-100', text: 'text-orange-700', border: 'border-orange-300', icon: 'text-orange-600' },
+                  { bg: 'bg-red-100', text: 'text-red-700', border: 'border-red-300', icon: 'text-red-600' },
+                  { bg: 'bg-rose-100', text: 'text-rose-700', border: 'border-rose-300', icon: 'text-rose-600' },
+                  { bg: 'bg-fuchsia-100', text: 'text-fuchsia-700', border: 'border-fuchsia-300', icon: 'text-fuchsia-600' },
+                  { bg: 'bg-violet-100', text: 'text-violet-700', border: 'border-violet-300', icon: 'text-violet-600' }
+                ];
+                const colors = colorSchemes[idx % colorSchemes.length];
+
+                return (
+                  <div key={feature.id} className={`${colors.bg} ${colors.border} border-2 rounded-xl p-4 shadow-sm`}>
+                    <h4 className={`font-bold ${colors.text} mb-3 flex items-center gap-2 text-base`}>
+                      <Shield className={`h-5 w-5 ${colors.icon}`} />
+                      {feature.label}
+                    </h4>
+                    <div className="flex flex-wrap gap-2">
+                      {feature.actions.map(action => {
+                        const isEnabled = userPermissions[feature.id]?.[action] || false;
+                        return (
+                          <button
+                            key={action}
+                            onClick={() => togglePermission(feature.id, action)}
+                            className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-bold transition-all transform hover:scale-105 shadow-md ${
+                              isEnabled
+                                ? 'bg-gradient-to-r from-emerald-400 to-emerald-600 text-white shadow-emerald-200'
+                                : 'bg-white text-gray-500 border-2 border-gray-300 hover:border-gray-400'
+                            }`}
+                          >
+                            {isEnabled ? (
+                              <ToggleRight className="h-5 w-5" />
+                            ) : (
+                              <ToggleLeft className="h-5 w-5" />
+                            )}
+                            <span className="uppercase tracking-wide">{action}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            <div className="flex justify-end space-x-3 pt-6 mt-4 border-t">
+              <button
+                type="button"
+                onClick={() => setShowPermissionsModal(false)}
+                className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded hover:bg-gray-200"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSavePermissions}
+                disabled={permissionsLoading}
+                className="px-4 py-2 text-sm font-medium text-white bg-purple-600 rounded hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+              >
+                {permissionsLoading ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    Saving...
+                  </>
+                ) : (
+                  <>
+                    <CheckCircle className="h-4 w-4" />
+                    Save Permissions
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

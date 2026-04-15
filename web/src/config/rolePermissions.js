@@ -52,135 +52,198 @@ export const DEFAULT_FEATURE_PERMISSIONS = {
   superadmin: {
     companies: { view: true, create: true, edit: true, delete: true },
     employees: { view: true, create: true, edit: true, delete: true },
-    salary: { view: true, edit: true },
-    payroll: { view: true, run: true },
-    recruitment: { view: true, create: true, edit: true, delete: true },
-    documents: { view: true, create: true, edit: true, delete: true },
-    leave: { view: true, apply: true, approve: true },
-    reports: { view: true, export: true },
-    settings: { view: true, edit: true },
-    users: { view: true, create: true, edit: true, delete: true },
+    salary: { view: true, edit: true, viewOwn: true, viewDepartment: true, viewAll: true },
+    payroll: { view: true, run: true, approve: true, process: true },
+    recruitment: { view: true, create: true, edit: true, delete: true, approve: true, reject: true },
+    documents: { view: true, create: true, edit: true, delete: true, upload: true, download: true },
+    leave: { view: true, apply: true, approve: true, reject: true, viewAll: true, viewDepartment: true },
+    reports: { view: true, export: true, create: true, schedule: true },
+    settings: { view: true, edit: true, configure: true },
+    users: { view: true, create: true, edit: true, delete: true, resetPassword: true, managePermissions: true },
+    // Approval Workflows
+    approvals: { view: true, approve: true, reject: true, delegate: true, viewPending: true, viewHistory: true },
+    promotions: { view: true, create: true, approve: true, reject: true, process: true },
+    disciplinary: { view: true, create: true, approve: true, reject: true, execute: true },
+    terminations: { view: true, create: true, approve: true, process: true, offboard: true },
     // v2.0 New Features
-    timeAttendance: { view: true, clockIn: true, manage: true },
-    benefits: { view: true, create: true, edit: true, approve: true },
-    engagement: { view: true, create: true, manage: true },
-    compliance: { view: true, manage: true, process: true },
-    integrations: { view: true, configure: true, manage: true },
-    analytics: { view: true, create: true, export: true }
+    timeAttendance: { view: true, clockIn: true, manage: true, approveOvertime: true, approveTimesheet: true },
+    benefits: { view: true, create: true, edit: true, approve: true, enroll: true, processClaims: true },
+    engagement: { view: true, create: true, manage: true, surveys: true, feedback: true },
+    compliance: { view: true, manage: true, process: true, audit: true, reports: true },
+    integrations: { view: true, configure: true, manage: true, apiAccess: true },
+    analytics: { view: true, create: true, export: true, dashboards: true, predictive: true },
+    training: { view: true, create: true, assign: true, track: true, certify: true },
+    performance: { view: true, create: true, evaluate: true, approve: true, calibrate: true },
+    orgStructure: { view: true, edit: true, chart: true, manageHierarchy: true },
+    notifications: { view: true, send: true, configure: true, manageTemplates: true }
   },
   gm: {
     companies: { view: false, create: false, edit: false, delete: false },
     employees: { view: true, create: true, edit: true, delete: false },
-    salary: { view: true, edit: true },
-    payroll: { view: true, run: true },
-    recruitment: { view: true, create: true, edit: true, delete: false },
-    documents: { view: true, create: true, edit: true, delete: false },
-    leave: { view: true, apply: true, approve: true },
-    reports: { view: true, export: true },
-    settings: { view: true, edit: false },
-    users: { view: true, create: true, edit: true, delete: false },
+    salary: { view: true, edit: true, viewOwn: true, viewDepartment: true, viewAll: true },
+    payroll: { view: true, run: true, approve: true, process: true },
+    recruitment: { view: true, create: true, edit: true, delete: false, approve: true, reject: true },
+    documents: { view: true, create: true, edit: true, delete: false, upload: true, download: true },
+    leave: { view: true, apply: true, approve: true, reject: true, viewAll: true, viewDepartment: true },
+    reports: { view: true, export: true, create: true, schedule: true },
+    settings: { view: true, edit: false, configure: false },
+    users: { view: true, create: true, edit: true, delete: false, resetPassword: true, managePermissions: true },
+    // Approval Workflows
+    approvals: { view: true, approve: true, reject: true, delegate: true, viewPending: true, viewHistory: true },
+    promotions: { view: true, create: true, approve: true, reject: true, process: true },
+    disciplinary: { view: true, create: true, approve: true, reject: true, execute: true },
+    terminations: { view: true, create: true, approve: true, process: true, offboard: true },
     // v2.0 New Features
-    timeAttendance: { view: true, clockIn: true, manage: true },
-    benefits: { view: true, create: true, edit: true, approve: true },
-    engagement: { view: true, create: true, manage: true },
-    compliance: { view: true, manage: true, process: true },
-    integrations: { view: true, configure: false, manage: false },
-    analytics: { view: true, create: true, export: true }
+    timeAttendance: { view: true, clockIn: true, manage: true, approveOvertime: true, approveTimesheet: true },
+    benefits: { view: true, create: true, edit: true, approve: true, enroll: true, processClaims: true },
+    engagement: { view: true, create: true, manage: true, surveys: true, feedback: true },
+    compliance: { view: true, manage: true, process: true, audit: true, reports: true },
+    integrations: { view: true, configure: false, manage: false, apiAccess: false },
+    analytics: { view: true, create: true, export: true, dashboards: true, predictive: true },
+    training: { view: true, create: true, assign: true, track: true, certify: true },
+    performance: { view: true, create: true, evaluate: true, approve: true, calibrate: true },
+    orgStructure: { view: true, edit: true, chart: true, manageHierarchy: true },
+    notifications: { view: true, send: true, configure: true, manageTemplates: true }
   },
   hrm: {
     companies: { view: false, create: false, edit: false, delete: false },
     employees: { view: true, create: true, edit: true, delete: false },
-    salary: { view: true, edit: true },
-    payroll: { view: true, run: true },
-    recruitment: { view: true, create: true, edit: true, delete: false },
-    documents: { view: true, create: true, edit: true, delete: false },
-    leave: { view: true, apply: true, approve: true },
-    reports: { view: true, export: true },
-    settings: { view: true, edit: false },
-    users: { view: true, create: true, edit: true, delete: false },
+    salary: { view: true, edit: true, viewOwn: true, viewDepartment: true, viewAll: true },
+    payroll: { view: true, run: true, approve: true, process: true },
+    recruitment: { view: true, create: true, edit: true, delete: false, approve: true, reject: true },
+    documents: { view: true, create: true, edit: true, delete: false, upload: true, download: true },
+    leave: { view: true, apply: true, approve: true, reject: true, viewAll: true, viewDepartment: true },
+    reports: { view: true, export: true, create: true, schedule: false },
+    settings: { view: true, edit: false, configure: false },
+    users: { view: true, create: true, edit: true, delete: false, resetPassword: true, managePermissions: true },
+    // Approval Workflows
+    approvals: { view: true, approve: true, reject: true, delegate: true, viewPending: true, viewHistory: true },
+    promotions: { view: true, create: true, approve: true, reject: true, process: true },
+    disciplinary: { view: true, create: true, approve: true, reject: true, execute: true },
+    terminations: { view: true, create: true, approve: true, process: true, offboard: true },
     // v2.0 New Features
-    timeAttendance: { view: true, clockIn: true, manage: true },
-    benefits: { view: true, create: true, edit: true, approve: true },
-    engagement: { view: true, create: true, manage: true },
-    compliance: { view: true, manage: true, process: true },
-    integrations: { view: true, configure: false, manage: false },
-    analytics: { view: true, create: true, export: true }
+    timeAttendance: { view: true, clockIn: true, manage: true, approveOvertime: true, approveTimesheet: true },
+    benefits: { view: true, create: true, edit: true, approve: true, enroll: true, processClaims: true },
+    engagement: { view: true, create: true, manage: true, surveys: true, feedback: true },
+    compliance: { view: true, manage: true, process: true, audit: true, reports: true },
+    integrations: { view: true, configure: false, manage: false, apiAccess: false },
+    analytics: { view: true, create: true, export: true, dashboards: true, predictive: false },
+    training: { view: true, create: true, assign: true, track: true, certify: true },
+    performance: { view: true, create: true, evaluate: true, approve: true, calibrate: true },
+    orgStructure: { view: true, edit: true, chart: true, manageHierarchy: true },
+    notifications: { view: true, send: true, configure: true, manageTemplates: true }
   },
   dept_head: {
     companies: { view: false, create: false, edit: false, delete: false },
     employees: { view: true, create: false, edit: false, delete: false },
-    salary: { view: false, edit: false },
-    payroll: { view: false, run: false },
-    recruitment: { view: true, create: false, edit: false, delete: false },
-    documents: { view: true, create: false, edit: false, delete: false },
-    leave: { view: true, apply: true, approve: true },
-    reports: { view: true, export: false },
-    settings: { view: false, edit: false },
-    users: { view: true, create: true, edit: false, delete: false },
+    salary: { view: false, edit: false, viewOwn: true, viewDepartment: true, viewAll: false },
+    payroll: { view: false, run: false, approve: false, process: false },
+    recruitment: { view: true, create: false, edit: false, delete: false, approve: false, reject: false },
+    documents: { view: true, create: false, edit: false, delete: false, upload: true, download: true },
+    leave: { view: true, apply: true, approve: true, reject: true, viewAll: false, viewDepartment: true },
+    reports: { view: true, export: false, create: false, schedule: false },
+    settings: { view: false, edit: false, configure: false },
+    users: { view: true, create: true, edit: false, delete: false, resetPassword: false, managePermissions: false },
+    // Approval Workflows
+    approvals: { view: true, approve: true, reject: true, delegate: false, viewPending: true, viewHistory: false },
+    promotions: { view: true, create: false, approve: true, reject: true, process: false },
+    disciplinary: { view: true, create: true, approve: false, reject: false, execute: false },
+    terminations: { view: true, create: false, approve: true, process: false, offboard: false },
     // v2.0 New Features
-    timeAttendance: { view: true, clockIn: true, manage: false },
-    benefits: { view: true, create: false, edit: false, approve: false },
-    engagement: { view: true, create: true, manage: false },
-    compliance: { view: false, manage: false, process: false },
-    integrations: { view: false, configure: false, manage: false },
-    analytics: { view: false, create: false, export: false }
+    timeAttendance: { view: true, clockIn: true, manage: false, approveOvertime: true, approveTimesheet: true },
+    benefits: { view: true, create: false, edit: false, approve: false, enroll: false, processClaims: false },
+    engagement: { view: true, create: true, manage: false, surveys: true, feedback: true },
+    compliance: { view: false, manage: false, process: false, audit: false, reports: false },
+    integrations: { view: false, configure: false, manage: false, apiAccess: false },
+    analytics: { view: false, create: false, export: false, dashboards: false, predictive: false },
+    training: { view: true, create: false, assign: true, track: true, certify: false },
+    performance: { view: true, create: false, evaluate: true, approve: false, calibrate: false },
+    orgStructure: { view: true, edit: false, chart: true, manageHierarchy: false },
+    notifications: { view: true, send: false, configure: false, manageTemplates: false }
   },
   supervisor: {
     companies: { view: false, create: false, edit: false, delete: false },
     employees: { view: true, create: false, edit: false, delete: false },
-    salary: { view: false, edit: false },
-    payroll: { view: false, run: false },
-    recruitment: { view: false, create: false, edit: false, delete: false },
-    documents: { view: false, create: false, edit: false, delete: false },
-    leave: { view: true, apply: true, approve: true },
-    reports: { view: false, export: false },
-    settings: { view: false, edit: false },
-    users: { view: true, create: true, edit: false, delete: false },
+    salary: { view: false, edit: false, viewOwn: true, viewDepartment: false, viewAll: false },
+    payroll: { view: false, run: false, approve: false, process: false },
+    recruitment: { view: false, create: false, edit: false, delete: false, approve: false, reject: false },
+    documents: { view: false, create: false, edit: false, delete: false, upload: false, download: false },
+    leave: { view: true, apply: true, approve: true, reject: true, viewAll: false, viewDepartment: false },
+    reports: { view: false, export: false, create: false, schedule: false },
+    settings: { view: false, edit: false, configure: false },
+    users: { view: true, create: true, edit: false, delete: false, resetPassword: false, managePermissions: false },
+    // Approval Workflows
+    approvals: { view: true, approve: true, reject: true, delegate: false, viewPending: true, viewHistory: false },
+    promotions: { view: false, create: false, approve: false, reject: false, process: false },
+    disciplinary: { view: false, create: false, approve: false, reject: false, execute: false },
+    terminations: { view: false, create: false, approve: false, process: false, offboard: false },
     // v2.0 New Features
-    timeAttendance: { view: true, clockIn: true, manage: false },
-    benefits: { view: true, create: false, edit: false, approve: false },
-    engagement: { view: true, create: true, manage: false },
-    compliance: { view: false, manage: false, process: false },
-    integrations: { view: false, configure: false, manage: false },
-    analytics: { view: false, create: false, export: false }
+    timeAttendance: { view: true, clockIn: true, manage: false, approveOvertime: false, approveTimesheet: true },
+    benefits: { view: true, create: false, edit: false, approve: false, enroll: false, processClaims: false },
+    engagement: { view: true, create: true, manage: false, surveys: true, feedback: true },
+    compliance: { view: false, manage: false, process: false, audit: false, reports: false },
+    integrations: { view: false, configure: false, manage: false, apiAccess: false },
+    analytics: { view: false, create: false, export: false, dashboards: false, predictive: false },
+    training: { view: true, create: false, assign: false, track: false, certify: false },
+    performance: { view: true, create: false, evaluate: false, approve: false, calibrate: false },
+    orgStructure: { view: true, edit: false, chart: true, manageHierarchy: false },
+    notifications: { view: true, send: false, configure: false, manageTemplates: false }
   },
   staff: {
     companies: { view: false, create: false, edit: false, delete: false },
     employees: { view: false, create: false, edit: false, delete: false },
-    salary: { view: false, edit: false },
-    payroll: { view: false, run: false },
-    recruitment: { view: false, create: false, edit: false, delete: false },
-    documents: { view: false, create: false, edit: false, delete: false },
-    leave: { view: true, apply: true, approve: false },
-    reports: { view: false, export: false },
-    settings: { view: false, edit: false },
-    users: { view: false, create: false, edit: false, delete: false },
+    salary: { view: false, edit: false, viewOwn: false, viewDepartment: false, viewAll: false },
+    payroll: { view: false, run: false, approve: false, process: false },
+    recruitment: { view: false, create: false, edit: false, delete: false, approve: false, reject: false },
+    documents: { view: false, create: false, edit: false, delete: false, upload: false, download: false },
+    leave: { view: true, apply: true, approve: false, reject: false, viewAll: false, viewDepartment: false },
+    reports: { view: false, export: false, create: false, schedule: false },
+    settings: { view: false, edit: false, configure: false },
+    users: { view: false, create: false, edit: false, delete: false, resetPassword: false, managePermissions: false },
+    // Approval Workflows
+    approvals: { view: false, approve: false, reject: false, delegate: false, viewPending: false, viewHistory: false },
+    promotions: { view: false, create: false, approve: false, reject: false, process: false },
+    disciplinary: { view: false, create: false, approve: false, reject: false, execute: false },
+    terminations: { view: false, create: false, approve: false, process: false, offboard: false },
     // v2.0 New Features
-    timeAttendance: { view: true, clockIn: true, manage: false },
-    benefits: { view: true, create: false, edit: false, approve: false },
-    engagement: { view: true, create: true, manage: false },
-    compliance: { view: false, manage: false, process: false },
-    integrations: { view: false, configure: false, manage: false },
-    analytics: { view: false, create: false, export: false }
+    timeAttendance: { view: true, clockIn: true, manage: false, approveOvertime: false, approveTimesheet: false },
+    benefits: { view: true, create: false, edit: false, approve: false, enroll: false, processClaims: false },
+    engagement: { view: true, create: true, manage: false, surveys: true, feedback: true },
+    compliance: { view: false, manage: false, process: false, audit: false, reports: false },
+    integrations: { view: false, configure: false, manage: false, apiAccess: false },
+    analytics: { view: false, create: false, export: false, dashboards: false, predictive: false },
+    training: { view: true, create: false, assign: false, track: false, certify: false },
+    performance: { view: true, create: false, evaluate: false, approve: false, calibrate: false },
+    orgStructure: { view: true, edit: false, chart: true, manageHierarchy: false },
+    notifications: { view: true, send: false, configure: false, manageTemplates: false }
   },
   employee: {
     companies: { view: false, create: false, edit: false, delete: false },
     employees: { view: false, create: false, edit: false, delete: false },
-    salary: { view: true, edit: false },
-    payroll: { view: false, run: false },
-    recruitment: { view: false, create: false, edit: false, delete: false },
-    documents: { view: true, create: false, edit: false, delete: false },
-    leave: { view: true, apply: true, approve: false },
-    reports: { view: false, export: false },
-    settings: { view: false, edit: false },
-    users: { view: false, create: false, edit: false, delete: false },
+    salary: { view: true, edit: false, viewOwn: true, viewDepartment: false, viewAll: false },
+    payroll: { view: false, run: false, approve: false, process: false },
+    recruitment: { view: false, create: false, edit: false, delete: false, approve: false, reject: false },
+    documents: { view: true, create: false, edit: false, delete: false, upload: false, download: true },
+    leave: { view: true, apply: true, approve: false, reject: false, viewAll: false, viewDepartment: false },
+    reports: { view: false, export: false, create: false, schedule: false },
+    settings: { view: false, edit: false, configure: false },
+    users: { view: false, create: false, edit: false, delete: false, resetPassword: false, managePermissions: false },
+    // Approval Workflows
+    approvals: { view: false, approve: false, reject: false, delegate: false, viewPending: false, viewHistory: false },
+    promotions: { view: false, create: false, approve: false, reject: false, process: false },
+    disciplinary: { view: false, create: false, approve: false, reject: false, execute: false },
+    terminations: { view: false, create: false, approve: false, process: false, offboard: false },
     // v2.0 New Features
-    timeAttendance: { view: true, clockIn: true, manage: false },
-    benefits: { view: true, create: false, edit: false, approve: false },
-    engagement: { view: true, create: true, manage: false },
-    compliance: { view: false, manage: false, process: false },
-    integrations: { view: false, configure: false, manage: false },
-    analytics: { view: false, create: false, export: false }
+    timeAttendance: { view: true, clockIn: true, manage: false, approveOvertime: false, approveTimesheet: false },
+    benefits: { view: true, create: false, edit: false, approve: false, enroll: false, processClaims: false },
+    engagement: { view: true, create: true, manage: false, surveys: true, feedback: true },
+    compliance: { view: false, manage: false, process: false, audit: false, reports: false },
+    integrations: { view: false, configure: false, manage: false, apiAccess: false },
+    analytics: { view: false, create: false, export: false, dashboards: false, predictive: false },
+    training: { view: true, create: false, assign: false, track: false, certify: false },
+    performance: { view: true, create: false, evaluate: false, approve: false, calibrate: false },
+    orgStructure: { view: true, edit: false, chart: true, manageHierarchy: false },
+    notifications: { view: true, send: false, configure: false, manageTemplates: false }
   }
 };
 
@@ -233,23 +296,71 @@ export const ALL_ROLES = Object.keys(ROLE_HIERARCHY).map(role => ({
 }));
 
 export const FEATURES = [
-  { id: 'companies', label: 'Companies', actions: ['view', 'create', 'edit', 'delete'] },
-  { id: 'employees', label: 'Employees', actions: ['view', 'create', 'edit', 'delete'] },
-  { id: 'salary', label: 'Salary Information', actions: ['view', 'edit'] },
-  { id: 'payroll', label: 'Payroll', actions: ['view', 'run'] },
-  { id: 'recruitment', label: 'Recruitment', actions: ['view', 'create', 'edit', 'delete'] },
-  { id: 'documents', label: 'Documents', actions: ['view', 'create', 'edit', 'delete'] },
-  { id: 'leave', label: 'Leave Management', actions: ['view', 'apply', 'approve'] },
-  { id: 'reports', label: 'Reports', actions: ['view', 'export'] },
-  { id: 'settings', label: 'Settings', actions: ['view', 'edit'] },
-  { id: 'users', label: 'User Management', actions: ['view', 'create', 'edit', 'delete'] },
-  // v2.0 New Features
-  { id: 'timeAttendance', label: 'Time & Attendance', actions: ['view', 'clockIn', 'manage'] },
-  { id: 'benefits', label: 'Benefits Management', actions: ['view', 'create', 'edit', 'approve'] },
-  { id: 'engagement', label: 'Employee Engagement', actions: ['view', 'create', 'manage'] },
-  { id: 'compliance', label: 'Compliance & Legal', actions: ['view', 'manage', 'process'] },
-  { id: 'integrations', label: 'Integrations Hub', actions: ['view', 'configure', 'manage'] },
-  { id: 'analytics', label: 'HR Analytics', actions: ['view', 'create', 'export'] }
+  // ============================================
+  // SECTION 1: BASIC ADMIN - No Approval Required
+  // Simple CRUD operations, direct access
+  // ============================================
+  { id: 'companies', label: '🏢 Companies', actions: ['view', 'create', 'edit', 'delete'] },
+  { id: 'employees', label: '👥 Employees', actions: ['view', 'create', 'edit', 'delete'] },
+  { id: 'documents', label: '📄 Documents', actions: ['view', 'create', 'edit', 'delete', 'upload', 'download'] },
+  { id: 'reports', label: '📊 Reports', actions: ['view', 'export', 'create', 'schedule'] },
+  { id: 'settings', label: '⚙️ Settings', actions: ['view', 'edit', 'configure'] },
+  { id: 'analytics', label: '📈 HR Analytics', actions: ['view', 'create', 'export', 'dashboards', 'predictive'] },
+  { id: 'orgStructure', label: '🏗️ Organization Structure', actions: ['view', 'edit', 'chart', 'manageHierarchy'] },
+  { id: 'integrations', label: '🔌 Integrations Hub', actions: ['view', 'configure', 'manage', 'apiAccess'] },
+  { id: 'notifications', label: '🔔 Notifications', actions: ['view', 'send', 'configure', 'manageTemplates'] },
+
+  // ============================================
+  // SECTION 2: USER MANAGEMENT - Special Access
+  // Requires high-level permissions
+  // ============================================
+  { id: 'users', label: '👤 User Management', actions: ['view', 'create', 'edit', 'delete', 'resetPassword', 'managePermissions'] },
+
+  // ============================================
+  // SECTION 3: SALARY & PAYROLL - Multi-Level Views
+  // Different view levels based on access
+  // ============================================
+  { id: 'salary', label: '💰 Salary Management', actions: ['viewOwn', 'viewDepartment', 'viewAll', 'edit'] },
+  { id: 'payroll', label: '💵 Payroll', actions: ['view', 'run', 'approve', 'process'] },
+
+  // ============================================
+  // SECTION 4: APPROVAL REQUIRED FEATURES
+  // These features NEED approve/reject permissions
+  // Toggle both user action + approval workflow
+  // ============================================
+  
+  // 4A: Leave & Time (Standard Approval)
+  { id: 'leave', label: '📅 Leave Management', actions: ['view', 'apply', 'approve', 'reject', 'viewAll', 'viewDepartment'] },
+  { id: 'timeAttendance', label: '⏰ Time & Attendance', actions: ['view', 'clockIn', 'manage', 'approveOvertime', 'approveTimesheet'] },
+  
+  // 4B: HR Processes (Multi-Stage Approval)
+  { id: 'recruitment', label: '🎯 Recruitment', actions: ['view', 'create', 'edit', 'delete', 'approve', 'reject'] },
+  { id: 'promotions', label: '⬆️ Promotions', actions: ['view', 'create', 'approve', 'reject', 'process'] },
+  { id: 'disciplinary', label: '⚠️ Disciplinary Actions', actions: ['view', 'create', 'approve', 'reject', 'execute'] },
+  { id: 'terminations', label: '🚪 Terminations', actions: ['view', 'create', 'approve', 'process', 'offboard'] },
+  
+  // 4C: Benefits & Compensation (Financial Approval)
+  { id: 'benefits', label: '🎁 Benefits Management', actions: ['view', 'create', 'edit', 'approve', 'enroll', 'processClaims'] },
+
+  // ============================================
+  // SECTION 5: EMPLOYEE DEVELOPMENT - View/Create Only
+  // Generally no approval needed, self-service
+  // ============================================
+  { id: 'training', label: '📚 Training & Development', actions: ['view', 'create', 'assign', 'track', 'certify'] },
+  { id: 'performance', label: '⭐ Performance Reviews', actions: ['view', 'create', 'evaluate', 'approve', 'calibrate'] },
+  { id: 'engagement', label: '💬 Employee Engagement', actions: ['view', 'create', 'manage', 'surveys', 'feedback'] },
+  
+  // ============================================
+  // SECTION 6: COMPLIANCE - Audit Required
+  // Audit trail, may need approval for changes
+  // ============================================
+  { id: 'compliance', label: '⚖️ Compliance & Legal', actions: ['view', 'manage', 'process', 'audit', 'reports'] },
+
+  // ============================================
+  // SECTION 7: APPROVAL CENTER - Meta Feature
+  // Access to approve anything across system
+  // ============================================
+  { id: 'approvals', label: '✅ Approval Center', actions: ['view', 'approve', 'reject', 'delegate', 'viewPending', 'viewHistory'] }
 ];
 
 // ============================================

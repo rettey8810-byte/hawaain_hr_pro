@@ -45,8 +45,9 @@ export default function EmployeeForm() {
     'Department ': '',
     Section: '',
     Designation: '',
+    Level: '',
     Superior: '',
-    'Date of Join': '',
+    DOJ: '',
     status: 'active',
     
     // Personal Info
@@ -80,6 +81,17 @@ export default function EmployeeForm() {
     NICExpiry: '',
     PassportNo: '',
     PassportExpiry: '',
+    PPExpiry: '',
+    
+    // Work Permit
+    WPNo: '',
+    WPExpiry: '',
+    FeeExpiry: '',
+    
+    // Insurance & Medical
+    MedExpiry: '',
+    InsExpiry: '',
+    VisaExpiry: '',
     
     // Emergency Contact 1
     EmergencyContactName1: '',
@@ -323,8 +335,9 @@ export default function EmployeeForm() {
                   name="Designation" 
                   options={companyDesignations.map(d => d.title)} 
                 />
+                <InputField label="Level" name="Level" placeholder="e.g., Default, Executive" />
                 <InputField label="Superior/Manager" name="Superior" />
-                <InputField label="Date of Join" name="Date of Join" type="date" />
+                <InputField label="Date of Join (DOJ)" name="DOJ" type="date" />
               </div>
             </div>
           )}
@@ -412,11 +425,30 @@ export default function EmployeeForm() {
                 <Shield className="h-5 w-5 text-blue-600" />
                 ID Documents
               </h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <InputField label="NIC Number" name="NICNo" />
                 <InputField label="NIC Expiry" name="NICExpiry" type="date" />
                 <InputField label="Passport Number" name="PassportNo" />
                 <InputField label="Passport Expiry" name="PassportExpiry" type="date" />
+                <InputField label="PP Expiry" name="PPExpiry" type="date" />
+              </div>
+              
+              <div className="mt-6 border-t pt-6">
+                <h4 className="font-medium text-gray-900 mb-4">Work Permit Details</h4>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  <InputField label="Work Permit No (WPNo)" name="WPNo" />
+                  <InputField label="WP Expiry" name="WPExpiry" type="date" />
+                  <InputField label="Fee Expiry" name="FeeExpiry" type="date" />
+                </div>
+              </div>
+              
+              <div className="mt-6 border-t pt-6">
+                <h4 className="font-medium text-gray-900 mb-4">Insurance & Medical</h4>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  <InputField label="Medical Expiry" name="MedExpiry" type="date" />
+                  <InputField label="Insurance Expiry" name="InsExpiry" type="date" />
+                  <InputField label="Visa Expiry" name="VisaExpiry" type="date" />
+                </div>
               </div>
             </div>
           )}

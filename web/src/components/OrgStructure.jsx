@@ -305,6 +305,17 @@ export default function OrgStructure() {
               <Network className="h-4 w-4" />
               Chart
             </button>
+            <button
+              onClick={() => setViewMode('leadership')}
+              className={`flex items-center gap-2 px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                viewMode === 'leadership'
+                  ? 'bg-white text-violet-700 shadow-sm'
+                  : 'text-gray-600 hover:text-gray-900'
+              }`}
+            >
+              <Crown className="h-4 w-4" />
+              Leadership
+            </button>
           </div>
         </div>
       </div>
@@ -601,6 +612,97 @@ export default function OrgStructure() {
                   </div>
                 );
               })}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Leadership View - GM and Department Heads */}
+      {viewMode === 'leadership' && (
+        <div className="bg-white rounded-xl shadow-sm p-6">
+          {orgStructure.length === 0 ? (
+            <div className="p-12 text-center">
+              <Crown className="h-16 w-16 mx-auto mb-4 text-gray-300" />
+              <p className="text-gray-500 text-lg">No leadership data found</p>
+            </div>
+          ) : (
+            <div className="space-y-8">
+              {/* GM Section */}
+              <div className="bg-gradient-to-r from-amber-50 to-orange-50 border-2 border-amber-200 rounded-xl p-6">
+                <h3 className="text-xl font-bold text-amber-800 mb-4 flex items-center gap-2">
+                  <Crown className="h-6 w-6 text-amber-600" />
+                  General Manager
+                </h3>
+                <div className="flex flex-wrap gap-4">
+                  {companyEmployees
+                    .filter(e => {
+                      const desig = (e.Designation || e.position || '').toLowerCase();
+                      return desig.includes('gm') || desig.includes('general manager') || desig.includes('director') || desig.includes('ceo');
+                    })
+                    .map(emp => (
+                      <div key={emp.id} className="flex items-center gap-3 bg-white rounded-lg p-3 shadow-sm border border-amber-200">
+                        <div className="h-14 w-14 rounded-full bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center text-white text-xl font-bold">
+                          {(emp.FullName || emp.name || 'U').charAt(0).toUpperCase()}
+                        </div>
+                        <div>
+                          <p className="font-semibold text-gray-900">{emp.FullName || emp.name}</p>
+                          <p className="text-sm text-amber-700 font-medium">{emp.Designation || emp.position}</p>
+                          <p className="text-xs text-gray-500">{emp['Department '] || emp.Department || 'N/A'}</p>
+                        </div>
+                      </div>
+                    ))}
+                </div>
+              </div>
+
+              {/* Department Heads Section */}
+              <div className="bg-gradient-to-r from-violet-50 to-purple-50 border-2 border-violet-200 rounded-xl p-6">
+                <h3 className="text-xl font-bold text-violet-800 mb-4 flex items-center gap-2">
+                  <Users className="h-6 w-6 text-violet-600" />
+                  Department Heads
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {companyEmployees
+                    .filter(e => {
+                      const desig = (e.Designation || e.position || '').toLowerCase();
+                      return desig.includes('head') || desig.includes('hod') || desig.includes('manager') || desig.includes('supervisor');
+                    })
+                    .sort((a, b) => (a['Department '] || a.Department || '').localeCompare(b['Department '] || b.Department || ''))
+                    .map(emp => (
+                      <div key={emp.id} className="flex items-center gap-3 bg-white rounded-lg p-3 shadow-sm border border-violet-200">
+                        <div className="h-12 w-12 rounded-full bg-gradient-to-br from-violet-400 to-purple-500 flex items-center justify-center text-white text-lg font-bold">
+                          {(emp.FullName || emp.name || 'U').charAt(0).toUpperCase()}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="font-semibold text-gray-900 truncate">{emp.FullName || emp.name}</p>
+                          <p className="text-sm text-violet-700 font-medium">{emp.Designation || emp.position}</p>
+                          <p className="text-xs text-gray-500">{emp['Department '] || emp.Department || 'N/A'}</p>
+                        </div>
+                      </div>
+                    ))}
+                </div>
+              </div>
+
+              {/* Summary Stats */}
+              <div className="grid grid-cols-2 gap-4">
+                <div className="bg-amber-100 rounded-lg p-4 text-center">
+                  <p className="text-3xl font-bold text-amber-800">
+                    {companyEmployees.filter(e => {
+                      const desig = (e.Designation || e.position || '').toLowerCase();
+                      return desig.includes('gm') || desig.includes('general manager') || desig.includes('director') || desig.includes('ceo');
+                    }).length}
+                  </p>
+                  <p className="text-sm text-amber-700 font-medium">Executives</p>
+                </div>
+                <div className="bg-violet-100 rounded-lg p-4 text-center">
+                  <p className="text-3xl font-bold text-violet-800">
+                    {companyEmployees.filter(e => {
+                      const desig = (e.Designation || e.position || '').toLowerCase();
+                      return desig.includes('head') || desig.includes('hod') || desig.includes('manager') || desig.includes('supervisor');
+                    }).length}
+                  </p>
+                  <p className="text-sm text-violet-700 font-medium">Department Heads</p>
+                </div>
+              </div>
             </div>
           )}
         </div>
