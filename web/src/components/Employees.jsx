@@ -10,10 +10,21 @@ import { calculateDaysRemaining } from '../utils/helpers';
 
 export default function Employees() {
   const { companyId } = useCompany();
-  const { isHR, hasAccess, filterByVisibility } = useAuth();
+  const { isHR, hasAccess, filterByVisibility, currentRole, userData } = useAuth();
   const canCreateEmployee = hasAccess('employees', 'create');
   const canEditEmployee = hasAccess('employees', 'edit');
   const canDeleteEmployee = hasAccess('employees', 'delete');
+  
+  // Debug logging for HRM permissions
+  useEffect(() => {
+    console.log('[Employees] Permission check:', {
+      currentRole,
+      isHR: isHR?.(),
+      canEditEmployee,
+      canDeleteEmployee,
+      userData: userData ? { role: userData.role, department: userData.department, companyId: userData.companyId, customPermissions: userData.customPermissions } : null
+    });
+  }, [currentRole, isHR, canEditEmployee, canDeleteEmployee, userData]);
   
   const [employees, setEmployees] = useState([]); // Local state for paginated employees
   const [loading, setLoading] = useState(false);
@@ -30,6 +41,7 @@ export default function Employees() {
   const [viewMode, setViewMode] = useState('grid');
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [selectedEmployee, setSelectedEmployee] = useState(null);
+  const [isSearching, setIsSearching] = useState(false);
 
   const PAGE_SIZE = 50;
 
@@ -61,7 +73,17 @@ export default function Employees() {
       }
 
       const snapshot = await getDocs(q);
-      const newDocs = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+      let newDocs = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+
+      // Filter by department for dept_head and supervisor roles
+      const userRole = userData?.role;
+      const userDept = userData?.department;
+      if (['dept_head', 'supervisor'].includes(userRole) && userDept) {
+        newDocs = newDocs.filter(emp => {
+          const empDept = emp['Department '] || emp.Department || emp.department;
+          return empDept === userDept;
+        });
+      }
 
       if (newDocs.length < PAGE_SIZE) {
         setHasMore(false);
@@ -78,7 +100,7 @@ export default function Employees() {
     } finally {
       setLoading(false);
     }
-  }, [companyId, lastDoc]);
+  }, [companyId, lastDoc, userData]);
 
   // Fetch ALL employees for stats ONLY when requested (to save reads) - excluding terminated
   const fetchAllEmployeesForStats = useCallback(async () => {
@@ -200,10 +222,66 @@ export default function Employees() {
     return count;
   };
 
+  // Search all employees from Firestore when search term is entered
+  const searchAllEmployees = useCallback(async (term) => {
+    if (!companyId || !term.trim()) {
+      setIsSearching(false);
+      return;
+    }
+    
+    setIsSearching(true);
+    setLoading(true);
+    try {
+      // Fetch all employees for this company (without pagination limit)
+      const q = query(
+        collection(db, 'employees'),
+        where('companyId', '==', companyId),
+        where('status', '!=', 'terminated')
+      );
+      const snapshot = await getDocs(q);
+      const allDocs = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+      
+      // Filter client-side by search term
+      const searchLower = term.toLowerCase();
+      const matched = allDocs.filter(emp => {
+        const name = emp.FullName || emp.name || '';
+        const empId = emp.EmpID || emp.employeeId || '';
+        const nationality = emp.Nationality || emp.country || '';
+        return String(name).toLowerCase().includes(searchLower) ||
+               String(empId).toLowerCase().includes(searchLower) ||
+               String(nationality).toLowerCase().includes(searchLower);
+      });
+      
+      setEmployees(matched);
+      setHasMore(false); // Disable pagination when searching
+    } catch (err) {
+      console.error('Error searching employees:', err);
+    } finally {
+      setLoading(false);
+    }
+  }, [companyId]);
+
+  // Handle search input change
+  const handleSearchChange = (e) => {
+    const value = e.target.value;
+    setSearchTerm(value);
+    
+    if (value.trim()) {
+      // Search across all employees
+      searchAllEmployees(value);
+    } else {
+      // Reset to paginated view
+      setIsSearching(false);
+      setHasMore(true);
+      setLastDoc(null);
+      fetchEmployees(true);
+    }
+  };
+
   // Filter employees client-side (apply role-based visibility first)
   const visibleEmployees = filterByVisibility(employees);
   
-  const filteredEmployees = visibleEmployees.filter(emp => {
+  const filteredEmployees = isSearching ? visibleEmployees : visibleEmployees.filter(emp => {
     const name = emp.FullName || emp.name || '';
     const empId = emp.EmpID || emp.employeeId || '';
     const nationality = emp.Nationality || emp.country || '';
@@ -267,9 +345,9 @@ export default function Employees() {
             <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-indigo-400" />
             <input
               type="text"
-              placeholder="🔍 Search employees..."
+              placeholder="🔍 Search all employees..."
               value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
+              onChange={handleSearchChange}
               className="block w-full rounded-xl border-0 bg-gray-50 pl-12 pr-4 py-3 text-gray-900 shadow-sm ring-1 ring-gray-200 focus:ring-2 focus:ring-indigo-500 transition-all"
             />
           </div>
@@ -294,29 +372,29 @@ export default function Employees() {
           const stats = getApproxStats();
           return (
             <>
-              <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl shadow-lg p-5 text-white transform hover:scale-105 transition-all">
+              <button onClick={() => {setSearchTerm(''); setFilterDepartment('');}} className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl shadow-lg p-5 text-white transform hover:scale-105 transition-all text-left">
                 <p className="text-sm text-blue-100 font-medium">📊 Total</p>
                 <p className="text-3xl font-bold mt-1">{stats.total}{stats.isApproximate && <span className="text-sm">+</span>}</p>
-              </div>
-              <div className="bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-2xl shadow-lg p-5 text-white transform hover:scale-105 transition-all">
+              </button>
+              <button onClick={() => {setSearchTerm(''); /* Filter active via status */}} className="bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-2xl shadow-lg p-5 text-white transform hover:scale-105 transition-all text-left">
                 <p className="text-sm text-emerald-100 font-medium">✅ Active</p>
                 <p className="text-3xl font-bold mt-1">{stats.active}{stats.isApproximate && <span className="text-sm">+</span>}</p>
-              </div>
-              <div className="bg-gradient-to-br from-rose-500 to-rose-600 rounded-2xl shadow-lg p-5 text-white transform hover:scale-105 transition-all">
+              </button>
+              <button onClick={() => {setSearchTerm(''); /* Filter inactive via status */}} className="bg-gradient-to-br from-rose-500 to-rose-600 rounded-2xl shadow-lg p-5 text-white transform hover:scale-105 transition-all text-left">
                 <p className="text-sm text-rose-100 font-medium">⏸️ Inactive</p>
                 <p className="text-3xl font-bold mt-1">{stats.inactive}{stats.isApproximate && <span className="text-sm">+</span>}</p>
-              </div>
-              <div className="bg-gradient-to-br from-amber-500 to-orange-500 rounded-2xl shadow-lg p-5 text-white transform hover:scale-105 transition-all">
+              </button>
+              <div className="bg-gradient-to-br from-amber-500 to-orange-500 rounded-2xl shadow-lg p-5 text-white">
                 <p className="text-sm text-amber-100 font-medium">🏢 Departments</p>
                 <p className="text-3xl font-bold mt-1">{stats.departments}</p>
               </div>
-              <div className="bg-gradient-to-br from-violet-500 to-purple-600 rounded-2xl shadow-lg p-5 text-white transform hover:scale-105 transition-all">
+              <div className="bg-gradient-to-br from-violet-500 to-purple-600 rounded-2xl shadow-lg p-5 text-white">
                 <p className="text-sm text-violet-100 font-medium">🌍 Countries</p>
                 <p className="text-3xl font-bold mt-1">{stats.countries}</p>
               </div>
-              <Link to="/terminations" className="bg-gradient-to-br from-red-500 to-red-600 rounded-2xl shadow-lg p-5 text-white transform hover:scale-105 transition-all cursor-pointer">
+              <Link to="/terminations" className="bg-gradient-to-br from-red-500 to-red-600 rounded-2xl shadow-lg p-5 text-white transform hover:scale-105 transition-all cursor-pointer flex flex-col justify-between">
                 <p className="text-sm text-red-100 font-medium">🚪 Terminations</p>
-                <p className="text-3xl font-bold mt-1">View</p>
+                <p className="text-3xl font-bold mt-1">View →</p>
               </Link>
             </>
           );

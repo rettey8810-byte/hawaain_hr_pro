@@ -2,14 +2,16 @@ import { useState, useEffect } from 'react';
 import {
   Briefcase, Users, Calendar, Filter, Search, Plus, CheckCircle, Clock, Loader2, Mail, Phone, X, Star, MapPin, DollarSign,
   FileText, Send, CheckSquare, UserCheck, Plane, FileCheck, MoreHorizontal, Download, Eye, ChevronRight, Building2,
-  Upload, ClipboardCheck
+  Upload, ClipboardCheck, History
 } from 'lucide-react';
 import { useFirestore } from '../hooks/useFirestore';
 import { useCompany } from '../contexts/CompanyContext';
+import { useAuth } from '../contexts/AuthContext';
 import { collection, addDoc, updateDoc, doc, Timestamp } from 'firebase/firestore';
 import { db } from '../firebase/config';
 import { toast } from 'react-hot-toast';
 import { formatDate } from '../utils/helpers';
+import ExpatOnboarding from './ExpatOnboarding';
 
 // Pipeline stages matching the workflow
 const PIPELINE_STAGES = [
@@ -40,6 +42,7 @@ export default function Recruitment() {
   const [activeTab, setActiveTab] = useState('jobs');
   const [searchTerm, setSearchTerm] = useState('');
   const { companyId } = useCompany();
+  const { userData } = useAuth();
 
   // Modals state
   const [showJobModal, setShowJobModal] = useState(false);
@@ -48,7 +51,9 @@ export default function Recruitment() {
   const [showOfferModal, setShowOfferModal] = useState(false);
   const [showOnboardingModal, setShowOnboardingModal] = useState(false);
   const [showExpatModal, setShowExpatModal] = useState(false);
+  const [showExpatOnboarding, setShowExpatOnboarding] = useState(false);
   const [showPrescreeningModal, setShowPrescreeningModal] = useState(false);
+  const [showHistoryModal, setShowHistoryModal] = useState(false);
   const [selectedJob, setSelectedJob] = useState(null);
   const [selectedCandidate, setSelectedCandidate] = useState(null);
 
@@ -141,13 +146,32 @@ export default function Recruitment() {
 
   const { documents: rooms } = useFirestore('rooms');
 
-  // Helper to update candidate
-  const updateCandidate = async (id, data) => {
+  // Helper to update candidate with activity tracking
+  const updateCandidate = async (id, data, actionNote = '') => {
     try {
+      const candidate = candidates.find(c => c.id === id);
+      const oldStage = candidate?.stage;
+      const newStage = data.stage;
+      
+      // Build activity entry if stage changed
+      const activityEntry = {
+        timestamp: new Date().toISOString(),
+        action: newStage && oldStage && newStage !== oldStage 
+          ? `Stage changed: ${oldStage} → ${newStage}`
+          : (actionNote || 'Updated'),
+        details: data,
+        user: userData?.name || userData?.email || 'System'
+      };
+      
+      // Get existing history or create new array
+      const existingHistory = candidate?.activityHistory || [];
+      
       await updateDoc(doc(db, 'candidates', id), {
         ...data,
-        updatedAt: new Date().toISOString()
+        updatedAt: new Date().toISOString(),
+        activityHistory: [...existingHistory, activityEntry]
       });
+      
       toast.success('Candidate updated successfully');
     } catch (err) {
       toast.error('Error updating candidate: ' + err.message);
@@ -211,24 +235,26 @@ export default function Recruitment() {
 
 
 
-  if (jobsLoading || candidatesLoading) {
-
+  if (!companyId) {
     return (
-
       <div className="min-h-screen bg-gray-50 p-6 flex items-center justify-center">
-
         <div className="flex items-center gap-3 text-gray-500">
-
-          <Loader2 className="h-6 w-6 animate-spin" />
-
-          <span>Loading recruitment data...</span>
-
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+          <span>Loading company data...</span>
         </div>
-
       </div>
-
     );
+  }
 
+  if (jobsLoading || candidatesLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 p-6 flex items-center justify-center">
+        <div className="flex items-center gap-3 text-gray-500">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+          <span>Loading recruitment data...</span>
+        </div>
+      </div>
+    );
   }
 
 
@@ -309,6 +335,7 @@ export default function Recruitment() {
         <div className="flex border-b overflow-x-auto">
           {[
             { id: 'jobs', label: 'Job Postings', icon: Briefcase },
+            { id: 'new', label: 'New', icon: FileText },
             { id: 'applications', label: 'New Applications', icon: FileText },
             { id: 'prescreening', label: 'Prescreening', icon: ClipboardCheck },
             { id: 'shortlisted', label: 'Shortlisted', icon: CheckSquare },
@@ -611,23 +638,46 @@ export default function Recruitment() {
 
                       {candidate.stage === 'onboarding' && !candidate.maldivian && (
                         <button
-                          onClick={() => { setSelectedCandidate(candidate); setShowExpatModal(true); }}
+                          onClick={() => { 
+                            setSelectedCandidate(candidate); 
+                            setShowExpatOnboarding(true);
+                          }}
                           className="px-3 py-1.5 bg-pink-600 text-white rounded-lg text-sm font-medium hover:bg-pink-700"
                         >
                           <Plane className="h-4 w-4 inline mr-1" />
-                          Process Expat
+                          Start Expat Onboarding
                         </button>
                       )}
 
                       {candidate.stage === 'expat_processing' && (
-                        <button
-                          onClick={() => updateCandidate(candidate.id, { stage: 'hired', hiredAt: new Date().toISOString(), updatedAt: new Date().toISOString() })}
-                          className="px-3 py-1.5 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-700"
-                        >
-                          <CheckCircle className="h-4 w-4 inline mr-1" />
-                          Complete & Hire
-                        </button>
+                        <>
+                          <button
+                            onClick={() => { 
+                              setSelectedCandidate(candidate); 
+                              setShowExpatOnboarding(true);
+                            }}
+                            className="px-3 py-1.5 bg-pink-600 text-white rounded-lg text-sm font-medium hover:bg-pink-700"
+                          >
+                            <Plane className="h-4 w-4 inline mr-1" />
+                            Continue Onboarding
+                          </button>
+                          <button
+                            onClick={() => updateCandidate(candidate.id, { stage: 'hired', hiredAt: new Date().toISOString(), updatedAt: new Date().toISOString() })}
+                            className="px-3 py-1.5 bg-green-600 text-white rounded-lg text-sm font-medium hover:bg-green-700"
+                          >
+                            <CheckCircle className="h-4 w-4 inline mr-1" />
+                            Complete & Hire
+                          </button>
+                        </>
                       )}
+
+                      <button
+                        onClick={() => { setSelectedCandidate(candidate); setShowHistoryModal(true); }}
+                        className="px-3 py-1.5 border border-gray-300 rounded-lg text-sm text-gray-600 hover:bg-gray-50"
+                      >
+                        <History className="h-4 w-4 inline mr-1" />
+                        History ({candidate.activityHistory?.length || 0})
+                      </button>
 
                       <button className="px-3 py-1.5 border border-gray-300 rounded-lg text-sm text-gray-600 hover:bg-gray-50">
                         <Eye className="h-4 w-4 inline mr-1" />
@@ -859,8 +909,12 @@ export default function Recruitment() {
                         toast.error('Please fill required fields');
                         return;
                       }
+                      // Get job details to store with candidate
+                      const selectedJob = filteredJobs.find(j => j.id === candidateForm.jobId);
                       await addCandidate({
                         ...candidateForm,
+                        jobTitle: selectedJob?.title || '',
+                        jobDepartment: selectedJob?.department || '',
                         companyId,
                         appliedAt: new Date().toISOString(),
                         updatedAt: new Date().toISOString()
@@ -1791,6 +1845,84 @@ export default function Recruitment() {
                   Complete & Shortlist
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Expat Onboarding Workflow Modal */}
+      {showExpatOnboarding && selectedCandidate && (
+        <ExpatOnboarding
+          candidate={selectedCandidate}
+          onClose={() => setShowExpatOnboarding(false)}
+          onComplete={(employeeId) => {
+            setShowExpatOnboarding(false);
+            setSelectedCandidate(prev => ({ ...prev, stage: 'hired', employeeId }));
+          }}
+        />
+      )}
+
+      {/* Activity History Modal */}
+      {showHistoryModal && selectedCandidate && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl p-6 max-w-2xl w-full max-h-[80vh] overflow-y-auto">
+            <div className="flex justify-between items-center mb-4">
+              <div>
+                <h2 className="text-xl font-bold flex items-center gap-2">
+                  <History className="h-5 w-5 text-blue-600" />
+                  Activity History
+                </h2>
+                <p className="text-sm text-gray-500 mt-1">
+                  {selectedCandidate.name} - {selectedCandidate.email}
+                </p>
+              </div>
+              <button 
+                onClick={() => setShowHistoryModal(false)}
+                className="p-2 hover:bg-gray-100 rounded-lg"
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+
+            {selectedCandidate.activityHistory?.length > 0 ? (
+              <div className="space-y-3">
+                {[...selectedCandidate.activityHistory].reverse().map((activity, index) => (
+                  <div key={index} className="border-l-4 border-blue-500 pl-4 py-2 bg-gray-50 rounded-r-lg">
+                    <div className="flex justify-between items-start">
+                      <p className="font-medium text-gray-800">{activity.action}</p>
+                      <span className="text-xs text-gray-500">
+                        {new Date(activity.timestamp).toLocaleString()}
+                      </span>
+                    </div>
+                    <p className="text-sm text-gray-600 mt-1">
+                      By: {activity.user}
+                    </p>
+                    {activity.details && Object.keys(activity.details).length > 0 && (
+                      <div className="mt-2 text-xs text-gray-500 bg-white p-2 rounded">
+                        <p className="font-medium">Changes:</p>
+                        {Object.entries(activity.details).map(([key, value]) => (
+                          <p key={key}>• {key}: {JSON.stringify(value)}</p>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-8 text-gray-500">
+                <History className="h-12 w-12 mx-auto mb-4 text-gray-300" />
+                <p>No activity history yet</p>
+                <p className="text-sm mt-1">Status changes will be tracked automatically</p>
+              </div>
+            )}
+
+            <div className="mt-6 flex justify-end">
+              <button
+                onClick={() => setShowHistoryModal(false)}
+                className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200"
+              >
+                Close
+              </button>
             </div>
           </div>
         </div>

@@ -48,3 +48,9 @@ node_modules/
 *.log
 
 .git_backups/
+
+# Vite cache
+.vite/
+
+# CSV exports
+*.csv

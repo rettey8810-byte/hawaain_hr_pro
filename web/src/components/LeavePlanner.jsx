@@ -108,19 +108,32 @@ export default function LeavePlanner() {
 
   // Fetch ALL employees for name lookup
   const fetchAllEmployees = useCallback(async () => {
-    if (!companyId) return;
+    console.log('[LeavePlanner] fetchAllEmployees called, companyId:', companyId);
+    if (!companyId) {
+      console.log('[LeavePlanner] No companyId, skipping fetch');
+      return;
+    }
     setEmployeesLoading(true);
     try {
+      console.log('[LeavePlanner] Querying employees for companyId:', companyId);
       const q = query(
         collection(db, 'employees'),
         where('companyId', '==', companyId)
       );
       const snap = await getDocs(q);
+      console.log('[LeavePlanner] Query returned', snap.docs.length, 'docs');
       const empList = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      console.log('[LeavePlanner] Fetched', empList.length, 'employees');
+      if (empList.length > 0) {
+        console.log('[LeavePlanner] First employee fields:', Object.keys(empList[0]));
+        console.log('[LeavePlanner] Sample employee:', { id: empList[0].id, EmpID: empList[0].EmpID, FullName: empList[0].FullName, name: empList[0].name });
+      } else {
+        console.log('[LeavePlanner] No employees found for companyId:', companyId);
+      }
       empList.sort((a, b) => (a.FullName || a.name || '').localeCompare(b.FullName || b.name || ''));
       setEmployees(empList);
     } catch (err) {
-      console.error('Error fetching employees:', err);
+      console.error('[LeavePlanner] Error fetching employees:', err);
     } finally {
       setEmployeesLoading(false);
     }
@@ -147,7 +160,7 @@ export default function LeavePlanner() {
   useEffect(() => {
     const balances = {};
     employees.forEach(emp => {
-      const empLeaves = leaves.filter(l => l.employeeId === emp.id && l.status === 'approved');
+      const empLeaves = leaves.filter(l => (l.employeeId === emp.id || l.employeeId === emp.EmpID || String(l.employeeId) === String(emp.EmpID)) && l.status === 'approved');
       const annualUsed = empLeaves
         .filter(l => l.leaveType === 'annual')
         .reduce((sum, l) => sum + (parseInt(l.days) || 0), 0);
@@ -175,7 +188,7 @@ export default function LeavePlanner() {
     // Filter by search term
     if (searchTerm) {
       filtered = filtered.filter(l => {
-        const employee = employees.find(e => e.id === l.employeeId);
+        const employee = getEmployeeById(l.employeeId);
         return (
           (employee?.FullName || employee?.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
           (l.destination || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -196,7 +209,7 @@ export default function LeavePlanner() {
     
     // Non-HR users can only see their own leaves
     if (!isHR() && userData?.employeeId) {
-      filtered = filtered.filter(l => l.employeeId === userData.employeeId);
+      filtered = filtered.filter(l => l.employeeId === userData.employeeId || l.employeeId === userData.EmpID);
     }
     
     setFilteredLeaves(filtered);
@@ -210,24 +223,46 @@ export default function LeavePlanner() {
     }
   };
 
+  // Helper to find employee by ID (handles both old format "sunisland-resort-and-spa_XXXXX" and new format)
+  const getEmployeeById = (id) => {
+    if (!id) return null;
+    
+    // Extract EmpID from format "sunisland-resort-and-spa_XXXXX" or "villa-park_XXXXX"
+    let searchId = id;
+    if (typeof id === 'string' && id.includes('_')) {
+      const parts = id.split('_');
+      searchId = parts[parts.length - 1]; // Get the last part (the actual EmpID)
+    }
+    
+    // Try exact match first
+    let emp = employees.find(e => e.id === id || e.EmpID === searchId || String(e.EmpID) === String(searchId));
+    
+    if (!emp) {
+      // Try matching with the original id as well
+      emp = employees.find(e => e.EmpID === id || String(e.EmpID) === String(id));
+    }
+    
+    return emp || null;
+  };
+
   const getEmployeeName = (id) => {
-    const emp = employees.find(e => e.id === id);
+    const emp = getEmployeeById(id);
     return emp?.FullName || emp?.name || 'Unknown';
   };
 
   const getEmployeePhoto = (id) => {
-    const emp = employees.find(e => e.id === id);
-    return emp?.photoURL;
+    const emp = getEmployeeById(id);
+    return emp?.photoURL || null;
   };
 
   const canDelete = (leave) => {
     if (isHR()) return true;
-    return leave.employeeId === userData?.employeeId && leave.status === 'pending';
+    return (leave.employeeId === userData?.employeeId || leave.employeeId === userData?.EmpID) && leave.status === 'pending';
   };
 
   const canEdit = (leave) => {
     if (isHR()) return true;
-    return leave.employeeId === userData?.employeeId && leave.status === 'pending';
+    return (leave.employeeId === userData?.employeeId || leave.employeeId === userData?.EmpID) && leave.status === 'pending';
   };
 
   // Export to CSV
@@ -762,7 +797,7 @@ export default function LeavePlanner() {
                   <tbody className="bg-white divide-y divide-gray-100">
                     {filteredLeaves.map((leave) => {
                       const statusConfig = STATUS_CONFIG[leave.status] || STATUS_CONFIG.pending;
-                      const emp = employees.find(e => e.id === leave.employeeId);
+                      const emp = getEmployeeById(leave.employeeId);
                       
                       return (
                         <tr key={leave.id} className="hover:bg-emerald-50/50 transition-colors">
@@ -951,35 +986,38 @@ export default function LeavePlanner() {
       {/* Stats Summary - Colorful Cards - Mobile Responsive */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4">
         {[
-          { key: 'total', label: 'Total Leaves', icon: Luggage, emoji: null, colors: 'from-blue-500 to-indigo-600' },
-          { key: 'annual', label: 'Annual', icon: null, emoji: '🏖️', colors: 'from-emerald-400 to-green-500' },
-          { key: 'sick', label: 'Sick', icon: null, emoji: '🤒', colors: 'from-rose-400 to-red-500' },
-          { key: 'unpaid', label: 'NoPay', icon: null, emoji: '💰', colors: 'from-gray-400 to-slate-500' },
-          { key: 'off_day', label: 'Off Day', icon: null, emoji: '🛌', colors: 'from-slate-400 to-gray-500' },
-          { key: 'ph', label: 'PH', icon: null, emoji: '🎉', colors: 'from-fuchsia-500 to-pink-600' },
-          { key: 'family_responsibility', label: 'Family Care', icon: null, emoji: '👪', colors: 'from-amber-400 to-orange-500' },
-          { key: 'medical', label: 'Medical', icon: null, emoji: '🏥', colors: 'from-emerald-500 to-teal-600' },
-          { key: 'special', label: 'Special', icon: null, emoji: '✨', colors: 'from-purple-500 to-violet-600' },
-          { key: 'on_duty', label: 'OnDuty', icon: null, emoji: '🧑‍💼', colors: 'from-cyan-400 to-blue-500' },
-          { key: 'hajju', label: 'Hajju', icon: null, emoji: '🕋', colors: 'from-indigo-500 to-purple-600' },
-          { key: 'emergency', label: 'Emergency', icon: null, emoji: '🚨', colors: 'from-red-500 to-rose-600' },
-          { key: 'other', label: 'Other', icon: null, emoji: '📋', colors: 'from-gray-400 to-slate-500' },
-        ].map((s) => (
-          <div 
+          { key: 'total', label: 'Total Leaves', icon: Luggage, emoji: null, colors: 'from-blue-500 to-indigo-600', filter: 'all' },
+          { key: 'pending', label: 'Pending', icon: Clock, emoji: '⏳', colors: 'from-amber-500 to-orange-500', filter: 'pending' },
+          { key: 'approved', label: 'Approved', icon: CheckCircle, emoji: '✅', colors: 'from-emerald-500 to-green-600', filter: 'approved' },
+          { key: 'rejected', label: 'Rejected', icon: XCircle, emoji: '❌', colors: 'from-rose-500 to-red-600', filter: 'rejected' },
+          { key: 'air', label: 'By Air', icon: Plane, emoji: '✈️', colors: 'from-sky-500 to-blue-600', filter: 'air' },
+          { key: 'sea', label: 'By Sea', icon: Ship, emoji: '🚢', colors: 'from-cyan-500 to-teal-600', filter: 'sea' },
+        ].map(s => (
+          <button 
             key={s.key} 
-            onClick={() => setLeaveTypeFilter(leaveTypeFilter === s.key ? 'all' : s.key)}
-            className={`bg-gradient-to-br ${s.colors} rounded-2xl p-4 text-white shadow-lg transform hover:scale-105 transition-all cursor-pointer ${leaveTypeFilter === s.key ? 'ring-4 ring-yellow-400 scale-105' : ''}`}
+            onClick={() => {
+              if (s.filter === 'all') {
+                setStatusFilter('all');
+                setLeaveTypeFilter('all');
+              } else if (['pending', 'approved', 'rejected'].includes(s.filter)) {
+                setStatusFilter(s.filter);
+              } else {
+                setLeaveTypeFilter(s.filter);
+              }
+              setActiveTab('list');
+            }}
+            className={`bg-gradient-to-br ${s.colors} rounded-2xl p-4 text-white shadow-lg transform hover:scale-105 transition-all text-left`}
           >
             <div className="flex items-center">
               <div className="p-2 bg-white/20 rounded-lg mr-3">
-                {s.icon ? <s.icon className="h-5 w-5 text-white" /> : <span className="text-lg">{s.emoji}</span>}
+                {s.emoji ? <span className="text-xl">{s.emoji}</span> : <s.icon className="h-5 w-5 text-white" />}
               </div>
               <div>
                 <p className="text-xs text-white/80 font-medium">{s.label}</p>
                 <p className="text-2xl font-bold">{stats[s.key] || 0}</p>
               </div>
             </div>
-          </div>
+          </button>
         ))}
       </div>
 
@@ -1050,7 +1088,7 @@ export default function LeavePlanner() {
       {showPrintView && printLeave && (
         <LeavePrintView 
           leave={printLeave} 
-          employee={employees.find(e => e.id === printLeave.employeeId)}
+          employee={employees.find(e => e.id === printLeave.employeeId || e.EmpID === printLeave.employeeId || String(e.EmpID) === String(printLeave.employeeId))}
           onClose={() => setShowPrintView(false)} 
         />
       )}

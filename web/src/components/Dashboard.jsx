@@ -144,6 +144,30 @@ export default function Dashboard() {
     .sort((a, b) => b.value - a.value)
     .slice(0, 8);
 
+  // Calculate nationality distribution
+  const nationalityData = companyEmployees.reduce((acc, emp) => {
+    const nat = emp.Nationality || 'Unknown';
+    acc[nat] = (acc[nat] || 0) + 1;
+    return acc;
+  }, {});
+
+  const nationalityChartData = Object.entries(nationalityData)
+    .map(([name, value]) => ({ name, value }))
+    .sort((a, b) => b.value - a.value)
+    .slice(0, 8);
+
+  // Calculate designation distribution
+  const designationData = companyEmployees.reduce((acc, emp) => {
+    const des = emp.Designation || 'Unknown';
+    acc[des] = (acc[des] || 0) + 1;
+    return acc;
+  }, {});
+
+  const designationChartData = Object.entries(designationData)
+    .map(([name, value]) => ({ name, value }))
+    .sort((a, b) => b.value - a.value)
+    .slice(0, 8);
+
   const COLORS = ['#4F46E5', '#7C3AED', '#EC4899', '#F59E0B', '#10B981', '#3B82F6', '#8B5CF6', '#EF4444'];
 
   // Calculate monthly headcount trend (mock data for now - would come from historical data)
@@ -498,7 +522,7 @@ export default function Dashboard() {
       </div>
 
       {/* Analytics Widgets */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-4 gap-6">
         {/* Headcount Trend */}
         <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-6">
           <div className="flex items-center justify-between mb-4">
@@ -575,6 +599,88 @@ export default function Dashboard() {
           </div>
         </div>
 
+        {/* Nationality Distribution */}
+        <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-6">
+          <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+            <PieChart className="h-5 w-5 text-emerald-600" />
+            Nationality Distribution
+          </h3>
+          <div style={{ height: '192px', width: '100%' }}>
+            {mounted && (
+            <ResponsiveContainer width="100%" height="100%" minWidth={200} minHeight={180}>
+              <RePieChart>
+                <Pie
+                  data={nationalityChartData}
+                  cx="50%"
+                  cy="50%"
+                  innerRadius={40}
+                  outerRadius={70}
+                  paddingAngle={5}
+                  dataKey="value"
+                >
+                  {nationalityChartData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                  ))}
+                </Pie>
+                <Tooltip />
+              </RePieChart>
+            </ResponsiveContainer>
+            )}
+          </div>
+          <div className="mt-2 flex flex-wrap gap-2 justify-center">
+            {nationalityChartData.slice(0, 4).map((nat, index) => (
+              <div key={nat.name} className="flex items-center gap-1 text-xs">
+                <div 
+                  className="w-3 h-3 rounded-full" 
+                  style={{ backgroundColor: COLORS[index % COLORS.length] }}
+                />
+                <span className="text-gray-600">{nat.name}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Designation Distribution */}
+        <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-6">
+          <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+            <PieChart className="h-5 w-5 text-amber-600" />
+            Designation Distribution
+          </h3>
+          <div style={{ height: '192px', width: '100%' }}>
+            {mounted && (
+            <ResponsiveContainer width="100%" height="100%" minWidth={200} minHeight={180}>
+              <RePieChart>
+                <Pie
+                  data={designationChartData}
+                  cx="50%"
+                  cy="50%"
+                  innerRadius={40}
+                  outerRadius={70}
+                  paddingAngle={5}
+                  dataKey="value"
+                >
+                  {designationChartData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                  ))}
+                </Pie>
+                <Tooltip />
+              </RePieChart>
+            </ResponsiveContainer>
+            )}
+          </div>
+          <div className="mt-2 flex flex-wrap gap-2 justify-center">
+            {designationChartData.slice(0, 4).map((des, index) => (
+              <div key={des.name} className="flex items-center gap-1 text-xs">
+                <div 
+                  className="w-3 h-3 rounded-full" 
+                  style={{ backgroundColor: COLORS[index % COLORS.length] }}
+                />
+                <span className="text-gray-600 truncate max-w-[80px]">{des.name}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
         {/* Leave Statistics */}
         <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-6">
           <div className="flex items-center justify-between mb-4">
@@ -638,23 +744,23 @@ export default function Dashboard() {
                   href="/notifications"
                 />
               )}
-              {(passportAlerts.alerts.expiring60.length + visaAlerts.alerts.expiring60.length + 
-                permitAlerts.alerts.expiring60.length + medicalAlerts.alerts.expiring60.length) > 0 && (
+              {(passportStats.expiring60 + visaStats.expiring60 + 
+                permitStats.expiring60 + medicalStats.expiring60) > 0 && (
                 <AlertItem
                   title="Expiring in 60 days"
-                  count={passportAlerts.alerts.expiring60.length + visaAlerts.alerts.expiring60.length + 
-                         permitAlerts.alerts.expiring60.length + medicalAlerts.alerts.expiring60.length}
+                  count={passportStats.expiring60 + visaStats.expiring60 + 
+                         permitStats.expiring60 + medicalStats.expiring60}
                   type="expiring60"
                   icon={Clock}
                   href="/notifications"
                 />
               )}
-              {(passportAlerts.alerts.expiring90.length + visaAlerts.alerts.expiring90.length + 
-                permitAlerts.alerts.expiring90.length + medicalAlerts.alerts.expiring90.length) > 0 && (
+              {(passportStats.expiring90 + visaStats.expiring90 + 
+                permitStats.expiring90 + medicalStats.expiring90) > 0 && (
                 <AlertItem
                   title="Expiring in 90 days"
-                  count={passportAlerts.alerts.expiring90.length + visaAlerts.alerts.expiring90.length + 
-                         permitAlerts.alerts.expiring90.length + medicalAlerts.alerts.expiring90.length}
+                  count={passportStats.expiring90 + visaStats.expiring90 + 
+                         permitStats.expiring90 + medicalStats.expiring90}
                   type="expiring90"
                   icon={TrendingUp}
                   href="/notifications"

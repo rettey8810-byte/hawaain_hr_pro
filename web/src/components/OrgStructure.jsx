@@ -19,6 +19,7 @@ import {
 } from 'lucide-react';
 import { useFirestore } from '../hooks/useFirestore';
 import { useCompany } from '../contexts/CompanyContext';
+import { useAuth } from '../contexts/AuthContext';
 
 // Tree Node Component
 function TreeNode({ employee, level = 0, isLast = false, children = [] }) {
@@ -123,13 +124,24 @@ export default function OrgStructure() {
   const [searchTerm, setSearchTerm] = useState('');
   const [viewMode, setViewMode] = useState('list'); // 'list', 'tree', or 'hierarchy'
   const { companyId } = useCompany();
+  const { userData } = useAuth();
 
   const { documents: employees, loading } = useFirestore('employees');
+
+  // Check user role for department filtering
+  const userRole = userData?.role;
+  const userDept = userData?.department;
+  const isAdmin = userRole === 'superadmin' || userRole === 'gm' || userRole === 'hrm' || userRole === 'hr';
 
   // Filter employees by company and search
   const companyEmployees = useMemo(() => {
     return employees.filter(e => {
       if (e.companyId !== companyId) return false;
+      
+      // Filter by user department for non-admins
+      const empDept = e['Department '] || e.Department || e.department;
+      if (!isAdmin && userDept && empDept !== userDept) return false;
+      
       if (!searchTerm) return true;
       const search = searchTerm.toLowerCase();
       return (
@@ -138,7 +150,7 @@ export default function OrgStructure() {
         (e['Department '] || e.Department || '').toLowerCase().includes(search)
       );
     });
-  }, [employees, companyId, searchTerm]);
+  }, [employees, companyId, searchTerm, isAdmin, userDept]);
 
   // Group by department and then by level
   const orgStructure = useMemo(() => {
@@ -490,9 +502,9 @@ export default function OrgStructure() {
                 const staffLevel = dept.levels.find(l => l.level <= 4);
 
                 const ceo = topLevel?.employees?.[0];
-                const managers = managerLevel?.employees?.slice(0, 2) || [];
-                const tls = supervisorLevel?.employees?.slice(0, 4) || [];
-                const workers = staffLevel?.employees?.slice(0, 8) || [];
+                const managers = managerLevel?.employees || [];
+                const tls = supervisorLevel?.employees || [];
+                const workers = staffLevel?.employees || [];
 
                 // Node component
                 const Node = ({ emp, type }) => {

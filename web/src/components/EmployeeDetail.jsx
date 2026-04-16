@@ -114,6 +114,28 @@ function InfoCard({ icon: Icon, label, value, subValue }) {
   );
 }
 
+function EditableField({ icon: Icon, label, field, value, editing, onChange, type = 'text' }) {
+  if (editing) {
+    return (
+      <div className="bg-white rounded-lg shadow p-4">
+        <div className="flex items-start">
+          <Icon className="h-5 w-5 text-gray-400 mr-3 mt-0.5" />
+          <div className="flex-1">
+            <label className="text-sm text-gray-500 block mb-1">{label}</label>
+            <input
+              type={type}
+              value={value || ''}
+              onChange={(e) => onChange(field, e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+            />
+          </div>
+        </div>
+      </div>
+    );
+  }
+  return <InfoCard icon={Icon} label={label} value={value} />;
+}
+
 function Section({ title, icon: Icon, children, defaultOpen = true }) {
   const [isOpen, setIsOpen] = useState(defaultOpen);
   
@@ -137,7 +159,8 @@ function Section({ title, icon: Icon, children, defaultOpen = true }) {
 export default function EmployeeDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { isHR, user } = useAuth();
+  const { isHR, hasAccess, user } = useAuth();
+  const canEditEmployee = hasAccess('employees', 'edit');
   const [employee, setEmployee] = useState(null);
   const [documents, setDocuments] = useState({
     passports: [],
@@ -161,11 +184,33 @@ export default function EmployeeDetail() {
       
       // Fetch single employee by ID using Firebase query
       try {
-        const employeeQuery = query(
+        // First try to find by document ID
+        let employeeQuery = query(
           collection(db, 'employees'),
           where('__name__', '==', id)
         );
-        const employeeSnap = await getDocs(employeeQuery);
+        let employeeSnap = await getDocs(employeeQuery);
+        
+        // If not found, try searching by EmpID field
+        if (employeeSnap.empty) {
+          console.log('Employee not found by doc ID, trying EmpID:', id);
+          employeeQuery = query(
+            collection(db, 'employees'),
+            where('EmpID', '==', id)
+          );
+          employeeSnap = await getDocs(employeeQuery);
+        }
+        
+        // If still not found, try searching by employeeId field
+        if (employeeSnap.empty) {
+          console.log('Employee not found by EmpID, trying employeeId:', id);
+          employeeQuery = query(
+            collection(db, 'employees'),
+            where('employeeId', '==', id)
+          );
+          employeeSnap = await getDocs(employeeQuery);
+        }
+        
         if (!employeeSnap.empty) {
           const empData = { id: employeeSnap.docs[0].id, ...employeeSnap.docs[0].data() };
           setEmployee(empData);
@@ -284,7 +329,7 @@ export default function EmployeeDetail() {
               </button>
             </>
           ) : (
-            isHR() && (
+            canEditEmployee && (
               <button
                 onClick={() => setEditing(true)}
                 className="inline-flex items-center rounded-md bg-white px-3 py-2 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50"
@@ -320,38 +365,38 @@ export default function EmployeeDetail() {
       {/* Personal Information Section */}
       <Section title="Personal Information" icon={User}>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          <InfoCard icon={User} label="Full Name" value={displayData?.FullName || displayData?.name} />
-          <InfoCard icon={User} label="Short Name" value={displayData?.ShortName} />
-          <InfoCard icon={Calendar} label="Date of Birth" value={formatDate(displayData?.DOB)} />
-          <InfoCard icon={User} label="Gender" value={displayData?.Gender} />
-          <InfoCard icon={Users} label="Marital Status" value={displayData?.MaritalStatus} />
-          <InfoCard icon={Flag} label="Nationality" value={displayData?.Nationality} />
-          <InfoCard icon={BadgeCheck} label="Religion" value={displayData?.Religion} />
-          <InfoCard icon={Droplet} label="Blood Group" value={displayData?.BloodGroup} />
+          <EditableField icon={User} label="Full Name" field="FullName" value={displayData?.FullName || displayData?.name} editing={editing} onChange={handleInputChange} />
+          <EditableField icon={User} label="Short Name" field="ShortName" value={displayData?.ShortName} editing={editing} onChange={handleInputChange} />
+          <EditableField icon={Calendar} label="Date of Birth" field="DOB" value={displayData?.DOB} editing={editing} onChange={handleInputChange} />
+          <EditableField icon={User} label="Gender" field="Gender" value={displayData?.Gender} editing={editing} onChange={handleInputChange} />
+          <EditableField icon={Users} label="Marital Status" field="MaritalStatus" value={displayData?.MaritalStatus} editing={editing} onChange={handleInputChange} />
+          <EditableField icon={Flag} label="Nationality" field="Nationality" value={displayData?.Nationality} editing={editing} onChange={handleInputChange} />
+          <EditableField icon={BadgeCheck} label="Religion" field="Religion" value={displayData?.Religion} editing={editing} onChange={handleInputChange} />
+          <EditableField icon={Droplet} label="Blood Group" field="BloodGroup" value={displayData?.BloodGroup} editing={editing} onChange={handleInputChange} />
         </div>
       </Section>
 
       {/* Employment Information Section */}
       <Section title="Employment Information" icon={Briefcase}>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          <InfoCard icon={Building2} label="Division" value={displayData?.Division} />
-          <InfoCard icon={Building2} label="Department" value={displayData?.['Department '] || displayData?.Department} />
-          <InfoCard icon={Building2} label="Section" value={displayData?.Section} />
-          <InfoCard icon={BadgeCheck} label="Designation" value={displayData?.Designation} />
-          <InfoCard icon={BadgeCheck} label="Level" value={displayData?.Level} />
-          <InfoCard icon={Users} label="Superior" value={displayData?.Superior} />
-          <InfoCard icon={Calendar} label="Date of Join (DOJ)" value={formatDate(displayData?.DOJ || displayData?.['Date of Join'])} />
-          <InfoCard icon={FileText} label="Work Permit No" value={displayData?.WPNo} />
+          <EditableField icon={Building2} label="Division" field="Division" value={displayData?.Division} editing={editing} onChange={handleInputChange} />
+          <EditableField icon={Building2} label="Department" field="Department" value={displayData?.['Department '] || displayData?.Department} editing={editing} onChange={handleInputChange} />
+          <EditableField icon={Building2} label="Section" field="Section" value={displayData?.Section} editing={editing} onChange={handleInputChange} />
+          <EditableField icon={BadgeCheck} label="Designation" field="Designation" value={displayData?.Designation} editing={editing} onChange={handleInputChange} />
+          <EditableField icon={BadgeCheck} label="Level" field="Level" value={displayData?.Level} editing={editing} onChange={handleInputChange} />
+          <EditableField icon={Users} label="Superior" field="Superior" value={displayData?.Superior} editing={editing} onChange={handleInputChange} />
+          <EditableField icon={Calendar} label="Date of Join (DOJ)" field="DOJ" value={displayData?.DOJ || displayData?.['Date of Join']} editing={editing} onChange={handleInputChange} />
+          <EditableField icon={FileText} label="Work Permit No" field="WPNo" value={displayData?.WPNo} editing={editing} onChange={handleInputChange} />
         </div>
       </Section>
 
       {/* Contact Information Section */}
       <Section title="Contact Information" icon={Phone}>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          <InfoCard icon={Phone} label="Phone Number" value={displayData?.PhoneNo || displayData?.phone} />
-          <InfoCard icon={Phone} label="Alternate Phone" value={displayData?.AlternateContactNo} />
-          <InfoCard icon={Mail} label="Email" value={displayData?.EmailID || displayData?.email} />
-          <InfoCard icon={Mail} label="Personal Email" value={displayData?.PersonalEmailID} />
+          <EditableField icon={Phone} label="Phone Number" field="PhoneNo" value={displayData?.PhoneNo || displayData?.phone} editing={editing} onChange={handleInputChange} />
+          <EditableField icon={Phone} label="Alternate Phone" field="AlternateContactNo" value={displayData?.AlternateContactNo} editing={editing} onChange={handleInputChange} />
+          <EditableField icon={Mail} label="Email" field="EmailID" value={displayData?.EmailID || displayData?.email} editing={editing} onChange={handleInputChange} />
+          <EditableField icon={Mail} label="Personal Email" field="PersonalEmailID" value={displayData?.PersonalEmailID} editing={editing} onChange={handleInputChange} />
         </div>
       </Section>
 

@@ -57,6 +57,7 @@ import { useNotifications } from '../contexts/NotificationContext';
 import { useCompany } from '../contexts/CompanyContext';
 import { useTheme } from '../contexts/ThemeContext';
 import ToastContainer from './ToastContainer';
+import NotificationBar from './NotificationBar';
 
 export default function Layout({ children }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -297,7 +298,10 @@ export default function Layout({ children }) {
       {/* Toast Notifications - DISABLED due to performance issues with large notification volume
       <ToastContainer />
       */}
-      
+
+      {/* Real-time Pending Approvals Notification Bar */}
+      <NotificationBar />
+
       {/* Mobile sidebar */}
       <div className={`fixed inset-0 z-40 lg:hidden ${sidebarOpen ? '' : 'hidden'}`}>
         <div className="fixed inset-0 bg-gray-600 bg-opacity-75" onClick={() => setSidebarOpen(false)} />
@@ -372,6 +376,20 @@ export default function Layout({ children }) {
           <div className="flex flex-1 justify-between px-4">
             <div className="flex flex-1" />
             <div className="ml-4 flex items-center gap-3">
+              {/* Notification Bell with Badge */}
+              <Link
+                to="/notifications"
+                className="relative p-2 rounded-lg text-gray-500 hover:bg-gray-100 transition-colors"
+                title="Notifications"
+              >
+                <Bell className="h-5 w-5" />
+                {unreadCount > 0 && (
+                  <span className="absolute -top-0.5 -right-0.5 h-4 w-4 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">
+                    {unreadCount > 9 ? '9+' : unreadCount}
+                  </span>
+                )}
+              </Link>
+
               {/* Dark Mode Toggle */}
               <button
                 onClick={toggleDarkMode}
@@ -381,8 +399,8 @@ export default function Layout({ children }) {
                 {darkMode ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
               </button>
               
-              {/* Company Switcher for GM and Superadmin */}
-              {(isSuperAdmin() || isGM()) && companies.length > 1 && (
+              {/* Company Switcher for GM, HRM and Superadmin */}
+              {(isSuperAdmin() || isGM() || userData?.role === 'hrm') && companies.length > 1 && (
                 <div className="relative">
                   <button
                     onClick={() => setCompanyDropdownOpen(!companyDropdownOpen)}
@@ -435,6 +453,11 @@ export default function Layout({ children }) {
                     </span>
                   </div>
                   <span className="ml-3 text-gray-700 hidden md:block">{user?.displayName || user?.email}</span>
+                  {userData?.actingAsHOD && (
+                    <span className="ml-2 px-2 py-0.5 text-xs bg-amber-100 text-amber-800 rounded-full">
+                      Acting HOD
+                    </span>
+                  )}
                   <ChevronDown className="ml-2 h-4 w-4 text-gray-400" />
                 </button>
 

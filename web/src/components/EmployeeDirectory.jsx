@@ -39,6 +39,11 @@ export default function EmployeeDirectory() {
   const [expandedNodes, setExpandedNodes] = useState(new Set());
   const [selectedEmployee, setSelectedEmployee] = useState(null);
 
+  // Check user role for department filtering
+  const userRole = userData?.role;
+  const userDept = userData?.department;
+  const isAdmin = userRole === 'superadmin' || userRole === 'gm' || userRole === 'hrm' || userRole === 'hr';
+
   useEffect(() => {
     fetchData();
   }, [companyId]);
@@ -60,9 +65,20 @@ export default function EmployeeDirectory() {
       }));
       setEmployees(employeesData);
 
-      // Extract unique departments
-      const deptSet = new Set(employeesData.map(e => e['Department '] || e.Department || e.department).filter(Boolean));
+      // Extract unique departments and filter by user role
+      let deptSet = new Set(employeesData.map(e => e['Department '] || e.Department || e.department).filter(Boolean));
+      
+      // Filter departments for non-admin users
+      if (!isAdmin && userDept) {
+        deptSet = new Set(Array.from(deptSet).filter(d => d === userDept));
+      }
+      
       setDepartments(Array.from(deptSet).sort());
+      
+      // Auto-select department for non-admins
+      if (!isAdmin && userDept && filterDepartment === 'all') {
+        setFilterDepartment(userDept);
+      }
 
       // Auto-expand all nodes initially
       setExpandedNodes(new Set(employeesData.map(e => e.id)));

@@ -633,6 +633,221 @@ When a candidate reaches "Offer" or "Notice Period" stage:
 4. For Maldivian candidates: Status changes to "Hired"
 5. For Expat candidates: Status changes to "Expat Processing"
 
+### Expat Onboarding Workflow (v2.5)
+
+A comprehensive 12-step workflow for non-Maldivian candidates from offer acceptance to active employment.
+
+#### Overview
+
+When an expat candidate accepts a job offer, they go through a detailed onboarding process that tracks document collection, visa processing, travel arrangements, accommodation assignment, and final employment registration.
+
+**Who can access:** HR Managers, GM, Superadmin
+
+**Access path:** Recruitment & ATS → Expat Processing tab → Click "Start/Continue Expat Onboarding"
+
+#### The 12 Stages
+
+**1. Offer Accepted**
+- Confirms candidate has accepted the position
+- Displays candidate name and job title
+- Starting point of the expat onboarding journey
+
+**2. Documents Required**
+Track 9 required documents with received/not received status:
+- **Passport Copy** (Required)
+- **Passport Size Photo (2)** (Required)
+- **Updated CV** (Required)
+- **Experience Certificates** (Required)
+- **Education Certificates** (Required)
+- **Medical Report** (Required)
+- **Police Clearance** (Required)
+- **Birth Certificate** (Optional)
+- **Marriage Certificate** (Optional, if applicable)
+
+*How to use:*
+- Click the checkbox next to each document to mark as received
+- System automatically records the received date
+- Required documents marked with red asterisk (*)
+- Progress shows: "X of Y required documents received"
+- Cannot proceed to visa until all required documents are received
+
+**3. Documents Received**
+- All required documents collected
+- Visual confirmation with green checkmarks
+- Unlock to proceed to visa application
+
+**4. Visa Application**
+Enter visa application details:
+- **Visa Type**: Work Visa, Business Visa, or Employment Visa
+- **Application Date**: Date visa application submitted
+- **Reference Number**: Official reference (e.g., "VISA-2024-001")
+- **Status**: Pending, Approved, Rejected, or In Process
+
+*Tip: Enter application date to mark as "applied"*
+
+**5. Visa Payment**
+Track visa fee payment:
+- **Amount (USD)**: Payment amount (e.g., 250)
+- **Payment Date**: Date of payment
+- **Receipt Number**: Official receipt reference
+- **Payment Completed**: Checkbox to confirm payment
+
+*Note: Cannot proceed to entry pass until payment is confirmed*
+
+**6. Entry Pass**
+Generate entry pass after visa payment confirmed:
+- **Pass Number**: Unique entry pass ID (e.g., "EP-2024-001")
+- **Issue Date**: When pass was issued
+- **Valid Until**: Pass expiration date
+
+*This pass allows the candidate to enter Maldives*
+
+**7. Tickets Booked**
+Book two-leg journey to Villa Park:
+
+**Leg 1: Destination to Male (Velana International Airport)**
+- **Mode**: Air (Flight) or Sea (Boat/Ferry)
+- **Flight/Boat Number**: Booking reference
+- **Departure Date**: From origin country
+- **Arrival at Male**: Date and time of arrival in Maldives
+
+**Leg 2: Male to Villa Park Resort**
+- **Mode**: Sea (Speedboat/Ferry) or Air (Seaplane)
+- **Boat/Flight Number**: Local transport reference
+- **Departure from Male**: Date and time
+- **Arrival at Villa Park**: Final arrival time
+
+*Both legs must be booked before proceeding*
+
+**8. Accommodation Assignment**
+Assign room from available inventory:
+- System displays all available rooms as cards
+- Each card shows:
+  - Room number
+  - Building name
+  - Floor level
+  - Availability status
+- Click a room to select (blue border appears)
+- Selected room reserved for the new hire
+
+*Note: If no rooms available, add rooms in Accommodation module first*
+
+**9. Arrival / Receiving**
+Record arrival information:
+- **Arrival Date**: Date employee arrived at resort
+- **Arrival Time**: Time of arrival
+- **Received By**: Name of staff who received the employee
+
+**10. Registration**
+Complete employment registration:
+- **Registration Date**: Official registration date
+- **Employee ID to Assign**: New employee ID (e.g., "VP-2024-001")
+
+**11. Handed to Department**
+Department handover details:
+- **Handover Date**: When employee joined department
+- **Department Head**: Name of receiving department head
+- **Handover Notes**: Any special instructions or observations
+
+**12. Employee Created**
+Final stage - creates employee record:
+- Shows summary of all collected information
+- Displays probation schedule that will be created:
+  - 1 Month Review
+  - 2 Month Review
+  - 3 Month Review
+  - Annual Review
+- Click "Create Employee & Start Probation" to complete
+
+#### Automatic Actions on Completion
+
+When you click "Create Employee & Start Probation":
+
+1. **Employee Record Created**
+   - Name, email, phone transferred from candidate
+   - Department and designation set
+   - Employee type marked as "expat"
+   - Joining date set from arrival date
+   - Accommodation linked
+
+2. **Room Assignment**
+   - Selected room status changes to "occupied"
+   - Room assignment record created
+   - Check-in date set to joining date
+
+3. **Probation Evaluation Schedule**
+   - 1 Month Review (due 1 month after joining)
+   - 2 Month Review (due 2 months after joining)
+   - 3 Month Review (due 3 months after joining)
+   - Annual Review (due 1 year after joining)
+   - All marked as "pending" status
+
+4. **Candidate Status Updated**
+   - Stage changed to "Hired"
+   - Employee ID linked to candidate record
+   - Hired timestamp recorded
+
+#### Progress Tracking
+
+- **Progress Bar**: Shows percentage completion (e.g., "58%")
+- **Stage Navigation**: Click any stage button to jump to that step
+- **Color Coding**:
+  - Blue = Current stage
+  - Green = Completed stages
+  - Gray = Future stages
+
+#### Saving Progress
+
+- Click "Save Progress" anytime to save current state
+- Can resume onboarding later from where you left off
+- All data stored on candidate record
+- Progress persists across sessions
+
+#### Best Practices
+
+1. **Document Collection**
+   - Start document collection immediately after offer acceptance
+   - Follow up regularly for pending documents
+   - Scan and attach document copies when possible
+
+2. **Visa Processing**
+   - Apply for visa as soon as all documents received
+   - Track application status regularly
+   - Keep payment receipts for records
+
+3. **Travel Booking**
+   - Book flights in advance for better rates
+   - Confirm Male to Villa Park connection timing
+   - Share travel details with employee
+
+4. **Accommodation**
+   - Assign room before employee arrival
+   - Ensure room is clean and ready
+   - Communicate room number to employee
+
+5. **Final Steps**
+   - Complete handover within 24 hours of arrival
+   - Ensure department head is prepared
+   - Create employee record promptly after handover
+
+#### Troubleshooting
+
+**No "Start Expat Onboarding" button?**
+- Candidate must be in "Onboarding" or "Expat Processing" stage
+- Candidate must be marked as non-Maldivian
+- Check candidate has jobId linked
+
+**Cannot proceed to next stage?**
+- Check all required fields are filled
+- Verify all required documents received (for visa stage)
+- Confirm visa payment checked (for entry pass)
+- Ensure both ticket legs booked (for accommodation)
+
+**No rooms available?**
+- Go to Accommodation module
+- Add new rooms or check for vacant rooms
+- Ensure room status is "available"
+
 ---
 
 ## Payroll & Payslips
@@ -1844,10 +2059,34 @@ Go to **HR Management** → **Operations**
 
 ### Profile Settings
 1. Click your name in top right
-2. Select "Profile"
-3. Update:
-   - Display name
-   - Email
+2. Select **Profile**
+3. Update your personal information
+4. Click **Save Changes**
+
+### Out of Office Delegation (Department Head)
+
+Department Heads can temporarily delegate their HOD access to a deputy while they are on leave.
+
+**Who can use it**
+- Only users with the **Department Head** role
+
+**Who can be selected as deputy**
+- A staff member from the **same department**
+
+**Important requirement**
+- The deputy must have an existing system user account in the `users` collection (typically created when they **log in at least once**).
+
+**Enable delegation**
+1. Go to **Profile**
+2. Find **Out of Office Delegation**
+3. Select a deputy from the dropdown (designation and name)
+4. Choose start date (and optional end date)
+5. Click **Enable Out of Office Delegation**
+
+**Disable delegation**
+1. Go to **Profile**
+2. In the Out of Office banner, click **End Delegation Early**
+3. Confirm
    - Password
    - Phone number
 

@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
-import { Plus, Search, AlertTriangle, Download, Eye } from 'lucide-react';
+import { Plus, Search, AlertTriangle, Download, Eye, Clock, FileText } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { useCompany } from '../contexts/CompanyContext';
 import { formatDate, calculateDaysRemaining } from '../utils/helpers';
@@ -12,7 +12,7 @@ export default function Medicals() {
   const [records, setRecords] = useState([]);
   const [filteredRecords, setFilteredRecords] = useState([]);
   const [activeTab, setActiveTab] = useState('medical'); // medical, insurance, fee
-  const { isHR } = useAuth();
+  const { isHR, userData } = useAuth();
   const { companyId } = useCompany();
   
   const [searchTerm, setSearchTerm] = useState('');
@@ -24,7 +24,17 @@ export default function Medicals() {
     try {
       const q = query(collection(db, 'employees'), where('companyId', '==', companyId));
       const snap = await getDocs(q);
-      const employees = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      let employees = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      
+      // Filter by department for dept_head and supervisor roles
+      const userRole = userData?.role;
+      const userDept = userData?.department;
+      if (['dept_head', 'supervisor'].includes(userRole) && userDept) {
+        employees = employees.filter(emp => {
+          const empDept = emp['Department '] || emp.Department || emp.department;
+          return empDept === userDept;
+        });
+      }
       
       // Create records based on active tab
       let extractedRecords = [];
@@ -162,17 +172,28 @@ export default function Medicals() {
         ))}
       </div>
 
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4">
+        {/* Total Card */}
+        <button onClick={() => setActiveFilter(null)} 
+          className={`bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl p-4 text-white shadow-lg transform hover:scale-105 transition-all text-left ${activeFilter === null ? 'ring-4 ring-offset-2 ring-blue-300' : ''}`}>
+          <div className="flex items-center">
+            <div className="p-2 bg-white/20 rounded-lg mr-3"><FileText className="h-5 w-5 text-white" /></div>
+            <div>
+              <p className="text-xs text-white/80 font-medium">📊 Total</p>
+              <p className="text-2xl font-bold">{records.length}</p>
+            </div>
+          </div>
+        </button>
         {[
-          { id: 'expired', label: 'Expired', color: 'from-rose-500 to-red-600' },
-          { id: '30days', label: '< 30 days', color: 'from-orange-400 to-amber-500' },
-          { id: '60days', label: '30-60 days', color: 'from-yellow-400 to-amber-500' },
-          { id: '90days', label: '60-90 days', color: 'from-sky-400 to-blue-500' }
+          { id: 'expired', label: 'Expired', color: 'from-rose-500 to-red-600', icon: AlertTriangle },
+          { id: '30days', label: '< 30 days', color: 'from-orange-400 to-amber-500', icon: Clock },
+          { id: '60days', label: '30-60 days', color: 'from-yellow-400 to-amber-500', icon: Clock },
+          { id: '90days', label: '60-90 days', color: 'from-sky-400 to-blue-500', icon: Clock }
         ].map(filter => (
           <button key={filter.id} onClick={() => setActiveFilter(activeFilter === filter.id ? null : filter.id)} 
             className={`bg-gradient-to-br ${filter.color} rounded-2xl p-4 text-white shadow-lg transform hover:scale-105 transition-all text-left ${activeFilter === filter.id ? 'ring-4 ring-offset-2' : ''}`}>
             <div className="flex items-center">
-              <div className="p-2 bg-white/20 rounded-lg mr-3"><AlertTriangle className="h-5 w-5 text-white" /></div>
+              <div className="p-2 bg-white/20 rounded-lg mr-3"><filter.icon className="h-5 w-5 text-white" /></div>
               <div>
                 <p className="text-xs text-white/80 font-medium">{filter.label}</p>
                 <p className="text-2xl font-bold">

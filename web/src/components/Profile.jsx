@@ -5,6 +5,7 @@ import { useCompany } from '../contexts/CompanyContext';
 import { doc, updateDoc } from 'firebase/firestore';
 import { db } from '../firebase/config';
 import { formatDate } from '../utils/helpers';
+import OutOfOfficeSettings from './OutOfOfficeSettings';
 
 export default function Profile() {
   const { user, userData, logout } = useAuth();
@@ -13,22 +14,50 @@ export default function Profile() {
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState('');
   
+  // Get name from various possible field names
+  const getName = () => {
+    return userData?.name || 
+           userData?.['Full Name'] || 
+           userData?.['Employee Name'] || 
+           userData?.displayName || 
+           user?.displayName || 
+           '';
+  };
+
+  // Get phone from various possible field names
+  const getPhone = () => {
+    return userData?.phone || 
+           userData?.['Phone'] || 
+           userData?.['Contact'] || 
+           userData?.['Mobile'] || 
+           '';
+  };
+
+  // Get position/designation from various possible field names
+  const getPosition = () => {
+    return userData?.position || 
+           userData?.['Position'] || 
+           userData?.['Designation'] || 
+           userData?.designation || 
+           '';
+  };
+
   const [formData, setFormData] = useState({
-    name: userData?.name || '',
+    name: getName(),
     email: user?.email || '',
-    phone: userData?.phone || '',
+    phone: getPhone(),
     department: userData?.department || '',
-    position: userData?.position || '',
+    position: getPosition(),
   });
 
   useEffect(() => {
     if (userData) {
       setFormData({
-        name: userData.name || '',
+        name: getName(),
         email: user?.email || '',
-        phone: userData.phone || '',
-        department: userData.department || '',
-        position: userData.position || '',
+        phone: getPhone(),
+        department: userData?.department || '',
+        position: getPosition(),
       });
     }
   }, [userData, user]);
@@ -300,6 +329,9 @@ export default function Profile() {
               </div>
             </div>
           </div>
+
+          {/* Out of Office Delegation - Only for HODs */}
+          <OutOfOfficeSettings />
         </div>
       </div>
     </div>

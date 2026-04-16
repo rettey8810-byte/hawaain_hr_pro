@@ -103,9 +103,16 @@ export default function TransportationBooking() {
         
         // Fetch employee details
         if (leaveData.employeeId) {
+          // Extract EmpID from format "sunisland-resort-and-spa_XXXXX" or "villa-park_XXXXX"
+          let searchEmpId = leaveData.employeeId;
+          if (typeof leaveData.employeeId === 'string' && leaveData.employeeId.includes('_')) {
+            const parts = leaveData.employeeId.split('_');
+            searchEmpId = parts[parts.length - 1];
+          }
+          
           const empQuery = query(
             collection(db, 'employees'),
-            where('__name__', '==', leaveData.employeeId)
+            where('EmpID', '==', searchEmpId)
           );
           const empSnap = await getDocs(empQuery);
           if (!empSnap.empty) {

@@ -659,6 +659,14 @@ export default function Accommodation() {
   const { documents: maintenance, loading: maintenanceLoading } = useFirestore('maintenance');
   const { documents: employees, loading: employeesLoading } = useFirestore('employees');
 
+  // Role-based access control
+  const userRole = userData?.role;
+  const userDept = userData?.department;
+  const actingAsHOD = userData?.actingAsHOD;
+  const isAdmin = userRole === 'superadmin' || userRole === 'gm' || userRole === 'hrm' || userRole === 'hr';
+  const isHOD = userRole === 'dept_head' || actingAsHOD;
+  const canEdit = isAdmin; // Only admins can create/edit/delete
+
   const companyRooms = useMemo(() => {
     return rooms.filter(r => r.companyId === companyId);
   }, [rooms, companyId]);
@@ -991,6 +999,17 @@ export default function Accommodation() {
     }
   };
 
+  if (!companyId) {
+    return (
+      <div className="min-h-screen bg-gray-50 p-6 flex items-center justify-center">
+        <div className="flex items-center gap-3 text-gray-500">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+          <span>Loading company data...</span>
+        </div>
+      </div>
+    );
+  }
+
   if (roomsLoading || assignmentsLoading || maintenanceLoading || employeesLoading) {
     return (
       <div className="min-h-screen bg-gray-50 p-6 flex items-center justify-center">
@@ -1107,21 +1126,23 @@ export default function Accommodation() {
                   </select>
                 )}
               </div>
-              <button
-                onClick={() => { setSelectedRoom(null); setShowRoomModal(true); }}
-                className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 flex items-center gap-2"
-              >
-                <Plus className="h-4 w-4" />
-                Add Room
-              </button>
-              <label className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 flex items-center gap-2 cursor-pointer">
-                <Download className="h-4 w-4" />
-                Import JSON
-                <input
-                  type="file"
-                  accept=".json"
-                  className="hidden"
-                  onChange={(e) => {
+              {canEdit && (
+                <>
+                  <button
+                    onClick={() => { setSelectedRoom(null); setShowRoomModal(true); }}
+                    className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 flex items-center gap-2"
+                  >
+                    <Plus className="h-4 w-4" />
+                    Add Room
+                  </button>
+                  <label className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 flex items-center gap-2 cursor-pointer">
+                    <Download className="h-4 w-4" />
+                    Import JSON
+                    <input
+                      type="file"
+                      accept=".json"
+                      className="hidden"
+                      onChange={(e) => {
                     console.log('File selected:', e.target.files);
                     const file = e.target.files[0];
                     if (file) {
@@ -1152,11 +1173,21 @@ export default function Accommodation() {
                   }}
                 />
               </label>
+              </>
+            )}
             </div>
 
             <div className="grid grid-cols-3 gap-4">
               {filteredRooms.map(room => {
-                const roomAssignments = companyAssignments.filter(a => a.roomId === room.id && !a.checkOutDate);
+                let roomAssignments = companyAssignments.filter(a => a.roomId === room.id && !a.checkOutDate);
+                // For HOD, filter occupants to show only their department staff
+                if (isHOD && userDept) {
+                  roomAssignments = roomAssignments.filter(a => {
+                    const emp = employees.find(e => e.id === a.employeeId);
+                    const empDept = emp?.['Department '] || emp?.Department || emp?.department;
+                    return empDept === userDept;
+                  });
+                }
                 const occupancy = roomAssignments.length;
                 const occupancyPercent = (occupancy / room.capacity) * 100;
 
@@ -1236,22 +1267,24 @@ export default function Accommodation() {
                       </div>
                     )}
 
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() => { setSelectedRoom(room); setShowRoomModal(true); }}
-                        className="flex-1 text-sm text-blue-600 hover:bg-blue-50 py-1.5 rounded"
-                      >
-                        Edit
-                      </button>
-                      {room.status === 'available' && (
+                    {canEdit && (
+                      <div className="flex gap-2">
                         <button
-                          onClick={() => { setSelectedAssignment({ roomId: room.id }); setShowAssignmentModal(true); }}
-                          className="flex-1 text-sm text-green-600 hover:bg-green-50 py-1.5 rounded"
+                          onClick={() => { setSelectedRoom(room); setShowRoomModal(true); }}
+                          className="flex-1 text-sm text-blue-600 hover:bg-blue-50 py-1.5 rounded"
                         >
-                          Assign
+                          Edit
                         </button>
-                      )}
-                    </div>
+                        {room.status === 'available' && (
+                          <button
+                            onClick={() => { setSelectedAssignment({ roomId: room.id }); setShowAssignmentModal(true); }}
+                            className="flex-1 text-sm text-green-600 hover:bg-green-50 py-1.5 rounded"
+                          >
+                            Assign
+                          </button>
+                        )}
+                      </div>
+                    )}
                   </div>
                 );
               })}
@@ -1272,20 +1305,18 @@ export default function Accommodation() {
           <div>
             <div className="flex justify-between items-center mb-4">
               <h3 className="font-semibold">Current Room Assignments</h3>
-              <button
-                onClick={() => { setSelectedAssignment(null); setShowAssignmentModal(true); }}
-                className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 flex items-center gap-2"
-              >
-                <Plus className="h-4 w-4" />
-                New Assignment
-              </button>
-              <button
-                onClick={() => { setSelectedAssignment(null); setShowAssignmentModal(true); }}
-                className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 flex items-center gap-2"
-              >
-                <Plus className="h-4 w-4" />
-                New Assignment
-              </button>
+              {isHOD && userDept && (
+                <span className="text-sm text-gray-500">Showing {userDept} department only</span>
+              )}
+              {canEdit && (
+                <button
+                  onClick={() => { setSelectedAssignment(null); setShowAssignmentModal(true); }}
+                  className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 flex items-center gap-2"
+                >
+                  <Plus className="h-4 w-4" />
+                  New Assignment
+                </button>
+              )}
             </div>
 
             <div className="overflow-x-auto">
@@ -1297,12 +1328,19 @@ export default function Accommodation() {
                     <th className="text-left py-3 px-4">Check-in</th>
                     <th className="text-left py-3 px-4">Rent</th>
                     <th className="text-left py-3 px-4">Status</th>
-                    <th className="text-right py-3 px-4">Actions</th>
+                    {canEdit && <th className="text-right py-3 px-4">Actions</th>}
                   </tr>
                 </thead>
                 <tbody className="divide-y">
                   {companyAssignments
                     .filter(a => !a.checkOutDate)
+                    .filter(a => {
+                      // For HOD, filter by department
+                      if (!isHOD || !userDept) return true;
+                      const emp = employees.find(e => e.id === a.employeeId);
+                      const empDept = emp?.['Department '] || emp?.Department || emp?.department;
+                      return empDept === userDept;
+                    })
                     .map(assignment => {
                       const emp = employees.find(e => e.id === assignment.employeeId);
                       const room = companyRooms.find(r => r.id === assignment.roomId);
@@ -1336,22 +1374,24 @@ export default function Accommodation() {
                               Active
                             </span>
                           </td>
-                          <td className="py-3 px-4 text-right">
-                            <div className="flex items-center justify-end gap-2">
-                              <button
-                                onClick={() => { setSelectedAssignment(assignment); setShowAssignmentModal(true); }}
-                                className="p-2 text-gray-400 hover:text-blue-600"
-                              >
-                                <Edit2 className="w-4 h-4" />
-                              </button>
-                              <button
-                                onClick={() => handleVacateRoom(assignment)}
-                                className="text-sm text-red-600 hover:bg-red-50 px-3 py-1 rounded"
-                              >
-                                Vacate
-                              </button>
-                            </div>
-                          </td>
+                          {canEdit && (
+                            <td className="py-3 px-4 text-right">
+                              <div className="flex items-center justify-end gap-2">
+                                <button
+                                  onClick={() => { setSelectedAssignment(assignment); setShowAssignmentModal(true); }}
+                                  className="p-2 text-gray-400 hover:text-blue-600"
+                                >
+                                  <Edit2 className="w-4 h-4" />
+                                </button>
+                                <button
+                                  onClick={() => handleVacateRoom(assignment)}
+                                  className="text-sm text-red-600 hover:bg-red-50 px-3 py-1 rounded"
+                                >
+                                  Vacate
+                                </button>
+                              </div>
+                            </td>
+                          )}
                         </tr>
                       );
                     })}
@@ -1374,13 +1414,15 @@ export default function Accommodation() {
           <div>
             <div className="flex justify-between items-center mb-4">
               <h3 className="font-semibold">Maintenance Requests</h3>
-              <button
-                onClick={() => { setSelectedMaintenance(null); setShowMaintenanceModal(true); }}
-                className="bg-orange-600 text-white px-4 py-2 rounded-lg hover:bg-orange-700 flex items-center gap-2"
-              >
-                <Plus className="h-4 w-4" />
-                New Request
-              </button>
+              {canEdit && (
+                <button
+                  onClick={() => { setSelectedMaintenance(null); setShowMaintenanceModal(true); }}
+                  className="bg-orange-600 text-white px-4 py-2 rounded-lg hover:bg-orange-700 flex items-center gap-2"
+                >
+                  <Plus className="h-4 w-4" />
+                  New Request
+                </button>
+              )}
             </div>
 
             <div className="space-y-3">

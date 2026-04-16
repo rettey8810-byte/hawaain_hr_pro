@@ -1,12 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { collection, addDoc, updateDoc, doc, query, where, orderBy, onSnapshot } from 'firebase/firestore';
+import { collection, addDoc, updateDoc, doc, query, where, orderBy, onSnapshot, Timestamp } from 'firebase/firestore';
 import { db } from '../firebase';
 import { useAuth } from '../contexts/AuthContext';
 import { useCompany } from '../contexts/CompanyContext';
+import { useNavigate } from 'react-router-dom';
+import { toast } from 'react-hot-toast';
 import OfficialLetterGenerator from './OfficialLetterGenerator';
 import { 
   Users, Plus, Search, Filter, FileText, CheckCircle, 
-  XCircle, Eye, Printer, UserPlus 
+  XCircle, Eye, Printer, UserPlus, Briefcase, ArrowRight
 } from 'lucide-react';
 
 /**
@@ -62,6 +64,7 @@ const URGENCY_LEVELS = [
 export default function RecruitmentApproval() {
   const { user, userData, hasAccess } = useAuth();
   const { companyId } = useCompany();
+  const navigate = useNavigate();
   
   const [requisitions, setRequisitions] = useState([]);
   const [employees, setEmployees] = useState([]);
@@ -77,6 +80,8 @@ export default function RecruitmentApproval() {
   // Form state
   const [formData, setFormData] = useState({
     department: '',
+    division: '',
+    designation: '',
     position: '',
     positionLevel: 'entry',
     numberOfPositions: 1,
@@ -141,12 +146,66 @@ export default function RecruitmentApproval() {
     };
   }, [companyId]);
 
-  // Get unique departments from employee data
-  const departments = [...new Set(employees.map(e => e['Department '] || e.Department || e.department).filter(Boolean))];
+  // Fallback departments if no employee data
+  const fallbackDepartments = ['ENGINEERING', 'HOUSEKEEPING', 'FOOD AND BEVERAGE SERVICE', 'GUEST SERVICE', 'MAINTENANCE', 'GENERAL OFFICE', 'FINANCE', 'TRANSPORT', 'ARAAMU SPA', 'Q ADVENTURE', "CHAIRMAN'S PROJECT"];
+  
+  // Get unique departments from employee data, fallback to hardcoded list
+  const employeeDepts = [...new Set(employees.map(e => e['Department '] || e.Department || e.department).filter(Boolean))];
+  const allDepartments = employeeDepts.length > 0 ? employeeDepts : fallbackDepartments;
+  
+  // Filter departments based on user role - non-admins only see their own department
+  const userRole = userData?.role;
+  const userDept = userData?.department;
+  const isAdmin = userRole === 'superadmin' || userRole === 'gm' || userRole === 'hrm' || userRole === 'hr';
+  const departments = isAdmin ? allDepartments : allDepartments.filter(d => d === userDept);
+
+  // Fallback designations by department
+  const fallbackDesignations = {
+    'ENGINEERING': ['Chief Engineer', 'Assistant Chief Engineer', 'Senior Engineer', 'Engineer', 'Electrician', 'AC Mechanic', 'Plumber', 'Carpenter', 'Helper'],
+    'HOUSEKEEPING': ['Assistant Housekeeper', 'Housekeeping Supervisor', 'Room Attendant', 'Laundry Attendant', 'Public Area Attendant', 'Tailor', 'Gardener'],
+    'FOOD AND BEVERAGE SERVICE': ['F&B Manager', 'Assistant F&B Manager', 'Restaurant Manager', 'Captain', 'Bartender', 'Server', 'Hostess', 'Cashier'],
+    'FOOD AND BEVERAGE PRODUCTION': ['Executive Chef', 'Sous Chef', 'Chef De Partie', 'Demi Chef', 'Commis', 'Kitchen Helper', 'Steward'],
+    'GUEST SERVICE': ['Room Division Director', 'Front Office Manager', 'Guest Service Agent', 'Senior Porter', 'Porter', 'Concierge', 'Bell Captain'],
+    'MAINTENANCE': ['Maintenance Manager', 'Maintenance Supervisor', 'Senior Mechanic', 'Gardener', 'Painter', 'Mason', 'Helper'],
+    'GENERAL OFFICE': ['General Manager', 'Executive Assistant Manager', 'HR Manager', 'Finance Manager', 'Accounts Officer', 'Secretary'],
+    'FINANCE': ['Finance Director', 'Financial Controller', 'Chief Accountant', 'Accountant', 'Accounts Assistant', 'Cashier'],
+    'TRANSPORT': ['Transport Manager', 'Captain', 'Crew', 'Driver', 'Fisherman', 'Mechanic'],
+    'ARAAMU SPA': ['Spa Manager', 'Spa Therapist', 'Spa Receptionist', 'Fitness Instructor'],
+    'Q ADVENTURE': ['Manager', 'Activity Coordinator', 'Instructor', 'Guide'],
+    "CHAIRMAN'S PROJECT": ['Project Manager', 'Coordinator', 'Cook', 'Server', 'Helper', 'Mason']
+  };
+
+  // Get designations for selected department - use employee data or fallback
+  const designationsForDept = formData.department 
+    ? (() => {
+        const empDesignations = [...new Set(employees
+          .filter(e => (e['Department '] || e.Department || e.department) === formData.department)
+          .map(e => e.Designation || e.designation || e.position)
+          .filter(Boolean))];
+        // Use fallback if no employee designations found
+        return empDesignations.length > 0 ? empDesignations : (fallbackDesignations[formData.department] || []);
+      })()
+    : [];
+
+  // Fallback divisions if none loaded from Firestore
+  const fallbackDivisions = [
+    { id: 'ops', name: 'Operations', budgetCode: 'OPS-001' },
+    { id: 'admin', name: 'Administration', budgetCode: 'ADM-001' },
+    { id: 'sales', name: 'Sales & Marketing', budgetCode: 'SAL-001' },
+    { id: 'finance', name: 'Finance', budgetCode: 'FIN-001' },
+    { id: 'hr', name: 'Human Resources', budgetCode: 'HR-001' },
+    { id: 'it', name: 'IT & Technology', budgetCode: 'IT-001' },
+    { id: 'maint', name: 'Maintenance', budgetCode: 'MAINT-001' },
+    { id: 'fb', name: 'Food & Beverage', budgetCode: 'FB-001' },
+    { id: 'rooms', name: 'Rooms Division', budgetCode: 'ROOMS-001' },
+    { id: 'spa', name: 'Spa & Recreation', budgetCode: 'SPA-001' }
+  ];
+  
+  const availableDivisions = divisions.length > 0 ? divisions : fallbackDivisions;
 
   // Get budget code for a department from divisions
   const getBudgetCodeForDepartment = (deptName) => {
-    const division = divisions.find(d => d.name === deptName);
+    const division = availableDivisions.find(d => d.name === deptName);
     return division?.budgetCode || '';
   };
 
@@ -337,6 +396,10 @@ export default function RecruitmentApproval() {
       'workflow.currentStage': newStage,
       status: newStatus
     });
+
+    // Close the detail modal after action
+    setShowDetailModal(false);
+    setSelectedRequisition(null);
   };
 
   const handleMarkFilled = async (reqId, employeeId = null) => {
@@ -372,6 +435,53 @@ export default function RecruitmentApproval() {
     workflow: req.workflow
   });
 
+  // Create job posting in ATS from approved requisition
+  const createJobPostingFromRequisition = async (req) => {
+    try {
+      // Default prescreening questions
+      const prescreeningQuestions = [
+        { id: 'experience', question: 'Years of relevant experience?', type: 'number', required: true },
+        { id: 'availability', question: 'When can you start?', type: 'text', required: true },
+        { id: 'salary_expectation', question: 'Expected salary (USD)?', type: 'number', required: true },
+        { id: 'relocate', question: 'Willing to relocate to resort island?', type: 'boolean', required: true },
+        { id: 'maldivian', question: 'Are you Maldivian?', type: 'boolean', required: true },
+        { id: 'notice_period', question: 'Current notice period (days)?', type: 'number', required: false }
+      ];
+
+      const jobData = {
+        title: req.position,
+        department: req.department,
+        location: 'Villa Park Resort, Maldives',
+        type: 'Full-time',
+        salary: `$${req.salaryRange?.min?.toLocaleString()} - $${req.salaryRange?.max?.toLocaleString()}`,
+        description: req.jobDescription,
+        requirements: `Qualifications: ${req.qualifications}\n\nExperience: ${req.experienceRequired}\n\nSkills: ${req.skillsRequired || 'N/A'}`,
+        status: 'open',
+        prescreeningQuestions: prescreeningQuestions,
+        companyId: companyId,
+        requisitionId: req.id, // Link back to requisition
+        createdAt: new Date().toISOString(),
+        postedAt: new Date().toISOString()
+      };
+
+      const jobRef = await addDoc(collection(db, 'jobPostings'), jobData);
+      
+      // Update requisition to mark job posting created
+      await updateDoc(doc(db, 'recruitmentApprovals', req.id), {
+        jobPostingId: jobRef.id,
+        jobPostingCreated: true,
+        updatedAt: new Date().toISOString()
+      });
+
+      toast.success('Job posting created successfully! Redirecting to ATS...');
+      
+      // Redirect to Recruitment ATS page
+      navigate('/recruitment');
+    } catch (error) {
+      toast.error('Failed to create job posting: ' + error.message);
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -385,7 +495,13 @@ export default function RecruitmentApproval() {
         </div>
         {canCreateRequisition() && (
           <button
-            onClick={() => setShowCreateModal(true)}
+            onClick={() => {
+              // Auto-select department for department heads
+              if (!isAdmin && userDept && departments.length > 0) {
+                setFormData(prev => ({...prev, department: userDept}));
+              }
+              setShowCreateModal(true);
+            }}
             className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
           >
             <Plus className="h-5 w-5" />
@@ -420,6 +536,87 @@ export default function RecruitmentApproval() {
           <option value="rejected">Rejected</option>
         </select>
       </div>
+
+      {/* Ready to Hire Section - Approved Requisitions */}
+      {filteredRequisitions.some(r => r.status === 'approved') && (
+        <div className="bg-gradient-to-r from-emerald-50 to-green-50 rounded-xl shadow-sm border border-emerald-200 overflow-hidden mb-6">
+          <div className="px-6 py-4 bg-emerald-100 border-b border-emerald-200 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <CheckCircle className="h-5 w-5 text-emerald-600" />
+              <h3 className="font-bold text-emerald-900">Ready to Hire</h3>
+              <span className="px-2 py-0.5 bg-emerald-600 text-white text-xs rounded-full">
+                {filteredRequisitions.filter(r => r.status === 'approved').length}
+              </span>
+            </div>
+            <p className="text-sm text-emerald-700">Click "Manage Hiring" to track progress and hire candidates</p>
+          </div>
+          <div className="p-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {filteredRequisitions
+              .filter(r => r.status === 'approved')
+              .map(req => (
+                <div key={req.id} className="bg-white rounded-lg p-4 border border-emerald-200 shadow-sm">
+                  <div className="flex justify-between items-start mb-2">
+                    <div>
+                      <h4 className="font-bold text-gray-900">{req.position}</h4>
+                      <p className="text-sm text-gray-600">{req.department}</p>
+                    </div>
+                    <span className="px-2 py-1 bg-emerald-100 text-emerald-700 text-xs rounded-full">
+                      {req.hiringProgress?.hired || 0}/{req.numberOfPositions} Hired
+                    </span>
+                  </div>
+                  
+                  {/* Hiring Progress Mini */}
+                  <div className="grid grid-cols-4 gap-2 text-center my-3">
+                    <div className="bg-blue-50 p-2 rounded">
+                      <div className="text-lg font-bold text-blue-600">{req.hiringProgress?.applications || 0}</div>
+                      <div className="text-xs text-gray-500">Apps</div>
+                    </div>
+                    <div className="bg-yellow-50 p-2 rounded">
+                      <div className="text-lg font-bold text-yellow-600">{req.hiringProgress?.interviews || 0}</div>
+                      <div className="text-xs text-gray-500">Int</div>
+                    </div>
+                    <div className="bg-purple-50 p-2 rounded">
+                      <div className="text-lg font-bold text-purple-600">{req.hiringProgress?.shortlisted || 0}</div>
+                      <div className="text-xs text-gray-500">Short</div>
+                    </div>
+                    <div className="bg-green-50 p-2 rounded">
+                      <div className="text-lg font-bold text-green-600">{req.hiringProgress?.hired || 0}</div>
+                      <div className="text-xs text-gray-500">Hired</div>
+                    </div>
+                  </div>
+                  
+                  <div className="flex gap-2">
+                    {!req.jobPostingCreated ? (
+                      <button
+                        onClick={() => createJobPostingFromRequisition(req)}
+                        className="flex-1 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-sm font-medium flex items-center justify-center gap-2"
+                      >
+                        <Briefcase className="h-4 w-4" />
+                        Create Job Posting
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => navigate('/recruitment')}
+                        className="flex-1 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 text-sm font-medium flex items-center justify-center gap-2"
+                      >
+                        View in ATS
+                        <ArrowRight className="h-4 w-4" />
+                      </button>
+                    )}
+                    <button
+                      onClick={() => { setSelectedRequisition(req); setShowLetterPreview(true); }}
+                      className="px-3 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
+                      title="Print Form"
+                    >
+                      <Printer className="h-4 w-4" />
+                    </button>
+                  </div>
+                </div>
+              ))
+            }
+          </div>
+        </div>
+      )}
 
       {/* Requisitions List */}
       <div className="bg-white rounded-xl shadow-sm border overflow-hidden">
@@ -519,13 +716,48 @@ export default function RecruitmentApproval() {
                     onChange={(e) => {
                       const dept = e.target.value;
                       const budgetCode = getBudgetCodeForDepartment(dept);
-                      setFormData({...formData, department: dept, budgetCode});
+                      setFormData({...formData, department: dept, designation: '', budgetCode});
                     }}
                     className="w-full px-3 py-2 border rounded-lg"
+                    disabled={!isAdmin && departments.length === 1}
                   >
                     <option value="">Select Department...</option>
                     {departments.map(dept => (
                       <option key={dept} value={dept}>{dept}</option>
+                    ))}
+                  </select>
+                  {!isAdmin && userDept && (
+                    <p className="text-xs text-gray-500 mt-1">Showing your department only</p>
+                  )}
+                </div>
+                <div>
+                  <label className="block text-sm font-medium mb-1">Division</label>
+                  <select
+                    value={formData.division}
+                    onChange={(e) => setFormData({...formData, division: e.target.value})}
+                    className="w-full px-3 py-2 border rounded-lg"
+                  >
+                    <option value="">Select Division (Optional)...</option>
+                    {availableDivisions.map(div => (
+                      <option key={div.id} value={div.name}>{div.name}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium mb-1">Designation *</label>
+                  <select
+                    required
+                    value={formData.designation}
+                    onChange={(e) => setFormData({...formData, designation: e.target.value})}
+                    className="w-full px-3 py-2 border rounded-lg"
+                    disabled={!formData.department}
+                  >
+                    <option value="">{formData.department ? 'Select Designation...' : 'Select Department First'}</option>
+                    {designationsForDept.map(desig => (
+                      <option key={desig} value={desig}>{desig}</option>
                     ))}
                   </select>
                 </div>

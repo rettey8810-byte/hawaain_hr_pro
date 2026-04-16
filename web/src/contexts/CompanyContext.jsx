@@ -29,8 +29,8 @@ export function CompanyProvider({ children }) {
     setLoading(true);
     console.log('[CompanyContext] Loading companies for user:', user?.email, 'userData.companyId:', userData?.companyId, 'role:', userData?.role);
     try {
-      // If super admin OR GM, load all companies
-      if (userData.role === 'superadmin' || userData.role === 'gm') {
+      // If super admin OR GM OR HRM OR dept_head, load all companies
+      if (['superadmin', 'gm', 'hrm', 'dept_head', 'supervisor'].includes(userData.role)) {
         const companiesSnap = await getDocs(collection(db, 'companies'));
         const companiesList = companiesSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
         setCompanies(companiesList);
@@ -56,6 +56,16 @@ export function CompanyProvider({ children }) {
             setCurrentCompany(companyData);
           } else {
             console.warn('[CompanyContext] Company not found in Firestore:', userData.companyId);
+            // Fallback: try to find villa-park company (data migration issue)
+            const fallbackDoc = await getDoc(doc(db, 'companies', 'villa-park'));
+            if (fallbackDoc.exists()) {
+              const companyData = { id: fallbackDoc.id, ...fallbackDoc.data() };
+              console.log('[CompanyContext] Fallback company loaded:', companyData.id, companyData.name);
+              setCompanies([companyData]);
+              setCurrentCompany(companyData);
+            } else {
+              console.warn('[CompanyContext] Fallback company also not found');
+            }
           }
         } else {
           console.warn('[CompanyContext] No companyId in userData for:', user?.email);

@@ -221,7 +221,11 @@ export function AuthProvider({ children }) {
   // Data visibility filters based on role
   const getDataVisibilityFilter = () => {
     const userDept = userData?.department;
-    const userCompany = userData?.companyId;
+    // Handle companyId mismatch - if user has old companyId, fallback to villa-park
+    let userCompany = userData?.companyId;
+    if (userCompany === 'sunisland-resort-and-spa') {
+      userCompany = 'villa-park'; // Fallback to actual data company
+    }
     
     switch (currentRole) {
       case 'superadmin':
@@ -252,7 +256,8 @@ export function AuthProvider({ children }) {
       case 'company':
         return employee.companyId === visibility.companyId;
       case 'department':
-        return employee.companyId === visibility.companyId && employee.department === visibility.department;
+        const empDept = employee['Department '] || employee.Department || employee.department || '';
+        return employee.companyId === visibility.companyId && empDept === visibility.department;
       case 'own':
         // Staff can see if the employee record is linked to their user account
         // This requires employees to have a userId field linking to auth
@@ -268,13 +273,28 @@ export function AuthProvider({ children }) {
     
     if (visibility.type === 'all') return items;
     
+    // Debug logging for department filter
+    if (visibility.type === 'department' && items.length > 0) {
+      const sampleDepts = items.slice(0, 5).map(i => ({ 
+        id: i.id, 
+        dept: i['Department '] || i.Department || i.department || 'NONE',
+        companyId: i.companyId 
+      }));
+      console.log('[filterByVisibility] Sample departments:', sampleDepts);
+      console.log('[filterByVisibility] Looking for dept:', visibility.department, 'in company:', visibility.companyId);
+    }
+    
     return items.filter(item => {
       switch (visibility.type) {
         case 'company':
           return item.companyId === visibility.companyId;
         case 'department':
           const itemDept = item['Department '] || item.Department || item.department || '';
-          return item.companyId === visibility.companyId && itemDept === visibility.department;
+          const matches = item.companyId === visibility.companyId && itemDept === visibility.department;
+          if (!matches && item.id === items[0]?.id) {
+            console.log('[filterByVisibility] First item dept check:', { itemDept, expected: visibility.department, companyId: item.companyId });
+          }
+          return matches;
         case 'own':
           return item.userId === visibility.userId || item.createdBy === visibility.userId || item.email === userData?.email;
         default:

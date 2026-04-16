@@ -305,6 +305,8 @@ Hawaain_HR_Pro/
 - npm or yarn
 - Firebase account (free tier)
 
+For detailed local run instructions, see `LOCALSERVER.md`.
+
 ### Web Application
 
 ```bash
@@ -320,6 +322,16 @@ npm install
 # Start development server
 npm run dev
 ```
+
+---
+
+## Out of Office Delegation (Department Head)
+
+- A Department Head can delegate temporary HOD access to a deputy from the same department.
+- The deputy must have a **real user account in the `users` collection** (typically created when they **log in at least once**).
+- Delegation stores:
+  - `outOfOffice.delegatedTo`: deputy **user id**
+  - `outOfOffice.deputyEmployeeId`: deputy **employee record id** (used for displaying the deputy name)
 
 ### Mobile Application
 

@@ -69,6 +69,7 @@ export default function Terminations() {
   const [formData, setFormData] = useState({
     employeeId: '',
     employeeName: '',
+    department: '',
     type: 'voluntary',
     status: 'pending',
     startDate: '',
@@ -91,6 +92,14 @@ export default function Terminations() {
     const isNotTerminated = e.status !== 'terminated';
     return matchesCompany && isNotTerminated;
   });
+
+  // Get unique departments from employees
+  const departments = [...new Set(employees.map(e => e['Department '] || e.Department || e.department).filter(Boolean))];
+  
+  // Filter employees by selected department
+  const filteredEmployeesByDept = formData.department 
+    ? employees.filter(e => (e['Department '] || e.Department || e.department) === formData.department)
+    : employees;
 
   const filteredTerminations = terminations.filter(t => {
     const matchesSearch = 
@@ -117,25 +126,26 @@ export default function Terminations() {
     return matchesCompany && isTerminated && matchesSearch;
   });
 
+  // Past Staffs: Show only terminated employees
+  const pastStaffItems = terminatedEmployees.map(e => ({ 
+    id: e.id, 
+    employeeId: e.id,
+    employeeName: e.name || e.Name || e.FullName,
+    type: 'terminated_employee',
+    status: 'past_staff',
+    itemType: 'employee',
+    startDate: e.joiningDate,
+    lastWorkingDay: e.lastWorkingDay || e.terminationDate,
+    reason: 'Terminated',
+    ...e
+  }));
+
+  // Main list: Only show termination records (not terminated employees)
+  const mainListItems = filteredTerminations.map(t => ({ ...t, itemType: 'termination' }));
+
   // Combine for Past Staffs display
-  const pastStaffItems = activeTab === 'past_staffs' 
-    ? [
-        ...filteredTerminations.map(t => ({ ...t, itemType: 'termination' })),
-        ...terminatedEmployees.map(e => ({ 
-          id: e.id, 
-          employeeId: e.id,
-          employeeName: e.name || e.Name || 'Unknown',
-          itemType: 'employee',
-          status: 'completed',
-          type: e.terminationReason || 'terminated',
-          lastWorkingDate: e.terminationDate,
-          reason: e.terminationReason || 'Employee terminated',
-          terminationDate: e.terminationDate,
-          ...e
-        }))
-      ]
-    : filteredTerminations.map(t => ({ ...t, itemType: 'termination' }));
-  
+  const items = activeTab === 'past_staffs' ? pastStaffItems : mainListItems;
+
   // Filter employees for dropdown
   const filteredEmployees = employees.filter(e => {
     const search = employeeSearchTerm.toLowerCase();
@@ -146,13 +156,14 @@ export default function Terminations() {
   
   // Handle employee selection
   const handleEmployeeSelect = (employee) => {
+    console.log('Selected employee:', employee);
     setSelectedEmployee(employee);
-    setFormData(prev => ({
-      ...prev,
+    setFormData({
+      ...formData,
       employeeId: employee.id,
-      employeeName: employee.name || employee.Name || ''
-    }));
-    setEmployeeSearchTerm(employee.name || employee.Name || '');
+      employeeName: employee.name || employee.Name || employee.FullName || ''
+    });
+    setEmployeeSearchTerm(employee.name || employee.Name || employee.FullName || '');
     setShowEmployeeDropdown(false);
   };
 
@@ -392,27 +403,27 @@ export default function Terminations() {
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-5 gap-4">
-        <div className="bg-white rounded-xl p-4 shadow border-l-4 border-red-500">
-          <p className="text-sm text-gray-500">Total</p>
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4">
+        <button onClick={() => setActiveTab('all')} className="bg-white rounded-xl p-4 shadow border-l-4 border-red-500 hover:shadow-lg transition-all text-left">
+          <p className="text-sm text-gray-500">📊 Total</p>
           <p className="text-2xl font-bold">{stats.total}</p>
-        </div>
-        <div className="bg-white rounded-xl p-4 shadow border-l-4 border-yellow-500">
-          <p className="text-sm text-gray-500">Pending</p>
+        </button>
+        <button onClick={() => setActiveTab('pending')} className="bg-white rounded-xl p-4 shadow border-l-4 border-yellow-500 hover:shadow-lg transition-all text-left">
+          <p className="text-sm text-gray-500">⏳ Pending</p>
           <p className="text-2xl font-bold">{stats.pending}</p>
-        </div>
-        <div className="bg-white rounded-xl p-4 shadow border-l-4 border-blue-500">
-          <p className="text-sm text-gray-500">In Progress</p>
+        </button>
+        <button onClick={() => setActiveTab('in_progress')} className="bg-white rounded-xl p-4 shadow border-l-4 border-blue-500 hover:shadow-lg transition-all text-left">
+          <p className="text-sm text-gray-500">🔄 In Progress</p>
           <p className="text-2xl font-bold">{stats.inProgress}</p>
-        </div>
-        <div className="bg-white rounded-xl p-4 shadow border-l-4 border-green-500">
-          <p className="text-sm text-gray-500">Completed</p>
+        </button>
+        <button onClick={() => setActiveTab('completed')} className="bg-white rounded-xl p-4 shadow border-l-4 border-green-500 hover:shadow-lg transition-all text-left">
+          <p className="text-sm text-gray-500">✅ Completed</p>
           <p className="text-2xl font-bold">{stats.completed}</p>
-        </div>
-        <div className="bg-white rounded-xl p-4 shadow border-l-4 border-purple-500">
-          <p className="text-sm text-gray-500">Past Staffs</p>
+        </button>
+        <button onClick={() => setActiveTab('past_staffs')} className="bg-white rounded-xl p-4 shadow border-l-4 border-purple-500 hover:shadow-lg transition-all text-left">
+          <p className="text-sm text-gray-500">👤 Past Staffs</p>
           <p className="text-2xl font-bold">{stats.pastStaffs}</p>
-        </div>
+        </button>
       </div>
 
       {/* Filters */}
@@ -464,7 +475,7 @@ export default function Terminations() {
 
       {/* List */}
       <div className="space-y-4">
-        {(activeTab === 'past_staffs' ? pastStaffItems.length === 0 : filteredTerminations.length === 0) ? (
+        {(activeTab === 'past_staffs' ? pastStaffItems.length === 0 : mainListItems.length === 0) ? (
           <div className="bg-white rounded-xl p-12 text-center text-gray-500">
             <UserX className="h-16 w-16 mx-auto mb-4 text-gray-300" />
             <p className="text-lg">
@@ -475,7 +486,7 @@ export default function Terminations() {
             </p>
           </div>
         ) : (
-          (activeTab === 'past_staffs' ? pastStaffItems : filteredTerminations).map((termination) => (
+          (activeTab === 'past_staffs' ? pastStaffItems : mainListItems).map((termination) => (
             <div key={termination.id} className="bg-white rounded-xl shadow overflow-hidden">
               <div 
                 className="p-4 flex items-center justify-between cursor-pointer hover:bg-gray-50"
@@ -612,6 +623,24 @@ export default function Terminations() {
             </div>
             <div className="p-4 space-y-4">
               <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium mb-1">Department</label>
+                  <select
+                    value={formData.department}
+                    onChange={(e) => {
+                      setFormData({...formData, department: e.target.value, employeeId: '', employeeName: ''});
+                      setEmployeeSearchTerm('');
+                      setSelectedEmployee(null);
+                    }}
+                    className="w-full px-3 py-2 border rounded-lg"
+                    disabled={editingTermination}
+                  >
+                    <option value="">All Departments</option>
+                    {departments.map(dept => (
+                      <option key={dept} value={dept}>{dept}</option>
+                    ))}
+                  </select>
+                </div>
                 <div className="relative">
                   <label className="block text-sm font-medium mb-1">Employee *</label>
                   <input
@@ -623,35 +652,46 @@ export default function Terminations() {
                     }}
                     onFocus={() => setShowEmployeeDropdown(true)}
                     className="w-full px-3 py-2 border rounded-lg"
-                    placeholder="Search by name or employee number..."
-                    disabled={editingTermination} // Disable editing employee on edit
+                    placeholder={formData.department ? "Search by name or employee number..." : "Select department first..."}
+                    disabled={editingTermination || !formData.department}
                   />
-                  {showEmployeeDropdown && !editingTermination && (
-                    <div className="absolute z-50 w-full mt-1 bg-white border rounded-lg shadow-lg max-h-60 overflow-y-auto">
-                      {filteredEmployees.length === 0 ? (
-                        <div className="p-3 text-gray-500 text-sm">No employees found</div>
-                      ) : (
-                        filteredEmployees.map(emp => (
+                  {console.log('Dropdown debug:', { showEmployeeDropdown, editingTermination, department: formData.department, employeesCount: filteredEmployeesByDept.length })}
+                  {showEmployeeDropdown && !editingTermination && formData.department && (
+                    <div 
+                      className="absolute z-50 w-full mt-1 bg-white border rounded-lg shadow-lg max-h-60 overflow-y-auto"
+                      onMouseDown={(e) => e.preventDefault()} // Prevent input blur from closing dropdown
+                    >
+                      {(() => {
+                        console.log('Filtering employees:', filteredEmployeesByDept.length, 'department:', formData.department);
+                        const filtered = filteredEmployeesByDept.filter(e => 
+                          (e.FullName || e.name || e.Name || '').toLowerCase().includes(employeeSearchTerm.toLowerCase()) || 
+                          (e.EmpID || e.employeeId || e.id || '').toLowerCase().includes(employeeSearchTerm.toLowerCase())
+                        );
+                        console.log('Filtered results:', filtered.length);
+                        if (filtered.length === 0) {
+                          return <div className="p-3 text-gray-500 text-sm">No employees found in {formData.department}</div>;
+                        }
+                        return filtered.map(emp => (
                           <div
                             key={emp.id}
                             onClick={() => handleEmployeeSelect(emp)}
                             className="p-3 hover:bg-gray-100 cursor-pointer border-b last:border-b-0"
                           >
-                            <div className="font-medium">{emp.name || emp.Name}</div>
+                            <div className="font-medium">{emp.FullName || emp.name || emp.Name || 'Unknown'}</div>
                             <div className="text-sm text-gray-500">
-                              ID: {emp.employeeId || emp['Employee Id'] || emp.id} | 
+                              Emp ID: {emp.EmpID || emp.employeeId || emp.id} | 
                               {emp.Designation || emp.designation || 'No designation'}
                             </div>
                           </div>
-                        ))
-                      )}
+                        ));
+                      })()}
                     </div>
                   )}
                   {selectedEmployee && (
                     <div className="mt-2 p-2 bg-blue-50 rounded text-sm">
-                      <span className="font-medium">Selected:</span> {selectedEmployee.name || selectedEmployee.Name}
+                      <span className="font-medium">Selected:</span> {selectedEmployee.FullName || selectedEmployee.name || selectedEmployee.Name || 'Unknown'}
                       <br/>
-                      <span className="text-gray-600">ID: {selectedEmployee.employeeId || selectedEmployee['Employee Id'] || selectedEmployee.id}</span>
+                      <span className="text-gray-600">Emp ID: {selectedEmployee.EmpID || selectedEmployee.employeeId || selectedEmployee.id}</span>
                     </div>
                   )}
                 </div>
