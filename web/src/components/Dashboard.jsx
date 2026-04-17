@@ -39,6 +39,7 @@ import { useFirestore } from '../hooks/useFirestore';
 import { useCompany } from '../contexts/CompanyContext';
 import { useAuth } from '../contexts/AuthContext';
 import { useExpiryAlerts } from '../hooks/useExpiryAlerts';
+import DailyReport from './DailyReport';
 
 function StatCard({ title, value, icon: Icon, gradient, subtitle, href }) {
   const gradientClasses = {
@@ -103,6 +104,7 @@ export default function Dashboard() {
   const { documents: leaves } = useFirestore('leaves');
   const { documents: terminations } = useFirestore('terminations');
   const [mounted, setMounted] = useState(false);
+  const [showDailyReport, setShowDailyReport] = useState(false);
 
   useEffect(() => {
     setMounted(true);
@@ -409,6 +411,16 @@ export default function Dashboard() {
     permitStats.expiring30 + 
     medicalStats.expiring30;
 
+  // Open Daily Information Report Modal
+  const openDailyReport = () => {
+    setShowDailyReport(true);
+  };
+
+  // Check if user is HRM, GM or Superadmin to show Daily Info button
+  const isHRM = userData?.role === 'hrm' || userData?.role === 'hr';
+  const isGM = userData?.role === 'gm';
+  const isSuper = userData?.role === 'superadmin';
+
   return (
     <div className="space-y-6">
       {/* Header - Modern Gradient with Illustration */}
@@ -430,8 +442,8 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* Export Button */}
-      <div className="flex justify-end mb-4">
+      {/* Export Buttons */}
+      <div className="flex justify-end gap-3 mb-4">
         <button
           onClick={exportStaffToCSV}
           className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors shadow-md"
@@ -439,6 +451,15 @@ export default function Dashboard() {
           <Download className="h-4 w-4" />
           Export All Staff (CSV)
         </button>
+        {(isHRM || isGM || isSuper) && (
+          <button
+            onClick={openDailyReport}
+            className="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors shadow-md"
+          >
+            <Download className="h-4 w-4" />
+            Daily Information
+          </button>
+        )}
       </div>
 
       {/* Stats Grid */}
@@ -769,6 +790,11 @@ export default function Dashboard() {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Daily Information Report Modal */}
+      {showDailyReport && (
+        <DailyReport onClose={() => setShowDailyReport(false)} />
       )}
     </div>
   );
