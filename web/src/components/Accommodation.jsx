@@ -3,7 +3,8 @@ import {
   Home, BedDouble, Wrench, DoorOpen, Plus, Search, X, Edit2, Trash2, CheckCircle,
   Users, Bath, Maximize, Building2, MapPin, Filter, Download, Eye, ArrowRight,
   AlertTriangle, Calendar, Clock, User, Save, ChevronLeft, ChevronRight, MoreVertical,
-  Droplets, Zap, Wind, UtensilsCrossed, Wifi, Tv, Waves, Snowflake, DollarSign
+  Droplets, Zap, Wind, UtensilsCrossed, Wifi, Tv, Waves, Snowflake, DollarSign,
+  ArrowRightLeft
 } from 'lucide-react';
 import { useFirestore } from '../hooks/useFirestore';
 import { useCompany } from '../contexts/CompanyContext';
@@ -644,9 +645,11 @@ export default function Accommodation() {
   const [showRoomModal, setShowRoomModal] = useState(false);
   const [showAssignmentModal, setShowAssignmentModal] = useState(false);
   const [showMaintenanceModal, setShowMaintenanceModal] = useState(false);
+  const [showMoveModal, setShowMoveModal] = useState(false);
   const [selectedRoom, setSelectedRoom] = useState(null);
   const [selectedAssignment, setSelectedAssignment] = useState(null);
   const [selectedMaintenance, setSelectedMaintenance] = useState(null);
+  const [movingAssignment, setMovingAssignment] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
   const [filterBuilding, setFilterBuilding] = useState('all');
@@ -665,7 +668,13 @@ export default function Accommodation() {
   const actingAsHOD = userData?.actingAsHOD;
   const isAdmin = userRole === 'superadmin' || userRole === 'gm' || userRole === 'hrm' || userRole === 'hr';
   const isHOD = userRole === 'dept_head' || actingAsHOD;
-  const canEdit = isAdmin; // Only admins can create/edit/delete
+  
+  // Special accommodation admin access for specific employees
+  const accommodationAdminIds = ['54901', '44583', '53603']; // Maheesh, Ibrahim, Kishanth
+  const isAccommodationAdmin = accommodationAdminIds.includes(userData?.employeeId) || 
+                                 accommodationAdminIds.includes(userData?.EmpID);
+  
+  const canEdit = isAdmin || isAccommodationAdmin; // Admins + designated accommodation staff
 
   const companyRooms = useMemo(() => {
     return rooms.filter(r => r.companyId === companyId);
@@ -865,6 +874,57 @@ export default function Accommodation() {
     }
   };
 
+  // Handle move staff to another room
+  const handleMoveRoom = async (targetRoomId) => {
+    if (!movingAssignment || !targetRoomId) return;
+    
+    const oldRoomId = movingAssignment.roomId;
+    const assignmentId = movingAssignment.id;
+    
+    try {
+      // Update assignment with new room
+      await updateDoc(doc(db, 'roomAssignments', assignmentId), {
+        roomId: targetRoomId,
+        updatedAt: new Date().toISOString()
+      });
+      
+      // Update old room status to available/cleaning
+      const oldRoomRef = doc(db, 'rooms', oldRoomId);
+      await updateDoc(oldRoomRef, { 
+        status: 'cleaning',
+        updatedAt: new Date().toISOString()
+      });
+      
+      // Update new room status to occupied
+      const newRoomRef = doc(db, 'rooms', targetRoomId);
+      await updateDoc(newRoomRef, { 
+        status: 'occupied',
+        updatedAt: new Date().toISOString()
+      });
+      
+      toast.success('Staff moved to new room successfully');
+      setShowMoveModal(false);
+      setMovingAssignment(null);
+    } catch (error) {
+      toast.error('Failed to move staff: ' + error.message);
+    }
+  };
+
+  // Get available rooms for moving
+  const getAvailableRooms = () => {
+    return companyRooms.filter(room => {
+      // Room must be available or have empty beds
+      if (room.status === 'available') return true;
+      if (room.status === 'occupied') {
+        const currentOccupants = companyAssignments.filter(
+          a => a.roomId === room.id && !a.checkOutDate
+        ).length;
+        return currentOccupants < room.capacity;
+      }
+      return false;
+    }).filter(room => room.id !== movingAssignment?.roomId); // Exclude current room
+  };
+
   // Import from Accomodation_Report.json format
   const handleImportFromJSON = async (jsonData) => {
     try {
@@ -1032,6 +1092,11 @@ export default function Accommodation() {
           <h1 className="text-2xl font-bold text-white flex items-center gap-3">
             <Building2 className="h-8 w-8" />
             Staff Accommodation
+            {isAccommodationAdmin && (
+              <span className="px-2 py-0.5 bg-green-500 text-white text-xs rounded-full font-normal">
+                Admin Access
+              </span>
+            )}
           </h1>
           <p className="text-blue-100 mt-1">Manage rooms, assignments, and maintenance</p>
         </div>
@@ -1380,12 +1445,21 @@ export default function Accommodation() {
                                 <button
                                   onClick={() => { setSelectedAssignment(assignment); setShowAssignmentModal(true); }}
                                   className="p-2 text-gray-400 hover:text-blue-600"
+                                  title="Edit"
                                 >
                                   <Edit2 className="w-4 h-4" />
                                 </button>
                                 <button
+                                  onClick={() => { setMovingAssignment(assignment); setShowMoveModal(true); }}
+                                  className="text-sm text-orange-600 hover:bg-orange-50 px-3 py-1 rounded"
+                                  title="Move to another room"
+                                >
+                                  Move
+                                </button>
+                                <button
                                   onClick={() => handleVacateRoom(assignment)}
                                   className="text-sm text-red-600 hover:bg-red-50 px-3 py-1 rounded"
+                                  title="Vacate room"
                                 >
                                   Vacate
                                 </button>
@@ -1537,6 +1611,110 @@ export default function Accommodation() {
         onSave={handleSaveMaintenance}
         onDelete={handleDeleteMaintenance}
       />
+
+      {/* Move Room Modal */}
+      {showMoveModal && movingAssignment && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl w-full max-w-3xl max-h-[90vh] overflow-y-auto">
+            <div className="p-6 border-b flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <ArrowRightLeft className="w-6 h-6 text-orange-600" />
+                <h2 className="text-xl font-semibold">Move to Another Room</h2>
+              </div>
+              <button 
+                onClick={() => { setShowMoveModal(false); setMovingAssignment(null); }}
+                className="p-2 hover:bg-gray-100 rounded-lg"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            
+            <div className="p-6">
+              {/* Current Assignment Info */}
+              {(() => {
+                const emp = employees.find(e => e.id === movingAssignment.employeeId);
+                const currentRoom = companyRooms.find(r => r.id === movingAssignment.roomId);
+                return (
+                  <div className="bg-blue-50 rounded-lg p-4 mb-6 border border-blue-200">
+                    <p className="font-semibold text-blue-900 mb-2">Current Assignment:</p>
+                    <div className="flex items-center gap-4">
+                      <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-medium">
+                        {(emp?.FullName || emp?.name || '?').charAt(0)}
+                      </div>
+                      <div>
+                        <p className="font-medium">{emp?.FullName || emp?.name || 'Unknown'}</p>
+                        <p className="text-sm text-gray-600">
+                          Currently in Room {currentRoom?.roomNumber} • {currentRoom?.building}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })()}
+              
+              <h3 className="font-semibold mb-4">Select Available Room:</h3>
+              
+              {getAvailableRooms().length === 0 ? (
+                <div className="text-center py-8 bg-gray-50 rounded-lg">
+                  <AlertTriangle className="w-12 h-12 mx-auto mb-3 text-yellow-500" />
+                  <p className="text-gray-600">No available rooms found</p>
+                  <p className="text-sm text-gray-500 mt-1">
+                    All rooms are full or not available for assignment
+                  </p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {getAvailableRooms().map(room => {
+                    const currentOccupants = companyAssignments.filter(
+                      a => a.roomId === room.id && !a.checkOutDate
+                    ).length;
+                    const availableBeds = room.capacity - currentOccupants;
+                    
+                    return (
+                      <button
+                        key={room.id}
+                        onClick={() => handleMoveRoom(room.id)}
+                        className="text-left p-4 border rounded-lg hover:border-orange-500 hover:bg-orange-50 transition-colors"
+                      >
+                        <div className="flex items-start justify-between">
+                          <div>
+                            <p className="font-semibold">Room {room.roomNumber}</p>
+                            <p className="text-sm text-gray-600">{room.building}</p>
+                            <p className="text-sm text-gray-500 mt-1">
+                              Floor {room.floor} • {room.beds} beds • {room.bathrooms} baths
+                            </p>
+                          </div>
+                          <div className="text-right">
+                            <span className={`px-2 py-1 rounded text-xs ${
+                              room.status === 'available' 
+                                ? 'bg-green-100 text-green-700' 
+                                : 'bg-yellow-100 text-yellow-700'
+                            }`}>
+                              {room.status}
+                            </span>
+                            <p className="text-sm text-orange-600 mt-1 font-medium">
+                              {availableBeds} bed{availableBeds !== 1 ? 's' : ''} free
+                            </p>
+                          </div>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+            
+            <div className="p-6 border-t flex justify-end">
+              <button
+                onClick={() => { setShowMoveModal(false); setMovingAssignment(null); }}
+                className="px-4 py-2 border rounded-lg hover:bg-gray-50"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
