@@ -123,6 +123,23 @@ export default function Dashboard() {
 
   // Filter by company and role visibility, exclude terminated employees
   const visibleEmployees = filterByVisibility ? filterByVisibility(employees) : employees;
+  
+  // Debug logging for dashboard visibility
+  useEffect(() => {
+    console.log('[Dashboard] Total employees from Firestore:', employees.length);
+    console.log('[Dashboard] After filterByVisibility:', visibleEmployees.length);
+    console.log('[Dashboard] User role:', userData?.role, 'Dept:', userData?.department);
+    console.log('[Dashboard] Current companyId:', companyId);
+    if (visibleEmployees.length > 0 && visibleEmployees.length < 10) {
+      console.log('[Dashboard] Visible employees:', visibleEmployees.map(e => ({ 
+        id: e.id, 
+        name: e.FullName, 
+        dept: e.Department || e.department,
+        companyId: e.companyId
+      })));
+    }
+  }, [employees, visibleEmployees, userData, companyId]);
+  
   const companyEmployeesAll = visibleEmployees.filter(e => e.companyId === companyId);
   const companyEmployees = companyEmployeesAll.filter(e => e.status !== 'terminated');
   const activeEmployeesCount = companyEmployees.length;
@@ -297,8 +314,8 @@ export default function Dashboard() {
         emp.Phone || emp.phone || '',
         emp.Mobile || emp.mobile || '',
         emp.status || 'active',
-        emp.HireDate || emp.hireDate || emp.JoinDate || emp.joinDate || '',
-        emp.JoinDate || emp.joinDate || '',
+        emp.DOB || emp['Date of Join'] || emp.HireDate || emp.hireDate || emp.JoinDate || emp.joinDate || '',
+        emp.DOB || emp['Date of Join'] || emp.JoinDate || emp.joinDate || '',
         emp.Nationality || emp.nationality || '',
         emp.DateOfBirth || emp.dateOfBirth || emp.DOB || '',
         emp.Gender || emp.gender || '',

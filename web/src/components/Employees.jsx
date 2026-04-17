@@ -45,9 +45,56 @@ export default function Employees() {
 
   const PAGE_SIZE = 50;
 
-  // Fetch employees with pagination (excluding terminated)
+  // Fetch ALL employees for dept_head/supervisor (no pagination - show entire department)
+  const fetchAllDepartmentEmployees = useCallback(async () => {
+    if (!companyId || !userData?.department) return;
+    
+    setLoading(true);
+    try {
+      // For dept_head/supervisor, fetch ALL company employees then filter by department
+      const q = query(
+        collection(db, 'employees'),
+        where('companyId', '==', companyId),
+        where('status', '!=', 'terminated')
+      );
+
+      const snapshot = await getDocs(q);
+      let allDocs = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+
+      // Filter by department (case-insensitive, includes sub-departments)
+      const userDept = userData.department.toLowerCase().trim();
+      const filteredDocs = allDocs.filter(emp => {
+        const empDept = (emp['Department '] || emp.Department || emp.department || '').toLowerCase().trim();
+        return empDept === userDept || 
+               empDept.startsWith(userDept + ' ') ||
+               empDept.startsWith(userDept + '-') ||
+               empDept.includes(' ' + userDept + ' ') ||
+               empDept.includes('-' + userDept + ' ') ||
+               empDept.includes('(' + userDept + ')');
+      });
+
+      console.log('[Employees] Fetched all department employees:', filteredDocs.length, 'of', allDocs.length, 'total');
+      setEmployees(filteredDocs);
+      setHasMore(false); // No pagination for dept_head
+    } catch (err) {
+      console.error('Error fetching department employees:', err);
+    } finally {
+      setLoading(false);
+    }
+  }, [companyId, userData]);
+
+  // Fetch employees with pagination (excluding terminated) - for HR roles
   const fetchEmployees = useCallback(async (isInitial = false) => {
     if (!companyId) return;
+    
+    // For dept_head/supervisor, use the all-department fetch instead
+    const userRole = userData?.role;
+    if (['dept_head', 'supervisor'].includes(userRole)) {
+      if (isInitial) {
+        await fetchAllDepartmentEmployees();
+      }
+      return;
+    }
     
     setLoading(true);
     try {
@@ -75,12 +122,12 @@ export default function Employees() {
       const snapshot = await getDocs(q);
       let newDocs = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
 
-      // Filter by department for dept_head and supervisor roles
+      // Filter by department for dept_head and supervisor roles (case-insensitive)
       const userRole = userData?.role;
-      const userDept = userData?.department;
+      const userDept = userData?.department?.toLowerCase().trim();
       if (['dept_head', 'supervisor'].includes(userRole) && userDept) {
         newDocs = newDocs.filter(emp => {
-          const empDept = emp['Department '] || emp.Department || emp.department;
+          const empDept = (emp['Department '] || emp.Department || emp.department || '').toLowerCase().trim();
           return empDept === userDept;
         });
       }
@@ -100,7 +147,7 @@ export default function Employees() {
     } finally {
       setLoading(false);
     }
-  }, [companyId, lastDoc, userData]);
+  }, [companyId, lastDoc, userData, fetchAllDepartmentEmployees]);
 
   // Fetch ALL employees for stats ONLY when requested (to save reads) - excluding terminated
   const fetchAllEmployeesForStats = useCallback(async () => {
@@ -280,6 +327,20 @@ export default function Employees() {
 
   // Filter employees client-side (apply role-based visibility first)
   const visibleEmployees = filterByVisibility(employees);
+  
+  // Debug logging for visibility
+  useEffect(() => {
+    console.log('[Employees] Total employees:', employees.length);
+    console.log('[Employees] Visible after role filter:', visibleEmployees.length);
+    console.log('[Employees] User dept:', userData?.department, 'Role:', currentRole);
+    if (visibleEmployees.length > 0 && visibleEmployees.length < 5) {
+      console.log('[Employees] Visible list:', visibleEmployees.map(e => ({ 
+        id: e.id, 
+        name: e.FullName || e.name, 
+        dept: e['Department '] || e.Department || e.department 
+      })));
+    }
+  }, [employees, visibleEmployees, userData, currentRole]);
   
   const filteredEmployees = isSearching ? visibleEmployees : visibleEmployees.filter(emp => {
     const name = emp.FullName || emp.name || '';
@@ -467,6 +528,10 @@ export default function Employees() {
                     <div className="flex items-center text-gray-700 bg-gray-50 rounded-lg p-2">
                       <span className="text-lg mr-2">🌍</span>
                       <span className="font-medium">{employee.Nationality || employee.country || 'N/A'}</span>
+                    </div>
+                    <div className="flex items-center text-gray-700 bg-gray-50 rounded-lg p-2">
+                      <span className="text-lg mr-2">📅</span>
+                      <span className="font-medium">DOJ: {employee.DOJ ? new Date(employee.DOJ).toLocaleDateString() : 'N/A'}</span>
                     </div>
                   </div>
 

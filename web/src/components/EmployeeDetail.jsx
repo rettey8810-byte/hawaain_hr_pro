@@ -159,8 +159,9 @@ function Section({ title, icon: Icon, children, defaultOpen = true }) {
 export default function EmployeeDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { isHR, hasAccess, user } = useAuth();
+  const { isHR, hasAccess, user, userData } = useAuth();
   const canEditEmployee = hasAccess('employees', 'edit');
+  const canViewSalary = ['hrm', 'gm', 'superadmin'].includes(userData?.role);
   const [employee, setEmployee] = useState(null);
   const [documents, setDocuments] = useState({
     passports: [],
@@ -359,7 +360,7 @@ export default function EmployeeDetail() {
         <InfoCard icon={Mail} label="Email" value={displayData?.EmailID || displayData?.email} />
         <InfoCard icon={Phone} label="Phone" value={displayData?.PhoneNo || displayData?.phone} />
         <InfoCard icon={Building2} label="Department" value={displayData?.['Department '] || displayData?.Department || displayData?.department} />
-        <InfoCard icon={Calendar} label="Date of Join" value={formatDate(displayData?.['Date of Join'] || displayData?.joinDate)} />
+        <InfoCard icon={Calendar} label="Date of Join" value={formatDate(displayData?.DOJ || displayData?.['Date of Join'] || displayData?.joinDate || displayData?.DOJ)} />
       </div>
 
       {/* Personal Information Section */}
@@ -420,18 +421,20 @@ export default function EmployeeDetail() {
         </div>
       </Section>
 
-      {/* Salary Information Section */}
-      <Section title="Salary Information" icon={DollarSign}>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          <InfoCard icon={DollarSign} label="Fixed (USD)" value={formatCurrency(displayData?.['Fixed(USD)'])} />
-          <InfoCard icon={DollarSign} label="Fixed (MVR)" value={displayData?.['Fixed(MVR)'] ? `${displayData['Fixed(MVR)'].toLocaleString()} MVR` : '-'} />
-          <InfoCard icon={DollarSign} label="Basic (USD)" value={formatCurrency(displayData?.['Basic(USD)'])} />
-          <InfoCard icon={DollarSign} label="Basic (MVR)" value={displayData?.['Basic(MVR)'] ? `${displayData['Basic(MVR)'].toLocaleString()} MVR` : '-'} />
-          <InfoCard icon={DollarSign} label="Total Salary (USD)" value={formatCurrency(displayData?.['TotalSalary(USD)'])} />
-          <InfoCard icon={DollarSign} label="Total Salary (MVR)" value={displayData?.['TotalSalary(MVR)'] ? `${displayData['TotalSalary(MVR)'].toLocaleString()} MVR` : '-'} />
-          <InfoCard icon={CreditCard} label="Pay Through" value={displayData?.PayThrough1} />
-        </div>
-      </Section>
+      {/* Salary Information Section - Only visible to HRM, GM, Superadmin */}
+      {canViewSalary && (
+        <Section title="Salary Information" icon={DollarSign}>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <InfoCard icon={DollarSign} label="Fixed (USD)" value={formatCurrency(displayData?.['Fixed(USD)'])} />
+            <InfoCard icon={DollarSign} label="Fixed (MVR)" value={displayData?.['Fixed(MVR)'] ? `${displayData['Fixed(MVR)'].toLocaleString()} MVR` : '-'} />
+            <InfoCard icon={DollarSign} label="Basic (USD)" value={formatCurrency(displayData?.['Basic(USD)'])} />
+            <InfoCard icon={DollarSign} label="Basic (MVR)" value={displayData?.['Basic(MVR)'] ? `${displayData['Basic(MVR)'].toLocaleString()} MVR` : '-'} />
+            <InfoCard icon={DollarSign} label="Total Salary (USD)" value={formatCurrency(displayData?.['TotalSalary(USD)'])} />
+            <InfoCard icon={DollarSign} label="Total Salary (MVR)" value={displayData?.['TotalSalary(MVR)'] ? `${displayData['TotalSalary(MVR)'].toLocaleString()} MVR` : '-'} />
+            <InfoCard icon={CreditCard} label="Pay Through" value={displayData?.PayThrough1} />
+          </div>
+        </Section>
+      )}
 
       {/* Bank Information Section */}
       <Section title="Bank Information" icon={Banknote}>

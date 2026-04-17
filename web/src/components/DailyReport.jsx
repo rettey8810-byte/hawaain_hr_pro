@@ -128,14 +128,93 @@ export default function DailyReport({ onClose }) {
     .sort((a, b) => b[1] - a[1]);
 
   const handlePrint = () => {
-    window.print();
+    // Get the report content
+    const reportContent = document.querySelector('.daily-report-content');
+    if (!reportContent) return;
+
+    // Clone the content
+    const clone = reportContent.cloneNode(true);
+
+    // Create a new window for printing
+    const printWindow = window.open('', '_blank', 'width=1200,height=800');
+    if (!printWindow) {
+      alert('Please allow popups to print the report');
+      return;
+    }
+
+    // Write the HTML
+    printWindow.document.write(`
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>Daily Dashboard - Villa Park</title>
+        <script src="https://cdn.tailwindcss.com"><\/script>
+        <style>
+          @page {
+            size: A4 landscape;
+            margin: 5mm;
+          }
+          body {
+            margin: 0;
+            padding: 0;
+            background: white;
+            font-family: Arial, sans-serif;
+          }
+          .shadow-2xl, .shadow-lg, .shadow-md, .shadow-xl {
+            box-shadow: none !important;
+          }
+          input {
+            display: none !important;
+          }
+          .print-only {
+            display: inline !important;
+          }
+          table {
+            page-break-inside: avoid;
+          }
+          tr {
+            page-break-inside: avoid;
+          }
+          .daily-report-content {
+            max-width: 100% !important;
+            box-shadow: none !important;
+            padding: 10mm;
+          }
+          .no-print, .no-print-bg {
+            display: none !important;
+          }
+        </style>
+      </head>
+      <body>
+        <div class="daily-report-content">
+          ${clone.innerHTML}
+        </div>
+        <script>
+          window.onload = function() {
+            setTimeout(function() {
+              window.print();
+              window.onafterprint = function() {
+                window.close();
+              };
+              // Fallback close after 1 second if onafterprint doesn't fire
+              setTimeout(function() {
+                window.close();
+              }, 1000);
+            }, 500);
+          };
+        <\/script>
+      </body>
+      </html>
+    `);
+
+    printWindow.document.close();
   };
 
   return (
     <div className="fixed inset-0 bg-black/50 z-50 overflow-auto">
       <div className="min-h-screen py-8 px-4">
         {/* Report Container */}
-        <div className="max-w-6xl mx-auto bg-white shadow-2xl print:shadow-none">
+        <div className="max-w-6xl mx-auto bg-white shadow-2xl print:shadow-none daily-report-content">
           
           {/* Header */}
           <div className="bg-white p-6 border-b-2 border-gray-200">
@@ -424,9 +503,28 @@ export default function DailyReport({ onClose }) {
         </div>
       </div>
 
-      {/* Print Styles */}
+      {/* Print Styles - Only print the report */}
       <style>{`
         @media print {
+          /* Hide the modal overlay background */
+          .fixed.inset-0 {
+            position: static !important;
+            background: white !important;
+          }
+          .bg-black\/50 {
+            background: white !important;
+          }
+          /* Hide dashboard page content */
+          body > div:not(:has(.daily-report-content)) {
+            display: none !important;
+          }
+          /* Show only report */
+          .daily-report-content {
+            display: block !important;
+            position: static !important;
+            width: 100% !important;
+            max-width: 100% !important;
+          }
           .no-print {
             display: none !important;
           }
@@ -436,12 +534,19 @@ export default function DailyReport({ onClose }) {
           }
           .min-h-screen {
             min-height: auto !important;
+            padding: 0 !important;
           }
           .max-w-6xl {
             max-width: 100% !important;
+            box-shadow: none !important;
           }
           body {
             background: white;
+          }
+          /* Ensure report takes full page */
+          @page {
+            size: A4 landscape;
+            margin: 10mm;
           }
         }
       `}</style>
@@ -458,6 +563,11 @@ export default function DailyReport({ onClose }) {
           }
           .print-only {
             display: inline !important;
+          }
+          /* Force landscape for wide tables */
+          @page {
+            size: A4 landscape;
+            margin: 10mm;
           }
         }
       `}</style>

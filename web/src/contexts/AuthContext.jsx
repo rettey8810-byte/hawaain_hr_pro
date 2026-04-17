@@ -327,6 +327,8 @@ export function AuthProvider({ children }) {
       }));
       console.log('[filterByVisibility] Sample departments:', sampleDepts);
       console.log('[filterByVisibility] Looking for dept:', visibility.department, 'in company:', visibility.companyId);
+      console.log('[filterByVisibility] User department from userData:', userData?.department);
+      console.log('[filterByVisibility] User role:', userData?.role, 'currentRole:', currentRole);
     }
     
     return items.filter(item => {
@@ -335,9 +337,32 @@ export function AuthProvider({ children }) {
           return item.companyId === visibility.companyId;
         case 'department':
           const itemDept = item['Department '] || item.Department || item.department || '';
-          const matches = item.companyId === visibility.companyId && itemDept === visibility.department;
-          if (!matches && item.id === items[0]?.id) {
-            console.log('[filterByVisibility] First item dept check:', { itemDept, expected: visibility.department, companyId: item.companyId });
+          // Case-insensitive department comparison - check if item dept CONTAINS or EQUALS the expected dept
+          // This handles parent departments with sub-divisions (e.g., "Guest Service - Front Desk")
+          const itemDeptLower = String(itemDept).toLowerCase().trim();
+          const expectedDeptLower = String(visibility.department).toLowerCase().trim();
+          // For dept_head: match department or sub-department (case-insensitive), companyId must match
+          const companyMatch = item.companyId === visibility.companyId;
+          // Match if dept equals OR starts with/contains the parent department name
+          const deptMatch = itemDeptLower === expectedDeptLower || 
+                           itemDeptLower.startsWith(expectedDeptLower + ' ') ||
+                           itemDeptLower.startsWith(expectedDeptLower + '-') ||
+                           itemDeptLower.includes(' ' + expectedDeptLower + ' ') ||
+                           itemDeptLower.includes('-' + expectedDeptLower + ' ') ||
+                           itemDeptLower.includes('(' + expectedDeptLower + ')');
+          const matches = companyMatch && deptMatch;
+          
+          // Debug logging for first few items
+          if (items.indexOf(item) < 5) {
+            console.log('[filterByVisibility] Dept check:', { 
+              id: item.id, 
+              itemDept: itemDeptLower, 
+              expected: expectedDeptLower, 
+              companyId: item.companyId,
+              companyMatch,
+              deptMatch,
+              matches 
+            });
           }
           return matches;
         case 'own':

@@ -61,8 +61,11 @@ export default function LeaveApplication() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   
+  // Check if user can select employees (HR, dept_head, supervisor)
+  const canSelectEmployee = isHR() || ['dept_head', 'supervisor'].includes(userData?.role);
+  
   const [formData, setFormData] = useState({
-    employeeId: isHR() ? '' : userData?.employeeId || '',
+    employeeId: canSelectEmployee ? '' : userData?.employeeId || '',
     leaveType: 'annual',
     startDate: '',
     endDate: '',
@@ -148,7 +151,7 @@ export default function LeaveApplication() {
     setShowOfflineBanner(!isOnline);
   }, [isOnline]);
 
-  // Fetch employees for HR selection
+  // Fetch employees for HR/dept_head selection
   const fetchEmployees = useCallback(async () => {
     if (!userData?.companyId) return;
     try {
@@ -158,11 +161,28 @@ export default function LeaveApplication() {
         where('status', '==', 'active')
       );
       const snap = await getDocs(q);
-      setEmployees(snap.docs.map(d => ({ id: d.id, ...d.data() })));
+      let allEmployees = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+      
+      // For dept_head/supervisor, filter by department
+      const userRole = userData?.role;
+      const userDept = userData?.department?.toLowerCase().trim();
+      if (['dept_head', 'supervisor'].includes(userRole) && userDept) {
+        allEmployees = allEmployees.filter(emp => {
+          const empDept = (emp['Department '] || emp.Department || emp.department || '').toLowerCase().trim();
+          return empDept === userDept || 
+                 empDept.startsWith(userDept + ' ') ||
+                 empDept.startsWith(userDept + '-') ||
+                 empDept.includes(' ' + userDept + ' ') ||
+                 empDept.includes('-' + userDept + ' ') ||
+                 empDept.includes('(' + userDept + ')');
+        });
+      }
+      
+      setEmployees(allEmployees);
     } catch (err) {
       console.error('Error fetching employees:', err);
     }
-  }, [userData?.companyId]);
+  }, [userData]);
 
   // Fetch existing leave data if editing
   const fetchLeaveData = useCallback(async () => {
@@ -196,13 +216,13 @@ export default function LeaveApplication() {
   }, [id, getDocumentById]);
 
   useEffect(() => {
-    if (isHR()) {
+    if (canSelectEmployee) {
       fetchEmployees();
     }
     if (id) {
       fetchLeaveData();
     }
-  }, [isHR, id, fetchEmployees, fetchLeaveData]);
+  }, [canSelectEmployee, id, fetchEmployees, fetchLeaveData]);
 
   // Calculate days when dates change
   useEffect(() => {
@@ -235,7 +255,7 @@ export default function LeaveApplication() {
   };
 
   const validateForm = () => {
-    if (isHR() && !formData.employeeId) return 'Please select an employee';
+    if (canSelectEmployee && !formData.employeeId) return 'Please select an employee';
     if (!formData.startDate) return 'Please select start date';
     if (!formData.endDate) return 'Please select end date';
     if (new Date(formData.endDate) < new Date(formData.startDate)) {
@@ -384,8 +404,8 @@ export default function LeaveApplication() {
       )}
 
       <form onSubmit={handleSubmit} className="space-y-6">
-        {/* Employee Selection - HR Only */}
-        {isHR() && (
+        {/* Employee Selection - HR, Dept Head, Supervisor Only */}
+        {canSelectEmployee && (
           <div className="bg-white rounded-2xl shadow-lg p-6 border border-gray-100">
             <h3 className="text-lg font-bold text-gray-900 mb-4 flex items-center">
               <User className="h-5 w-5 mr-2 text-emerald-500" />

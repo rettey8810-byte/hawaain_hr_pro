@@ -208,8 +208,29 @@ export default function LeavePlanner() {
     }
     
     // Non-HR users can only see their own leaves
+    // Except dept_head and supervisor who can see their department's leaves
+    const userRole = userData?.role;
+    const isDeptHeadOrSupervisor = ['dept_head', 'supervisor'].includes(userRole);
+    const userDept = userData?.department?.toLowerCase().trim();
+    
     if (!isHR() && userData?.employeeId) {
-      filtered = filtered.filter(l => l.employeeId === userData.employeeId || l.employeeId === userData.EmpID);
+      if (isDeptHeadOrSupervisor && userDept) {
+        // Dept head/supervisor sees all leaves from their department
+        filtered = filtered.filter(l => {
+          const employee = getEmployeeById(l.employeeId);
+          if (!employee) return false;
+          const empDept = (employee['Department '] || employee.Department || employee.department || '').toLowerCase().trim();
+          return empDept === userDept || 
+                 empDept.startsWith(userDept + ' ') ||
+                 empDept.startsWith(userDept + '-') ||
+                 empDept.includes(' ' + userDept + ' ') ||
+                 empDept.includes('-' + userDept + ' ') ||
+                 empDept.includes('(' + userDept + ')');
+        });
+      } else {
+        // Regular staff only see their own leaves
+        filtered = filtered.filter(l => l.employeeId === userData.employeeId || l.employeeId === userData.EmpID);
+      }
     }
     
     setFilteredLeaves(filtered);

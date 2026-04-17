@@ -181,11 +181,40 @@ export default function Recruitment() {
 
 
 
-  // Filter by company
+  // Filter by company and department (for dept_head/supervisor)
+  const userRole = userData?.role;
+  const userDept = userData?.department?.toLowerCase().trim();
+  const isDeptHeadOrSupervisor = ['dept_head', 'supervisor'].includes(userRole);
 
-  const filteredJobs = jobPostings.filter(job => job.companyId === companyId);
+  const filteredJobs = jobPostings.filter(job => {
+    if (job.companyId !== companyId) return false;
+    // For dept_head/supervisor, only show jobs from their department
+    if (isDeptHeadOrSupervisor && userDept) {
+      const jobDept = (job.department || '').toLowerCase().trim();
+      return jobDept === userDept || 
+             jobDept.startsWith(userDept + ' ') ||
+             jobDept.startsWith(userDept + '-') ||
+             jobDept.includes(' ' + userDept + ' ') ||
+             jobDept.includes('-' + userDept + ' ') ||
+             jobDept.includes('(' + userDept + ')');
+    }
+    return true;
+  });
 
-  const filteredCandidates = candidates.filter(c => c.companyId === companyId);
+  const filteredCandidates = candidates.filter(c => {
+    if (c.companyId !== companyId) return false;
+    // For dept_head/supervisor, only show candidates from their department
+    if (isDeptHeadOrSupervisor && userDept) {
+      const candidateDept = (c.jobDepartment || c.department || '').toLowerCase().trim();
+      return candidateDept === userDept || 
+             candidateDept.startsWith(userDept + ' ') ||
+             candidateDept.startsWith(userDept + '-') ||
+             candidateDept.includes(' ' + userDept + ' ') ||
+             candidateDept.includes('-' + userDept + ' ') ||
+             candidateDept.includes('(' + userDept + ')');
+    }
+    return true;
+  });
 
 
 
