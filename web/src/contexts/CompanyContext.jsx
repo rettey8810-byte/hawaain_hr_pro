@@ -30,19 +30,51 @@ export function CompanyProvider({ children }) {
     console.log('[CompanyContext] Loading companies for user:', user?.email, 'userData.companyId:', userData?.companyId, 'role:', userData?.role);
     try {
       // If super admin OR GM OR HRM OR dept_head, load all companies
-      if (['superadmin', 'gm', 'hrm', 'dept_head', 'supervisor'].includes(userData.role)) {
+      const role = (userData?.role || '').toLowerCase();
+      if (['superadmin', 'gm', 'hrm', 'dept_head', 'supervisor'].includes(role)) {
         const companiesSnap = await getDocs(collection(db, 'companies'));
         const companiesList = companiesSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
         setCompanies(companiesList);
         
-        // Set first company as default or from localStorage
+        // Default company selection priority:
+        // 1) user's assigned companyId (prevents HOD landing in wrong company)
+        // 2) localStorage selectedCompanyId (user's last selection)
+        // 3) Legacy company name mapping (for data migration)
+        // 4) first company
+        const preferredCompanyId = userData?.companyId;
         const savedCompanyId = localStorage.getItem('selectedCompanyId');
-        if (savedCompanyId) {
-          const found = companiesList.find(c => c.id === savedCompanyId);
-          if (found) setCurrentCompany(found);
-          else if (companiesList.length > 0) setCurrentCompany(companiesList[0]);
-        } else if (companiesList.length > 0) {
-          setCurrentCompany(companiesList[0]);
+        
+        // Legacy company ID mapping - map old string IDs to real company docs
+        const legacyCompanyMap = {
+          'sunisland-resort-and-spa': 'Villa Park',
+          'villa-park': 'Villa Park'
+        };
+        
+        let pickCompanyId = preferredCompanyId || savedCompanyId;
+        let selectedCompany = null;
+        
+        if (pickCompanyId) {
+          selectedCompany = companiesList.find(c => c.id === pickCompanyId) || null;
+        }
+        
+        // If no match, try legacy mapping by company name
+        if (!selectedCompany && preferredCompanyId && legacyCompanyMap[preferredCompanyId]) {
+          const targetName = legacyCompanyMap[preferredCompanyId];
+          selectedCompany = companiesList.find(c => 
+            c.name === targetName || c.Name === targetName
+          ) || null;
+          if (selectedCompany) {
+            console.log('[CompanyContext] Matched legacy companyId to:', selectedCompany.id, selectedCompany.name);
+          }
+        }
+        
+        if (!selectedCompany && companiesList.length > 0) {
+          selectedCompany = companiesList[0];
+        }
+
+        if (selectedCompany) {
+          setCurrentCompany(selectedCompany);
+          localStorage.setItem('selectedCompanyId', selectedCompany.id);
         }
       } else {
         // Regular user - load their assigned company
@@ -91,7 +123,7 @@ export function CompanyProvider({ children }) {
     companies,
     loading,
     switchCompany,
-    isSuperAdmin: () => userData?.role === 'superadmin',
+    isSuperAdmin: () => (userData?.role || '').toLowerCase() === 'superadmin',
     companyId: currentCompany?.id
   };
 

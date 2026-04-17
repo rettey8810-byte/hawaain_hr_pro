@@ -35,6 +35,11 @@ export function AuthProvider({ children }) {
   });
   const [loading, setLoading] = useState(true);
 
+  const isLegacyCompanyId = (companyId) => {
+    const legacy = String(companyId || '').toLowerCase();
+    return legacy === 'sunisland-resort-and-spa' || legacy === 'villa-park';
+  };
+
   const setUserData = (data) => {
     setUserDataState(data);
     if (data) {
@@ -67,15 +72,40 @@ export function AuthProvider({ children }) {
           }
           
           // Sync department, position, and companyId from employee record if missing
-          if (!data.department || !data.position || !data.companyId) {
+          // Also resync companyId if it's an old/legacy value (data migration)
+          if (!data.department || !data.position || !data.companyId || isLegacyCompanyId(data.companyId)) {
             try {
-              const employeesQuery = query(
-                collection(db, 'employees'),
-                where('Email', '==', user.email)
-              );
-              const employeesSnap = await getDocs(employeesQuery);
-              if (!employeesSnap.empty) {
+              const emailCandidates = [
+                user.email,
+                (user.email || '').toLowerCase()
+              ].filter(Boolean);
+
+              const tryEmployeeQuery = async (field, value) => {
+                const q = query(collection(db, 'employees'), where(field, '==', value));
+                return getDocs(q);
+              };
+
+              let employeesSnap = null;
+              for (const email of emailCandidates) {
+                employeesSnap = await tryEmployeeQuery('Email', email);
+                if (!employeesSnap.empty) break;
+
+                employeesSnap = await tryEmployeeQuery('email', email);
+                if (!employeesSnap.empty) break;
+
+                employeesSnap = await tryEmployeeQuery('PersonalEmailID', email);
+                if (!employeesSnap.empty) break;
+
+                employeesSnap = await tryEmployeeQuery('personalEmail', email);
+                if (!employeesSnap.empty) break;
+
+                employeesSnap = await tryEmployeeQuery('E-mail', email);
+                if (!employeesSnap.empty) break;
+              }
+
+              if (employeesSnap && !employeesSnap.empty) {
                 const employeeData = employeesSnap.docs[0].data();
+                console.log('[AuthContext] Employee sync match found for:', user.email, 'employeeId:', employeesSnap.docs[0].id);
                 const updates = {};
                 if (!data.department && employeeData['Department ']) {
                   updates.department = employeeData['Department '];
@@ -83,13 +113,18 @@ export function AuthProvider({ children }) {
                 if (!data.position && employeeData['Designation']) {
                   updates.position = employeeData['Designation'];
                 }
-                if (!data.companyId && employeeData.companyId) {
-                  updates.companyId = employeeData.companyId;
+
+                const empCompanyId = employeeData.companyId || employeeData.CompanyId || employeeData.company || employeeData.Company;
+                if (( !data.companyId || isLegacyCompanyId(data.companyId) ) && empCompanyId) {
+                  updates.companyId = empCompanyId;
+                  console.log('[AuthContext] Syncing companyId from employee record:', empCompanyId);
                 }
                 if (Object.keys(updates).length > 0) {
                   await updateDoc(doc(db, 'users', user.uid), updates);
                   data = { ...data, ...updates };
                 }
+              } else {
+                console.warn('[AuthContext] No matching employee record found to sync for:', user.email);
               }
             } catch (err) {
               console.error('Error syncing employee data:', err);
@@ -221,10 +256,13 @@ export function AuthProvider({ children }) {
   // Data visibility filters based on role
   const getDataVisibilityFilter = () => {
     const userDept = userData?.department;
-    // Handle companyId mismatch - if user has old companyId, fallback to villa-park
-    let userCompany = userData?.companyId;
-    if (userCompany === 'sunisland-resort-and-spa') {
-      userCompany = 'villa-park'; // Fallback to actual data company
+    // Prefer the currently selected company from CompanyContext (stored in localStorage)
+    const selectedCompanyId = localStorage.getItem('selectedCompanyId');
+    let userCompany = selectedCompanyId || userData?.companyId;
+
+    // Normalize legacy ids
+    if (isLegacyCompanyId(userCompany)) {
+      userCompany = selectedCompanyId || null;
     }
     
     switch (currentRole) {
