@@ -157,7 +157,7 @@ function SuperAdminRoute({ children }) {
 
 function EmployeeRoute({ children }) {
   const { user, userData, loading } = useAuth();
-  
+
   if (loading) {
     return (
       <div className="flex justify-center items-center h-screen">
@@ -165,15 +165,20 @@ function EmployeeRoute({ children }) {
       </div>
     );
   }
-  
+
   if (!user) return <Navigate to="/login" />;
-  
+
+  // If acting as HOD, stay on main dashboard (don't redirect to employee dashboard)
+  if (userData?.actingAsHOD) {
+    return children;
+  }
+
   // If employee role, redirect to employee dashboard
   const employeeRoles = ['employee', 'staff'];
   if (employeeRoles.includes(userData?.role)) {
     return <Navigate to="/employee-dashboard" />;
   }
-  
+
   return children;
 }
 

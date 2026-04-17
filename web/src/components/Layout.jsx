@@ -399,8 +399,8 @@ export default function Layout({ children }) {
                 {darkMode ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
               </button>
               
-              {/* Company Switcher for GM, HRM and Superadmin */}
-              {(isSuperAdmin() || isGM() || userData?.role === 'hrm') && companies.length > 1 && (
+              {/* Company Switcher for GM, HRM, Superadmin and Acting HOD */}
+              {(isSuperAdmin() || isGM() || userData?.role === 'hrm' || userData?.actingAsHOD) && companies.length > 1 && (
                 <div className="relative">
                   <button
                     onClick={() => setCompanyDropdownOpen(!companyDropdownOpen)}

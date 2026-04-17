@@ -246,8 +246,10 @@ export function AuthProvider({ children }) {
     if (customPerms && customPerms[feature] && typeof customPerms[feature][action] === 'boolean') {
       return customPerms[feature][action];
     }
+    // If acting as HOD, use dept_head role for permissions
+    const effectiveRole = userData?.actingAsHOD ? 'dept_head' : currentRole;
     // Fall back to default role-based permissions
-    return hasFeatureAccess(currentRole, feature, action);
+    return hasFeatureAccess(effectiveRole, feature, action);
   };
   
   const isRoleHigherThan = (otherRole) => isHigherRole(currentRole, otherRole);
@@ -264,7 +266,12 @@ export function AuthProvider({ children }) {
     if (isLegacyCompanyId(userCompany)) {
       userCompany = selectedCompanyId || null;
     }
-    
+
+    // If acting as HOD, use dept_head filtering (department-level)
+    if (userData?.actingAsHOD) {
+      return { type: 'department', department: userDept, companyId: userCompany };
+    }
+
     switch (currentRole) {
       case 'superadmin':
         return { type: 'all' }; // See everything

@@ -272,3 +272,9 @@ To trigger a new deploy without code changes:
 git commit --allow-empty -m "trigger: force deploy"
 git push origin main
 ```
+
+
+
+cd "C:\Users\maushaz.MADIHAA\Desktop\Rettey\Hawaain_HR_Pro"
+git commit --allow-empty -m "trigger: force vercel deploy"
+git push origin main

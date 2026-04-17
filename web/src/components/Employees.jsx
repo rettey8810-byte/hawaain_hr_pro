@@ -689,7 +689,7 @@ export default function Employees() {
       )}
 
       <div className="text-center text-sm font-medium text-gray-500 bg-white/80 backdrop-blur-sm rounded-xl py-3 px-4 inline-block mx-auto">
-        📊 Showing {employees.length} of {allEmployees.length} employees
+        📊 Showing {filteredEmployees.length} of {visibleEmployees.length} employees
       </div>
 
       {/* Delete Modal - Mobile Responsive */}
