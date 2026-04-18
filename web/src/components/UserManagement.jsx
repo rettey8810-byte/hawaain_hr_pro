@@ -4,7 +4,8 @@ import {
 
   Plus, Edit2, Trash2, Mail, Shield, User, Lock, X, Key, Search,
 
-  Eye, Phone, Briefcase, Building2, CheckCircle, EyeOff, ToggleLeft, ToggleRight, Settings2
+  Eye, Phone, Briefcase, Building2, CheckCircle, EyeOff, ToggleLeft, ToggleRight, Settings2,
+  DollarSign, Ban
 
 } from 'lucide-react';
 
@@ -1721,12 +1722,42 @@ export default function UserManagement() {
 
 
             <p className="text-sm text-gray-600 mb-4 bg-blue-50 p-3 rounded">
-
               <strong>Note:</strong> Toggle permissions to customize access. Changes override default role permissions.
-
             </p>
 
-
+            {/* Quick Preset Buttons */}
+            <div className="flex flex-wrap gap-2 mb-4">
+              <button
+                onClick={() => setUserPermissions(prev => ({
+                  ...prev,
+                  salary: { view: true, edit: true, delete: true, viewOwn: true, viewDepartment: true, viewAll: true }
+                }))}
+                className="px-3 py-1.5 text-sm font-medium text-white bg-emerald-600 rounded hover:bg-emerald-700 flex items-center gap-1"
+              >
+                <DollarSign className="h-4 w-4" />
+                Grant Full Salary CRUD
+              </button>
+              <button
+                onClick={() => setUserPermissions(prev => ({
+                  ...prev,
+                  salary: { view: true, edit: false, delete: false, viewOwn: true, viewDepartment: true, viewAll: false }
+                }))}
+                className="px-3 py-1.5 text-sm font-medium text-emerald-700 bg-emerald-100 rounded hover:bg-emerald-200 flex items-center gap-1"
+              >
+                <Eye className="h-4 w-4" />
+                Salary View Only (Dept)
+              </button>
+              <button
+                onClick={() => setUserPermissions(prev => ({
+                  ...prev,
+                  salary: { view: false, edit: false, delete: false, viewOwn: false, viewDepartment: false, viewAll: false }
+                }))}
+                className="px-3 py-1.5 text-sm font-medium text-red-700 bg-red-100 rounded hover:bg-red-200 flex items-center gap-1"
+              >
+                <Ban className="h-4 w-4" />
+                Revoke Salary Access
+              </button>
+            </div>
 
             <div className="space-y-4">
 

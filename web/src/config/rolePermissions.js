@@ -52,7 +52,7 @@ export const DEFAULT_FEATURE_PERMISSIONS = {
   superadmin: {
     companies: { view: true, create: true, edit: true, delete: true },
     employees: { view: true, create: true, edit: true, delete: true },
-    salary: { view: true, edit: true, viewOwn: true, viewDepartment: true, viewAll: true },
+    salary: { view: true, edit: true, delete: true, viewOwn: true, viewDepartment: true, viewAll: true },
     payroll: { view: true, run: true, approve: true, process: true },
     recruitment: { view: true, create: true, edit: true, delete: true, approve: true, reject: true },
     documents: { view: true, create: true, edit: true, delete: true, upload: true, download: true },
@@ -80,7 +80,7 @@ export const DEFAULT_FEATURE_PERMISSIONS = {
   gm: {
     companies: { view: false, create: false, edit: false, delete: false },
     employees: { view: true, create: true, edit: true, delete: false },
-    salary: { view: true, edit: true, viewOwn: true, viewDepartment: true, viewAll: true },
+    salary: { view: true, edit: true, delete: true, viewOwn: true, viewDepartment: true, viewAll: true },
     payroll: { view: true, run: true, approve: true, process: true },
     recruitment: { view: true, create: true, edit: true, delete: false, approve: true, reject: true },
     documents: { view: true, create: true, edit: true, delete: false, upload: true, download: true },
@@ -108,7 +108,7 @@ export const DEFAULT_FEATURE_PERMISSIONS = {
   hrm: {
     companies: { view: false, create: false, edit: false, delete: false },
     employees: { view: true, create: true, edit: true, delete: false },
-    salary: { view: true, edit: true, viewOwn: true, viewDepartment: true, viewAll: true },
+    salary: { view: true, edit: true, delete: true, viewOwn: true, viewDepartment: true, viewAll: true },
     payroll: { view: true, run: true, approve: true, process: true },
     recruitment: { view: true, create: true, edit: true, delete: false, approve: true, reject: true },
     documents: { view: true, create: true, edit: true, delete: false, upload: true, download: true },
@@ -136,7 +136,7 @@ export const DEFAULT_FEATURE_PERMISSIONS = {
   dept_head: {
     companies: { view: false, create: false, edit: false, delete: false },
     employees: { view: true, create: false, edit: false, delete: false },
-    salary: { view: false, edit: false, viewOwn: true, viewDepartment: true, viewAll: false },
+    salary: { view: false, edit: false, delete: false, viewOwn: true, viewDepartment: true, viewAll: false },
     payroll: { view: false, run: false, approve: false, process: false },
     recruitment: { view: true, create: false, edit: false, delete: false, approve: false, reject: false },
     documents: { view: true, create: false, edit: false, delete: false, upload: true, download: true },
@@ -164,7 +164,7 @@ export const DEFAULT_FEATURE_PERMISSIONS = {
   supervisor: {
     companies: { view: false, create: false, edit: false, delete: false },
     employees: { view: true, create: false, edit: false, delete: false },
-    salary: { view: false, edit: false, viewOwn: true, viewDepartment: false, viewAll: false },
+    salary: { view: false, edit: false, delete: false, viewOwn: true, viewDepartment: false, viewAll: false },
     payroll: { view: false, run: false, approve: false, process: false },
     recruitment: { view: false, create: false, edit: false, delete: false, approve: false, reject: false },
     documents: { view: false, create: false, edit: false, delete: false, upload: false, download: false },
@@ -192,7 +192,7 @@ export const DEFAULT_FEATURE_PERMISSIONS = {
   staff: {
     companies: { view: false, create: false, edit: false, delete: false },
     employees: { view: false, create: false, edit: false, delete: false },
-    salary: { view: false, edit: false, viewOwn: false, viewDepartment: false, viewAll: false },
+    salary: { view: false, edit: false, delete: false, viewOwn: false, viewDepartment: false, viewAll: false },
     payroll: { view: false, run: false, approve: false, process: false },
     recruitment: { view: false, create: false, edit: false, delete: false, approve: false, reject: false },
     documents: { view: false, create: false, edit: false, delete: false, upload: false, download: false },
@@ -220,7 +220,7 @@ export const DEFAULT_FEATURE_PERMISSIONS = {
   employee: {
     companies: { view: false, create: false, edit: false, delete: false },
     employees: { view: false, create: false, edit: false, delete: false },
-    salary: { view: true, edit: false, viewOwn: true, viewDepartment: false, viewAll: false },
+    salary: { view: true, edit: false, delete: false, viewOwn: true, viewDepartment: false, viewAll: false },
     payroll: { view: false, run: false, approve: false, process: false },
     recruitment: { view: false, create: false, edit: false, delete: false, approve: false, reject: false },
     documents: { view: true, create: false, edit: false, delete: false, upload: false, download: true },
@@ -320,7 +320,7 @@ export const FEATURES = [
   // SECTION 3: SALARY & PAYROLL - Multi-Level Views
   // Different view levels based on access
   // ============================================
-  { id: 'salary', label: '💰 Salary Management', actions: ['viewOwn', 'viewDepartment', 'viewAll', 'edit'] },
+  { id: 'salary', label: '💰 Salary Management', actions: ['view', 'edit', 'delete', 'viewOwn', 'viewDepartment', 'viewAll'] },
   { id: 'payroll', label: '💵 Payroll', actions: ['view', 'run', 'approve', 'process'] },
 
   // ============================================
