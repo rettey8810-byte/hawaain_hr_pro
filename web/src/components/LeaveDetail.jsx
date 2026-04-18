@@ -22,7 +22,7 @@ import {
 import { useFirestore } from '../hooks/useFirestore';
 import { useAuth } from '../contexts/AuthContext';
 import { formatDate, calculateDaysRemaining } from '../utils/helpers';
-import { collection, query, where, getDocs } from 'firebase/firestore';
+import { collection, query, where, getDocs, doc, getDoc } from 'firebase/firestore';
 import { db } from '../firebase/config';
 
 const STATUS_CONFIG = {
@@ -64,15 +64,26 @@ export default function LeaveDetail() {
       if (leaveData) {
         setLeave(leaveData);
         
-        // Fetch employee details
+        // Fetch employee details using employeeId (which is the document ID)
         if (leaveData.employeeId) {
-          const empQuery = query(
-            collection(db, 'employees'),
-            where('__name__', '==', leaveData.employeeId)
-          );
-          const empSnap = await getDocs(empQuery);
-          if (!empSnap.empty) {
-            setEmployee({ id: empSnap.docs[0].id, ...empSnap.docs[0].data() });
+          try {
+            const empDocRef = doc(db, 'employees', leaveData.employeeId);
+            const empSnap = await getDoc(empDocRef);
+            if (empSnap.exists()) {
+              setEmployee({ id: empSnap.id, ...empSnap.data() });
+            } else {
+              // Fallback: try to find by EmpID field if document ID doesn't match
+              const empQuery = query(
+                collection(db, 'employees'),
+                where('EmpID', '==', leaveData.employeeId)
+              );
+              const empQuerySnap = await getDocs(empQuery);
+              if (!empQuerySnap.empty) {
+                setEmployee({ id: empQuerySnap.docs[0].id, ...empQuerySnap.docs[0].data() });
+              }
+            }
+          } catch (empErr) {
+            console.error('Error fetching employee:', empErr);
           }
         }
       }
@@ -218,15 +229,15 @@ export default function LeaveDetail() {
             <div className="ml-4">
               <p className={`text-lg font-bold ${statusConfig.text}`}>{statusConfig.label}</p>
               <p className="text-sm text-gray-600">
-                Applied on {formatDate(leave.appliedAt)}
+                Applied on {formatDate(leave.requestedOn || leave.appliedAt)}
               </p>
             </div>
           </div>
           {leave.approvedAt && (
             <div className="text-right">
               <p className="text-sm text-gray-500">Processed by</p>
-              <p className="font-medium text-gray-900">{leave.approverName}</p>
-              <p className="text-xs text-gray-400">{formatDate(leave.approvedAt)}</p>
+              <p className="font-medium text-gray-900">{leave.approvedBy || leave.approverName}</p>
+              <p className="text-xs text-gray-400">{formatDate(leave.approvedOn || leave.approvedAt)}</p>
             </div>
           )}
         </div>
@@ -261,9 +272,9 @@ export default function LeaveDetail() {
                 </div>
               )}
               <div className="ml-4">
-                <p className="text-xl font-bold text-gray-900">{employee?.name || 'Unknown Employee'}</p>
-                <p className="text-gray-500">{employee?.position || 'No position'}</p>
-                <p className="text-sm text-gray-400">{employee?.department || 'No department'}</p>
+                <p className="text-xl font-bold text-gray-900">{employee?.name || leave?.employeeName || 'Unknown Employee'}</p>
+                <p className="text-gray-500">{employee?.position || leave?.designation || 'No position'}</p>
+                <p className="text-sm text-gray-400">{employee?.department || leave?.department || 'No department'}</p>
                 {employee?.employeeCode && (
                   <p className="text-sm text-gray-400">ID: {employee.employeeCode}</p>
                 )}
@@ -284,15 +295,15 @@ export default function LeaveDetail() {
               </div>
               <div className="p-4 bg-gray-50 rounded-xl">
                 <p className="text-sm text-gray-500 mb-1">Duration</p>
-                <p className="font-medium text-gray-900">{leave.days} days</p>
+                <p className="font-medium text-gray-900">{leave.leaveDays || leave.days || '-'} days</p>
               </div>
               <div className="p-4 bg-gray-50 rounded-xl">
                 <p className="text-sm text-gray-500 mb-1">Start Date</p>
-                <p className="font-medium text-gray-900">{formatDate(leave.startDate)}</p>
+                <p className="font-medium text-gray-900">{formatDate(leave.fromDate || leave.startDate)}</p>
               </div>
               <div className="p-4 bg-gray-50 rounded-xl">
                 <p className="text-sm text-gray-500 mb-1">End Date</p>
-                <p className="font-medium text-gray-900">{formatDate(leave.endDate)}</p>
+                <p className="font-medium text-gray-900">{formatDate(leave.toDate || leave.endDate)}</p>
               </div>
             </div>
             <div className="mt-4 p-4 bg-gray-50 rounded-xl">

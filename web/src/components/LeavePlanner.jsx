@@ -46,6 +46,97 @@ import { collection, query, where, getDocs, orderBy, addDoc, updateDoc, doc, Tim
 import { db } from '../firebase/config';
 import { toast } from 'react-hot-toast';
 
+// Staff View Component - Groups leaves by employee
+function StaffView({ leaves, employees, getEmployeeById, getEmployeeName }) {
+  const navigate = useNavigate();
+  
+  // Group leaves by employee
+  const staffData = useMemo(() => {
+    const grouped = {};
+    leaves.forEach(leave => {
+      const empId = leave.employeeId || leave.empId;
+      if (!grouped[empId]) {
+        const emp = getEmployeeById(empId);
+        grouped[empId] = {
+          employee: emp,
+          empId: empId,
+          leaves: [],
+          totalDays: 0
+        };
+      }
+      grouped[empId].leaves.push(leave);
+      grouped[empId].totalDays += parseFloat(leave.leaveDays || leave.days || 0);
+    });
+    return Object.values(grouped).sort((a, b) => a.employee?.name?.localeCompare(b.employee?.name) || 0);
+  }, [leaves, getEmployeeById]);
+
+  if (staffData.length === 0) {
+    return (
+      <div className="bg-white rounded-2xl shadow-lg p-12 text-center">
+        <div className="text-5xl mb-3">🌴</div>
+        <p className="text-gray-500 font-medium">No staff on leave</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="bg-white rounded-2xl shadow-lg overflow-hidden border border-gray-100">
+      <div className="overflow-x-auto">
+        <table className="w-full divide-y divide-gray-200">
+          <thead className="bg-gradient-to-r from-emerald-50 to-teal-50">
+            <tr>
+              <th className="px-6 py-4 text-left text-xs font-bold text-emerald-700 uppercase">👤 Employee</th>
+              <th className="px-6 py-4 text-left text-xs font-bold text-emerald-700 uppercase">🆔 Emp ID</th>
+              <th className="px-6 py-4 text-left text-xs font-bold text-emerald-700 uppercase">📋 Department</th>
+              <th className="px-6 py-4 text-center text-xs font-bold text-emerald-700 uppercase">📝 Leave Records</th>
+              <th className="px-6 py-4 text-center text-xs font-bold text-emerald-700 uppercase">📅 Total Days</th>
+              <th className="px-6 py-4 text-center text-xs font-bold text-emerald-700 uppercase">👁️ View</th>
+            </tr>
+          </thead>
+          <tbody className="bg-white divide-y divide-gray-100">
+            {staffData.map((staff) => (
+              <tr key={staff.empId} className="hover:bg-gray-50 transition-colors">
+                <td className="px-6 py-4">
+                  <div className="flex items-center">
+                    <div className="h-10 w-10 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-700 font-bold mr-3">
+                      {staff.employee?.name?.charAt(0) || staff.empId?.charAt(0) || '?'}
+                    </div>
+                    <div>
+                      <p className="font-semibold text-gray-900">{staff.employee?.name || getEmployeeName(staff.empId)}</p>
+                      <p className="text-sm text-gray-500">{staff.employee?.designation || 'Staff'}</p>
+                    </div>
+                  </div>
+                </td>
+                <td className="px-6 py-4 text-sm font-medium text-gray-900">{staff.empId}</td>
+                <td className="px-6 py-4 text-sm text-gray-600">{staff.employee?.department || '-'}</td>
+                <td className="px-6 py-4 text-center">
+                  <span className="inline-flex items-center px-3 py-1 rounded-full bg-blue-100 text-blue-700 font-semibold">
+                    {staff.leaves.length} records
+                  </span>
+                </td>
+                <td className="px-6 py-4 text-center">
+                  <span className="inline-flex items-center px-3 py-1 rounded-full bg-emerald-100 text-emerald-700 font-semibold">
+                    {staff.totalDays} days
+                  </span>
+                </td>
+                <td className="px-6 py-4 text-center">
+                  <button
+                    onClick={() => navigate(`/leave-planner/${staff.leaves[0]?.id}`)}
+                    className="inline-flex items-center px-3 py-1 bg-emerald-500 text-white rounded-lg hover:bg-emerald-600 transition-colors"
+                  >
+                    <Eye className="h-4 w-4 mr-1" />
+                    View
+                  </button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
 const STATUS_CONFIG = {
   pending: { color: 'amber', label: '⏳ Pending', bg: 'bg-amber-100', text: 'text-amber-700', border: 'border-amber-200' },
   approved: { color: 'emerald', label: '✅ Approved', bg: 'bg-emerald-100', text: 'text-emerald-700', border: 'border-emerald-200' },
@@ -496,18 +587,37 @@ export default function LeavePlanner() {
     }
   };
 
-  // Calculate stats from ALL leaves, not filtered leaves
+  // Get today's date for real-time stats
+  const today = new Date().toISOString().split('T')[0];
+  
+  // Calculate stats - count unique employees currently on leave (as of today)
   const stats = useMemo(() => {
-    const base = { total: leaves.length };
-    const types = [
-      'annual', 'unpaid', 'off_day', 'ph', 'family_responsibility',
-      'medical', 'special', 'on_duty', 'sick', 'hajju', 'emergency', 'other'
-    ];
-    types.forEach(t => {
-      base[t] = leaves.filter(l => (l.leaveType || 'other') === t).length;
+    // Filter leaves that are active today (startDate <= today <= endDate)
+    const activeLeaves = leaves.filter(l => {
+      const start = l.startDate || l.fromDate;
+      const end = l.endDate || l.toDate;
+      return start <= today && end >= today;
     });
-    return base;
-  }, [leaves]);
+    
+    // Get unique employees for each leave type
+    const getUniqueEmployees = (type) => {
+      const filtered = type === 'all' 
+        ? activeLeaves 
+        : activeLeaves.filter(l => (l.leaveType || 'other') === type);
+      const uniqueIds = new Set(filtered.map(l => l.employeeId || l.empId));
+      return uniqueIds.size;
+    };
+    
+    return {
+      total: getUniqueEmployees('all'),
+      annual: getUniqueEmployees('annual'),
+      unpaid: getUniqueEmployees('unpaid'),
+      off_day: getUniqueEmployees('off_day'),
+      ph: getUniqueEmployees('ph'),
+      family_responsibility: getUniqueEmployees('family_responsibility'),
+      sick: getUniqueEmployees('sick')
+    };
+  }, [leaves, today]);
 
   if (loading || employeesLoading) {
     return (
@@ -762,6 +872,17 @@ export default function LeavePlanner() {
                   List View
                 </button>
                 <button
+                  onClick={() => setViewMode('staff')}
+                  className={`flex items-center px-4 py-2 rounded-lg transition-all ${
+                    viewMode === 'staff' 
+                      ? 'bg-emerald-500 text-white shadow' 
+                      : 'text-gray-600 hover:bg-gray-100'
+                  }`}
+                >
+                  <Users className="h-4 w-4 mr-2" />
+                  Staff View
+                </button>
+                <button
                   onClick={() => setViewMode('calendar')}
                   className={`flex items-center px-4 py-2 rounded-lg transition-all ${
                     viewMode === 'calendar' 
@@ -801,6 +922,8 @@ export default function LeavePlanner() {
                 employees={employees}
                 onLeaveClick={(leave) => navigate(`/leave-planner/${leave.id}`)}
               />
+            ) : viewMode === 'staff' ? (
+              <StaffView leaves={filteredLeaves} employees={employees} getEmployeeById={getEmployeeById} getEmployeeName={getEmployeeName} />
             ) : (
               <>
             <div className="bg-white rounded-2xl shadow-lg overflow-hidden border border-gray-100">
@@ -989,6 +1112,9 @@ export default function LeavePlanner() {
           <p className="mt-1 text-sm text-white/80">
             Manage employee leave applications and travel arrangements
           </p>
+          <p className="mt-1 text-xs text-white/60 font-medium">
+            📅 Staff on leave as of {new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}
+          </p>
         </div>
         <div className="mt-4 flex md:ml-4 md:mt-0 gap-3">
           <Link
@@ -1011,12 +1137,12 @@ export default function LeavePlanner() {
       {/* Stats Summary - Colorful Cards - Mobile Responsive */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
         {[
-          { key: 'total', label: 'Total', icon: Luggage, emoji: null, colors: 'from-blue-500 to-indigo-600', filter: 'all', type: 'status' },
+          { key: 'total', label: 'Staff on Leave', icon: Users, emoji: null, colors: 'from-blue-500 to-indigo-600', filter: 'all', type: 'status' },
           { key: 'annual', label: 'Annual', icon: Calendar, emoji: '🏖️', colors: 'from-emerald-500 to-green-600', filter: 'annual', type: 'type' },
           { key: 'off_day', label: 'Off Day', icon: Moon, emoji: '🛌', colors: 'from-slate-500 to-slate-600', filter: 'off_day', type: 'type' },
           { key: 'ph', label: 'Public Holiday', icon: PartyPopper, emoji: '🎉', colors: 'from-purple-500 to-purple-600', filter: 'ph', type: 'type' },
           { key: 'sick', label: 'Sick', icon: HeartPulse, emoji: '🤒', colors: 'from-rose-500 to-red-600', filter: 'sick', type: 'type' },
-          { key: 'unpaid', label: 'No Pay', icon: DollarSign, emoji: '�', colors: 'from-gray-500 to-gray-600', filter: 'unpaid', type: 'type' },
+          { key: 'unpaid', label: 'No Pay', icon: DollarSign, emoji: '💰', colors: 'from-gray-500 to-gray-600', filter: 'unpaid', type: 'type' },
           { key: 'family_responsibility', label: 'Family Resp', icon: Users, emoji: '👨‍👩‍👧‍👦', colors: 'from-amber-500 to-orange-500', filter: 'family_responsibility', type: 'type' },
         ].map(s => (
           <button 
@@ -1029,6 +1155,7 @@ export default function LeavePlanner() {
                 setLeaveTypeFilter(s.filter);
                 setStatusFilter('all');
               }
+              setViewMode('staff');
               setActiveTab('list');
             }}
             className={`bg-gradient-to-br ${s.colors} rounded-2xl p-4 text-white shadow-lg transform hover:scale-105 transition-all text-left`}

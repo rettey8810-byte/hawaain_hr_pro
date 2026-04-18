@@ -11,7 +11,8 @@ import {
   serverTimestamp,
   limit,
   startAfter,
-  orderBy
+  orderBy,
+  getDoc
 } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { db, storage } from '../firebase/config';
@@ -110,6 +111,20 @@ export function useFirestore(collectionName, customConstraints = []) {
     }
   };
 
+  const getDocumentById = async (id) => {
+    try {
+      const docRef = doc(db, collectionName, id);
+      const docSnap = await getDoc(docRef);
+      if (docSnap.exists()) {
+        return { id: docSnap.id, ...docSnap.data() };
+      }
+      return null;
+    } catch (err) {
+      setError(err.message);
+      throw err;
+    }
+  };
+
   const uploadFile = async (file, path) => {
     try {
       const storageRef = ref(storage, `${companyId}/${path}/${Date.now()}_${file.name}`);
@@ -202,6 +217,7 @@ export function useFirestore(collectionName, customConstraints = []) {
     addDocument,
     updateDocument,
     deleteDocument,
+    getDocumentById,
     uploadFile,
     getAllDocuments,
     getDocumentsByQuery,
