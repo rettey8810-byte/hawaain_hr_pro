@@ -28,6 +28,10 @@ import {
   FileSpreadsheet,
   AlertCircle,
   Users,
+  HeartPulse,
+  DollarSign,
+  Moon,
+  PartyPopper,
   CheckSquare,
   XSquare
 } from 'lucide-react';
@@ -1005,25 +1009,25 @@ export default function LeavePlanner() {
       </div>
 
       {/* Stats Summary - Colorful Cards - Mobile Responsive */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
         {[
-          { key: 'total', label: 'Total Leaves', icon: Luggage, emoji: null, colors: 'from-blue-500 to-indigo-600', filter: 'all' },
-          { key: 'pending', label: 'Pending', icon: Clock, emoji: '⏳', colors: 'from-amber-500 to-orange-500', filter: 'pending' },
-          { key: 'approved', label: 'Approved', icon: CheckCircle, emoji: '✅', colors: 'from-emerald-500 to-green-600', filter: 'approved' },
-          { key: 'rejected', label: 'Rejected', icon: XCircle, emoji: '❌', colors: 'from-rose-500 to-red-600', filter: 'rejected' },
-          { key: 'air', label: 'By Air', icon: Plane, emoji: '✈️', colors: 'from-sky-500 to-blue-600', filter: 'air' },
-          { key: 'sea', label: 'By Sea', icon: Ship, emoji: '🚢', colors: 'from-cyan-500 to-teal-600', filter: 'sea' },
+          { key: 'total', label: 'Total', icon: Luggage, emoji: null, colors: 'from-blue-500 to-indigo-600', filter: 'all', type: 'status' },
+          { key: 'annual', label: 'Annual', icon: Calendar, emoji: '🏖️', colors: 'from-emerald-500 to-green-600', filter: 'annual', type: 'type' },
+          { key: 'off_day', label: 'Off Day', icon: Moon, emoji: '🛌', colors: 'from-slate-500 to-slate-600', filter: 'off_day', type: 'type' },
+          { key: 'ph', label: 'Public Holiday', icon: PartyPopper, emoji: '🎉', colors: 'from-purple-500 to-purple-600', filter: 'ph', type: 'type' },
+          { key: 'sick', label: 'Sick', icon: HeartPulse, emoji: '🤒', colors: 'from-rose-500 to-red-600', filter: 'sick', type: 'type' },
+          { key: 'unpaid', label: 'No Pay', icon: DollarSign, emoji: '�', colors: 'from-gray-500 to-gray-600', filter: 'unpaid', type: 'type' },
+          { key: 'family_responsibility', label: 'Family Resp', icon: Users, emoji: '👨‍👩‍👧‍👦', colors: 'from-amber-500 to-orange-500', filter: 'family_responsibility', type: 'type' },
         ].map(s => (
           <button 
             key={s.key} 
             onClick={() => {
-              if (s.filter === 'all') {
-                setStatusFilter('all');
-                setLeaveTypeFilter('all');
-              } else if (['pending', 'approved', 'rejected'].includes(s.filter)) {
+              if (s.type === 'status') {
                 setStatusFilter(s.filter);
+                setLeaveTypeFilter('all');
               } else {
                 setLeaveTypeFilter(s.filter);
+                setStatusFilter('all');
               }
               setActiveTab('list');
             }}
