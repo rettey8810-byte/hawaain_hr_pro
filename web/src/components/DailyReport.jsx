@@ -10,6 +10,7 @@ export default function DailyReport({ onClose }) {
   const { documents: employees } = useFirestore('employees');
   const { documents: leaves } = useFirestore('leaves');
   const { documents: terminations } = useFirestore('terminations');
+  const { documents: rooms } = useFirestore('rooms');
 
   const today = new Date().toISOString().split('T')[0];
   const todayFormatted = new Date().toLocaleDateString('en-US', {
@@ -54,7 +55,48 @@ export default function DailyReport({ onClose }) {
     return ['construction', 'projects', 'project'].some(d => dept.includes(d));
   }).length;
 
-  const constructionGroups = 0; // Placeholder - adjust based on your data structure
+  // Construction Groups breakdown (based on department/section names)
+  const adhiraGroup = activeEmployees.filter(e => {
+    const dept = (e.Department || e.department || '').toLowerCase();
+    return dept.includes('adhira');
+  }).length;
+  
+  const villaConstructionSite = activeEmployees.filter(e => {
+    const dept = (e.Department || e.department || '').toLowerCase();
+    return dept.includes('villa construction') && dept.includes('site');
+  }).length;
+  
+  const villaConstructionOld = activeEmployees.filter(e => {
+    const dept = (e.Department || e.department || '').toLowerCase();
+    return dept.includes('villa construction') && dept.includes('old');
+  }).length;
+  
+  const villaConstructionOther = activeEmployees.filter(e => {
+    const dept = (e.Department || e.department || '').toLowerCase();
+    return dept.includes('villa construction') && dept.includes('other');
+  }).length;
+  
+  const thirdParty = activeEmployees.filter(e => {
+    const dept = (e.Department || e.department || '').toLowerCase();
+    return dept.includes('third party') || dept.includes('pallette art') || dept.includes('pastex');
+  }).length;
+  
+  const mmplCordelia = activeEmployees.filter(e => {
+    const dept = (e.Department || e.department || '').toLowerCase();
+    return dept.includes('mmpl') || dept.includes('cordelia') || dept.includes('jewellary');
+  }).length;
+  
+  const sisterProperty = activeEmployees.filter(e => {
+    const dept = (e.Department || e.department || '').toLowerCase();
+    return dept.includes('vmt') || dept.includes('sister property') || dept.includes('mart & bio');
+  }).length;
+  
+  const shaminGrp = activeEmployees.filter(e => {
+    const dept = (e.Department || e.department || '').toLowerCase();
+    return dept.includes('shamin');
+  }).length;
+  
+  const constructionGroups = adhiraGroup + villaConstructionSite + villaConstructionOld + villaConstructionOther;
 
   // Leave Data
   const todayLeaves = leaves.filter(l =>
@@ -279,13 +321,41 @@ export default function DailyReport({ onClose }) {
                         <td className="px-3 py-1 text-xs">Total</td>
                         <td className="px-3 py-1 text-right text-xs">{operationalStaff + nonOperationalStaff}</td>
                       </tr>
-                      <tr className="bg-blue-100">
-                        <td className="px-3 py-1 text-xs">Construction Groups + Others</td>
-                        <td className="px-3 py-1 text-right text-xs font-bold">{constructionGroups}</td>
+                      <tr className="bg-amber-100">
+                        <td className="px-3 py-1 text-xs">Adhira Group (+15 on Leave)</td>
+                        <td className="px-3 py-1 text-right text-xs font-bold">{adhiraGroup}</td>
+                      </tr>
+                      <tr className="bg-gray-100">
+                        <td className="px-3 py-1 text-xs">Villa Construction In Site</td>
+                        <td className="px-3 py-1 text-right text-xs font-bold">{villaConstructionSite}</td>
+                      </tr>
+                      <tr className="bg-gray-100">
+                        <td className="px-3 py-1 text-xs">Villa Construction Old Batch</td>
+                        <td className="px-3 py-1 text-right text-xs font-bold">{villaConstructionOld}</td>
+                      </tr>
+                      <tr className="bg-gray-100">
+                        <td className="px-3 py-1 text-xs">Villa Construction other sites</td>
+                        <td className="px-3 py-1 text-right text-xs font-bold">{villaConstructionOther}</td>
+                      </tr>
+                      <tr className="bg-orange-100">
+                        <td className="px-3 py-1 text-xs">Third Party (Pallette Art, Pastex...)</td>
+                        <td className="px-3 py-1 text-right text-xs font-bold">{thirdParty}</td>
+                      </tr>
+                      <tr className="bg-purple-100">
+                        <td className="px-3 py-1 text-xs">MMPL: Cordelia, Jewellary Shop</td>
+                        <td className="px-3 py-1 text-right text-xs font-bold">{mmplCordelia}</td>
+                      </tr>
+                      <tr className="bg-cyan-100">
+                        <td className="px-3 py-1 text-xs">Sister Property (VMT, Mart & Bio)</td>
+                        <td className="px-3 py-1 text-right text-xs font-bold">{sisterProperty}</td>
+                      </tr>
+                      <tr className="bg-pink-100">
+                        <td className="px-3 py-1 text-xs">Shamin Grp</td>
+                        <td className="px-3 py-1 text-right text-xs font-bold">{shaminGrp}</td>
                       </tr>
                       <tr className="bg-green-200 font-bold">
                         <td className="px-3 py-1 text-xs">Total Head Count</td>
-                        <td className="px-3 py-1 text-right text-xs">{operationalStaff + nonOperationalStaff + constructionGroups}</td>
+                        <td className="px-3 py-1 text-right text-xs">{operationalStaff + nonOperationalStaff + constructionGroups + thirdParty + mmplCordelia + sisterProperty + shaminGrp}</td>
                       </tr>
                     </tbody>
                   </table>
@@ -370,6 +440,42 @@ export default function DailyReport({ onClose }) {
 
               {/* Right Column */}
               <div className="space-y-6">
+                
+                {/* New Hire */}
+                <div className="border-2 border-gray-400">
+                  <div className="bg-gray-800 text-white px-3 py-1 text-sm font-bold">New Hire</div>
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="bg-gray-700 text-white">
+                        <th className="px-2 py-1 text-left text-xs">Name</th>
+                        <th className="px-2 py-1 text-left text-xs">Department</th>
+                        <th className="px-2 py-1 text-left text-xs">Designation</th>
+                        <th className="px-2 py-1 text-left text-xs">Remarks</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr className="bg-white"><td className="px-2 py-1 text-xs">-</td><td className="px-2 py-1 text-xs">-</td><td className="px-2 py-1 text-xs">-</td><td className="px-2 py-1 text-xs">-</td></tr>
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* Separation */}
+                <div className="border-2 border-gray-400">
+                  <div className="bg-gray-800 text-white px-3 py-1 text-sm font-bold">Separation</div>
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="bg-gray-700 text-white">
+                        <th className="px-2 py-1 text-left text-xs">Name</th>
+                        <th className="px-2 py-1 text-left text-xs">Department</th>
+                        <th className="px-2 py-1 text-left text-xs">Designation</th>
+                        <th className="px-2 py-1 text-left text-xs">Remarks</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr className="bg-white"><td className="px-2 py-1 text-xs">-</td><td className="px-2 py-1 text-xs">-</td><td className="px-2 py-1 text-xs">-</td><td className="px-2 py-1 text-xs">-</td></tr>
+                    </tbody>
+                  </table>
+                </div>
 
                 {/* Head Count Ratio */}
                 <div className="border-2 border-gray-400">
@@ -380,6 +486,7 @@ export default function DailyReport({ onClose }) {
                         <th className="px-2 py-1 text-left text-xs">Name</th>
                         <th className="px-2 py-1 text-right text-xs">Male</th>
                         <th className="px-2 py-1 text-right text-xs">Female</th>
+                        <th className="px-2 py-1 text-right text-xs">%</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -387,16 +494,19 @@ export default function DailyReport({ onClose }) {
                         <td className="px-2 py-1 text-xs">Locals</td>
                         <td className="px-2 py-1 text-right text-xs font-bold">{locals}</td>
                         <td className="px-2 py-1 text-right text-xs">0</td>
+                        <td className="px-2 py-1 text-right text-xs">{male > 0 ? ((locals/male)*100).toFixed(2) : '0.00'}</td>
                       </tr>
                       <tr className="bg-green-200">
                         <td className="px-2 py-1 text-xs">Expat</td>
                         <td className="px-2 py-1 text-right text-xs font-bold">{expats}</td>
                         <td className="px-2 py-1 text-right text-xs">0</td>
+                        <td className="px-2 py-1 text-right text-xs">{male > 0 ? ((expats/male)*100).toFixed(2) : '0.00'}</td>
                       </tr>
                       <tr className="bg-green-300 font-bold">
                         <td className="px-2 py-1 text-xs">Total</td>
                         <td className="px-2 py-1 text-right text-xs">{male}</td>
                         <td className="px-2 py-1 text-right text-xs">{female}</td>
+                        <td className="px-2 py-1 text-right text-xs">100</td>
                       </tr>
                     </tbody>
                   </table>
@@ -473,7 +583,7 @@ export default function DailyReport({ onClose }) {
                     <thead>
                       <tr className="bg-blue-700 text-white">
                         <th className="px-2 py-1 text-left text-xs">Department</th>
-                        <th className="px-2 py-1 text-center text-xs">Position</th>
+                        <th className="px-2 py-1 text-center text-xs">No</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -487,6 +597,37 @@ export default function DailyReport({ onClose }) {
                         <td className="px-2 py-1 text-xs">Total</td>
                         <td className="px-2 py-1 text-center text-xs">{sortedDepts.reduce((sum, [,c]) => sum + c, 0)}</td>
                       </tr>
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* Room Availability - NOT AVAILABLE */}
+                <div className="border-2 border-gray-400">
+                  <div className="bg-gray-600 text-white px-3 py-1 text-sm font-bold">NOT AVAILABLE</div>
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="bg-gray-500 text-white">
+                        <th className="px-2 py-1 text-left text-xs">Room No</th>
+                        <th className="px-2 py-1 text-left text-xs">Status</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr className="bg-white"><td className="px-2 py-1 text-xs">Room No: 1237</td><td className="px-2 py-1 text-xs">Out of order</td></tr>
+                      <tr className="bg-gray-50"><td className="px-2 py-1 text-xs">Room No: 1272</td><td className="px-2 py-1 text-xs">OOO Occupied</td></tr>
+                      <tr className="bg-white"><td className="px-2 py-1 text-xs">Room No: 1029</td><td className="px-2 py-1 text-xs">OOO Occupied</td></tr>
+                      <tr className="bg-gray-50"><td className="px-2 py-1 text-xs">Room No: 10103</td><td className="px-2 py-1 text-xs">Outdoor Noise / Occupied</td></tr>
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* Staff Facilities */}
+                <div className="border-2 border-gray-400">
+                  <div className="bg-gray-600 text-white px-3 py-1 text-sm font-bold">STAFF FACILITIES</div>
+                  <table className="w-full text-sm">
+                    <tbody>
+                      <tr className="bg-white"><td className="px-2 py-1 text-xs">Staff Gym</td><td className="px-2 py-1 text-xs">OOO</td></tr>
+                      <tr className="bg-gray-50"><td className="px-2 py-1 text-xs">HR Meeting Room</td><td className="px-2 py-1 text-xs">OOO</td></tr>
+                      <tr className="bg-white"><td className="px-2 py-1 text-xs">Top loader machine</td><td className="px-2 py-1 text-xs">Staff Laundry - R/no. 10 area</td></tr>
                     </tbody>
                   </table>
                 </div>
